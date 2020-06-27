@@ -52,17 +52,6 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
     if (connected_)
         return Result(STATUS::ALREADY_CONNECTED);
 
-    //unsigned char buf[sizeof(struct in6_addr)];
-
-    //if (inet_pton(version, host, buf) == 1) {
-        //if (::connect(socket_, rp->ai_addr, rp->ai_addrlen) == -1) {
-            //::close(socket_);
-            //continue;
-        //}
-    //}
-
-    // resolve a list of IPs for given host (see man 3 getaddrinfo)
-
     addrinfo hints;
     addrinfo *result;
 
@@ -79,8 +68,6 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
             resolving_status == EAI_SYSTEM ? strerror(errno) : gai_strerror(resolving_status)
         );
 
-    std::cout << "Huhu\n";
-
 
     // we got a list of addresses to connect to, try to connect to one of them
 
@@ -88,8 +75,6 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
 
         if ((socket_ = ::socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1)
             continue;
-
-        std::cout << "have socket\n";
 
         if (rp->ai_family == AF_INET) {
             sockaddr_in *addr_in = reinterpret_cast<sockaddr_in *>(rp->ai_addr);
@@ -182,13 +167,10 @@ bool Socket::is_localhost() const {
 Socket *Socket::create(Socket::VERSION v) {
     switch (v) {
         case VERSION::ALL:
-            std::cout << "Create ALL\n";
             return new Socket(AF_UNSPEC);
         case VERSION::IPv4:
-            std::cout << "Create v4\n";
             return new Socket(AF_INET);
         case VERSION::IPv6:
-            std::cout << "Create v6\n";
             return new Socket(AF_INET6);
         /* no default to get warnings on compile time when VERSION has been changed */
     }
