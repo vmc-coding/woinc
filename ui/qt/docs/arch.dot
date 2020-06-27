@@ -1,0 +1,34 @@
+// dot -Tpng arch.dot | feh -
+digraph Arch {
+    Adapter [shape=box];
+    App [shape=box];
+    Controller [shape=box];
+    Gui [shape=box];
+    Model [shape=box];
+    Widgets [shape=box];
+
+    Adapter -> Controller [label="host connected"];
+    Adapter -> Controller [label="host auth(failed)"];
+    Adapter -> Controller [label="host error"];
+
+    Adapter -> Model [label="*updated"];
+    Adapter -> Model [label="host added/removed"];
+
+    Controller -> Gui [label="on_error"];
+
+    Gui -> App [label="quit"];
+
+    App -> Controller [label="to quit"];
+
+    main -> Controller [label="add host (tmp)"];
+
+    Model -> Controller [label="*update_needed"];
+    Model -> Widgets [label="*updated"];
+    Model -> Widgets [label="host (un)selected"];
+
+    Widgets -> Controller [label="*"];
+
+    libui -> Adapter [style=dotted];
+    Controller -> libui [style=dotted];
+
+}

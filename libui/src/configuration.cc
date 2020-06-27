@@ -1,0 +1,79 @@
+/* libui/src/configuration.cc --
+   Written and Copyright (C) 2018 by vmc.
+
+   This file is part of woinc.
+
+   woinc is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   woinc is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with woinc. If not, see <http://www.gnu.org/licenses/>. */
+
+#include "configuration.h"
+
+#include <algorithm>
+#include <cassert>
+
+#define WOINC_CONFIGURATION_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
+
+namespace woinc { namespace ui {
+
+void Configuration::interval(PeriodicTask task, int seconds) {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    intervals_[static_cast<size_t>(task)] = std::chrono::seconds(seconds);
+}
+
+int Configuration::interval(PeriodicTask task) const {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    return static_cast<int>(intervals_.at(static_cast<size_t>(task)).count());
+}
+
+Configuration::Intervals Configuration::intervals() const {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    return intervals_;
+}
+
+void Configuration::active_only_tasks(const std::string &host, bool value) {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) != host_configurations_.end());
+    host_configurations_.at(host).active_only_tasks_ = value;
+}
+
+bool Configuration::active_only_tasks(const std::string &host) const {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) != host_configurations_.end());
+    return host_configurations_.at(host).active_only_tasks_;
+}
+
+void Configuration::schedule_periodic_tasks(const std::string &host, bool value) {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) != host_configurations_.end());
+    host_configurations_.at(host).schedule_periodic_tasks = value;
+}
+
+bool Configuration::schedule_periodic_tasks(const std::string &host) const {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) != host_configurations_.end());
+    return host_configurations_.at(host).schedule_periodic_tasks;
+}
+
+void Configuration::add_host(const std::string &host) {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) == host_configurations_.end());
+    host_configurations_.emplace(host, HostConfiguration());
+}
+
+void Configuration::remove_host(const std::string &host) {
+    WOINC_CONFIGURATION_LOCK_GUARD;
+    assert(host_configurations_.find(host) != host_configurations_.end());
+    host_configurations_.erase(host);
+}
+
+}}

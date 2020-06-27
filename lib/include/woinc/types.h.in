@@ -1,0 +1,582 @@
+/* woinc/types.h --
+   Written and Copyright (C) 2017-2020 by vmc.
+
+   This file is part of woinc.
+
+   woinc is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   woinc is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with woinc. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef WOINC_TYPES_H_
+#define WOINC_TYPES_H_
+
+#include <ctime>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <woinc/defs.h>
+
+namespace woinc {
+
+struct FileRef {
+    bool main_program = false;
+    std::string file_name;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool copy_file = false;
+    bool optional = false;
+    std::string open_name;
+#endif
+};
+
+typedef std::vector<FileRef> FileRefs;
+
+struct ActiveTask {
+    ACTIVE_TASK_STATE active_task_state = ACTIVE_TASK_STATE::UNINITIALIZED;
+    SCHEDULER_STATE scheduler_state = SCHEDULER_STATE::UNINITIALIZED;
+
+    bool needs_shmem = false;
+    bool too_large = false;
+
+    int pid = 0;
+    int slot = 0;
+
+    double bytes_received = 0;
+    double bytes_sent = 0;
+    double checkpoint_cpu_time = 0;
+    double current_cpu_time = 0;
+    double elapsed_time = 0;
+    double fraction_done = 0;
+    double progress_rate = 0;
+    double swap_size = 0;
+    double working_set_size_smoothed = 0;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    double page_fault_rate = 0;
+    double working_set_size = 0;
+
+    int app_version_num = 0;
+
+    std::string graphics_exec_path;
+    std::string remote_desktop_addr;
+    std::string slot_path;
+    std::string web_graphics_url;
+#endif
+};
+
+struct App {
+    bool non_cpu_intensive = false;
+    std::string name;
+    std::string user_friendly_name;
+
+    std::string project_url; // not sent by the client, but needed to find corresponding project
+};
+
+typedef std::vector<App> Apps;
+
+// TODO add the stuff about coprocs
+struct AppVersion {
+    double avg_ncpus = 0;
+    double flops = 0;
+    int version_num = 0;
+    std::string app_name;
+    std::string plan_class;
+    std::string platform;
+    FileRefs file_refs;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool dont_throttle = false;
+    bool is_wrapper = false;
+    bool needs_network = false;
+    double gpu_ram = 0;
+    std::string api_version;
+    std::string cmdline;
+    std::string file_prefix;
+#endif
+
+    std::string project_url; // not sent by the client, but needed to find corresponding project
+};
+
+typedef std::vector<AppVersion> AppVersions;
+
+struct CCStatus {
+    struct State {
+        SUSPEND_REASON suspend_reason = SUSPEND_REASON::UNKNOWN_TO_WOINC;
+        RUN_MODE mode = RUN_MODE::UNKNOWN_TO_WOINC;
+        RUN_MODE perm_mode = RUN_MODE::UNKNOWN_TO_WOINC;
+        double delay = 0; // seconds until mode gets perm_mode
+    };
+
+    State cpu;
+    State gpu;
+    State network;
+
+    NETWORK_STATUS network_status = NETWORK_STATUS::UNKNOWN_TO_WOINC;
+};
+
+struct DailyStatistic {
+    double host_expavg_credit;
+    double host_total_credit;
+    double user_expavg_credit;
+    double user_total_credit;
+    time_t day;
+};
+
+typedef std::vector<DailyStatistic> DailyStatistics;
+
+struct DiskUsage {
+    double allowed;
+    double boinc;
+    double free;
+    double total;
+
+    struct Project {
+        std::string master_url;
+        double disk_usage;
+    };
+    std::vector<Project> projects;
+};
+
+struct FileXfer {
+    double bytes_xferred = 0;
+    double xfer_speed = 0;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    double file_offset = 0;
+    std::string url;
+#endif
+};
+
+struct PersistentFileXfer {
+    bool is_upload = false;
+    double time_so_far = 0;
+    time_t next_request_time = 0;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    double last_bytes_xferred = 0;
+    int num_retries = 0;
+    time_t first_request_time = 0;
+#endif
+};
+
+struct FileTransfer {
+    FileTransfer() = default;
+    FileTransfer(const FileTransfer &ft);
+    FileTransfer(FileTransfer &&ft) = default;
+
+    FileTransfer &operator=(FileTransfer ft);
+
+    double nbytes = 0;
+    int status = 0;
+    std::string name;
+    std::string project_name;
+    std::string project_url;
+    time_t project_backoff = 0;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    double max_nbytes = 0;
+#endif
+
+    std::unique_ptr<PersistentFileXfer> persistent_file_xfer = nullptr;
+    std::unique_ptr<FileXfer> file_xfer = nullptr;
+};
+
+typedef std::vector<FileTransfer> FileTransfers;
+
+struct GlobalPreferences {
+    bool confirm_before_connecting = false;
+    bool dont_verify_images = false;
+    bool hangup_if_dialed = false;
+    bool leave_apps_in_memory = false;
+    bool run_gpu_if_user_active = false;
+    bool run_if_user_active = false;
+    bool run_on_batteries = false;
+
+    double cpu_scheduling_period_minutes = 0;
+    double cpu_usage_limit = 0;
+    double daily_xfer_limit_mb = 0;
+    double disk_interval = 0;
+    double disk_max_used_gb = 0;
+    double disk_max_used_pct = 0;
+    double disk_min_free_gb = 0;
+    double end_hour = 0; // compute only until this timepoint every day
+    double idle_time_to_run = 0;
+    double max_bytes_sec_down = 0;
+    double max_bytes_sec_up = 0;
+    double max_ncpus_pct = 0;
+    double net_end_hour = 0;
+    double net_start_hour = 0;
+    double ram_max_used_busy_pct = 0;
+    double ram_max_used_idle_pct = 0;
+    double start_hour = 0; // start computing at this timepoint every day
+    double suspend_cpu_usage = 0;
+    double vm_max_used_pct = 0;
+    double work_buf_additional_days = 0;
+    double work_buf_min_days = 0;
+
+    int daily_xfer_period_days = 0;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool network_wifi_only = false;
+    bool override_file_present = false;
+    double battery_charge_min_pct = 0;
+    double battery_max_temperature = 0;
+    double mod_time = 0;
+    double suspend_if_no_recent_input = 0;
+    int max_cpus = 0;
+    std::string source_project;
+#endif
+
+    struct TimeSpan {
+        double start, end;
+    };
+
+    typedef std::map<DAY_OF_WEEK, TimeSpan> TimeSpans;
+
+    TimeSpans cpu_times;
+    TimeSpans net_times;
+};
+
+struct GlobalPreferencesMask {
+    bool confirm_before_connecting = false;
+    bool cpu_scheduling_period_minutes = false;
+    bool cpu_usage_limit = false;
+    bool daily_xfer_limit_mb = false;
+    bool daily_xfer_period_days = false;
+    bool disk_interval = false;
+    bool disk_max_used_gb = false;
+    bool disk_max_used_pct = false;
+    bool disk_min_free_gb = false;
+    bool dont_verify_images = false;
+    bool end_hour = false;
+    bool hangup_if_dialed = false;
+    bool idle_time_to_run = false;
+    bool leave_apps_in_memory = false;
+    bool max_bytes_sec_down = false;
+    bool max_bytes_sec_up = false;
+    bool max_ncpus_pct = false;
+    bool net_end_hour = false;
+    bool net_start_hour = false;
+    bool ram_max_used_busy_pct = false;
+    bool ram_max_used_idle_pct = false;
+    bool run_gpu_if_user_active = false;
+    bool run_if_user_active = false;
+    bool run_on_batteries = false;
+    bool start_hour = false;
+    bool suspend_cpu_usage = false;
+    bool vm_max_used_pct = false;
+    bool work_buf_additional_days = false;
+    bool work_buf_min_days = false;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool battery_charge_min_pct = false;
+    bool battery_max_temperature = false;
+    bool max_cpus = false;
+    bool mod_time = false;
+    bool network_wifi_only = false;
+    bool override_file_present = false;
+    bool source_project = false;
+    bool suspend_if_no_recent_input = false;
+#endif
+};
+
+struct GuiUrl {
+    std::string name;
+    std::string description;
+    std::string url;
+
+    bool ifteam = false;
+};
+
+typedef std::vector<GuiUrl> GuiUrls;
+
+// TODO add the stuff about coprocs
+struct HostInfo {
+    double d_free = 0;
+    double d_total = 0;
+    double m_cache = 0;
+    double m_nbytes = 0;
+    double m_swap = 0;
+    double p_fpops = 0;
+    double p_iops = 0;
+    double p_membw = 0;
+    int p_ncpus = 0;
+    int timezone = 0;
+    std::string domain_name;
+    std::string ip_addr;
+    std::string os_name;
+    std::string os_version;
+    std::string p_model;
+    std::string p_vendor;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool p_vm_extensions_disabled = false;
+    double p_calculated = 0;
+    int n_usable_coprocs = 0;
+    std::string host_cpid;
+    std::string mac_address;
+    std::string p_features;
+    std::string product_name;
+    std::string virtualbox_version;
+#endif
+};
+
+struct Message {
+    MSG_INFO priority = MSG_INFO::UNKNOWN_TO_WOINC;
+    int seqno = 0;
+    std::string body;
+    std::string project;
+    time_t timestamp = 0;
+};
+
+typedef std::vector<Message> Messages;
+
+struct NetStats {
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    double bwup = 0;
+    double avg_up = 0;
+    double avg_time_up = 0;
+    double bwdown = 0;
+    double avg_down = 0;
+    double avg_time_down = 0;
+#endif
+};
+
+struct Notice {
+    int seqno = 0;
+    std::string category;
+    std::string description;
+    std::string link;
+    std::string project_name;
+    std::string title;
+    time_t create_time = 0;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool is_private = false;
+    bool is_youtube_video = false;
+    time_t arrival_time = 0;
+#endif
+};
+
+typedef std::vector<Notice> Notices;
+
+typedef std::string Platform;
+typedef std::vector<std::string> Platforms;
+
+// TODO add the stuff about coprocs
+struct Project {
+    bool anonymous_platform = false;
+    bool attached_via_acct_mgr = false;
+    bool detach_when_done = false;
+    bool dont_request_more_work = false;
+    bool ended = false;
+    bool master_url_fetch_pending = false;
+    bool non_cpu_intensive = false;
+    bool scheduler_rpc_in_progress = false;
+    bool suspended_via_gui = false;
+    bool trickle_up_pending = false;
+
+    double desired_disk_usage = 0;
+    double elapsed_time = 0;
+    double host_expavg_credit = 0;
+    double host_total_credit = 0;
+    double project_files_downloaded_time = 0;
+    double resource_share = 0;
+    double sched_priority = 0;
+    double user_expavg_credit = 0;
+    double user_total_credit = 0;
+
+    int hostid = 0;
+    int master_fetch_failures = 0;
+    int njobs_error = 0;
+    int njobs_success = 0;
+    int nrpc_failures = 0;
+
+    RPC_REASON sched_rpc_pending = RPC_REASON::NONE;
+
+    std::string external_cpid;
+    std::string master_url;
+    std::string project_name;
+    std::string team_name;
+    std::string user_name;
+    std::string venue;
+
+    time_t download_backoff = 0;
+    time_t last_rpc_time = 0;
+    time_t min_rpc_time = 0;
+    time_t upload_backoff = 0;
+
+    GuiUrls gui_urls;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool dont_use_dcf = false;
+    bool send_full_workload = false;
+    bool use_symlinks = false;
+    bool verify_files_on_app_start = false;
+
+    double ams_resource_share_new = 0;
+    double cpid_time = 0;
+    double duration_correction_factor = 0;
+    double host_create_time = 0;
+    double next_rpc_time = 0;
+    double rec = 0;
+    double rec_time = 0;
+    double user_create_time = 0;
+
+    int rpc_seqno = 0;
+    int send_job_log = 0;
+    int send_time_stats_log = 0;
+    int teamid = 0;
+    int userid = 0;
+
+    std::string cross_project_id;
+    std::string email_hash;
+    std::string host_venue;
+    std::string project_dir;
+    std::string symstore;
+#endif
+};
+
+typedef std::vector<Project> Projects;
+
+struct ProjectStatistics {
+    std::string master_url;
+    DailyStatistics daily_statistics;
+};
+
+typedef std::vector<ProjectStatistics> Statistics;
+
+struct Task {
+    Task() = default;
+    Task(const Task &task);
+    Task(Task &&task) = default;
+
+    Task &operator=(Task task);
+
+    RESULT_CLIENT_STATE state = RESULT_CLIENT_STATE::NEW;
+
+    bool coproc_missing = false;
+    bool got_server_ack = false;
+    bool network_wait = false;
+    bool project_suspended_via_gui = false;
+    bool ready_to_report = false;
+    bool scheduler_wait = false;
+    bool suspended_via_gui = false;
+
+    double estimated_cpu_time_remaining = 0;
+    double final_cpu_time = 0;
+    double final_elapsed_time = 0;
+
+    int exit_status;
+    int signal = 0;
+    int version_num = 0;
+
+    std::string name;
+    std::string project_url;
+    std::string resources;
+    std::string scheduler_wait_reason;
+    std::string wu_name;
+
+    std::unique_ptr<ActiveTask> active_task = nullptr;
+
+    time_t received_time = 0;
+    time_t report_deadline = 0;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool edf_scheduled = false;
+    bool report_immediately = false;
+
+    double completed_time = 0;
+
+    std::string plan_class;
+    std::string platform;
+#endif
+};
+
+typedef std::vector<Task> Tasks;
+
+struct TimeStats {
+    double active_frac = 0;
+    double connected_frac = 0;
+    double cpu_and_network_available_frac = 0;
+    double gpu_active_frac = 0;
+    double now = 0;
+    double on_frac = 0;
+    double previous_uptime = 0;
+    double session_active_duration = 0;
+    double session_gpu_active_duration = 0;
+    double total_active_duration = 0;
+    double total_duration = 0;
+    double total_gpu_active_duration = 0;
+    time_t client_start_time = 0;
+    time_t total_start_time = 0;
+};
+
+struct Version {
+    int major = 0;
+    int minor = 0;
+    int release = 0;
+};
+
+// TODO add the (job) keywords
+struct Workunit {
+    double rsc_disk_bound = 0;
+    double rsc_fpops_bound = 0;
+    double rsc_fpops_est = 0;
+    double rsc_memory_bound = 0;
+
+    int version_num = 0;
+
+    std::string app_name;
+    std::string name;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    std::string command_line;
+
+    FileRefs input_files;
+#endif
+
+    std::string project_url; // not sent by the client, but needed to find corresponding project
+};
+
+typedef std::vector<Workunit> Workunits;
+
+struct ClientState {
+    ClientState() = default;
+    ClientState(const ClientState &cs);
+    ClientState(ClientState &&cs) = default;
+
+    ClientState &operator=(ClientState cs);
+
+    AppVersions app_versions;
+    Apps apps;
+    Projects projects;
+    Tasks tasks;
+    TimeStats time_stats;
+    Workunits workunits;
+
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    GlobalPreferences global_prefs;
+    HostInfo host_info;
+    Platforms platforms;
+    Version core_client_version;
+
+    bool executing_as_daemon = false;
+    bool have_ati = false; // deprecated
+    bool have_cuda = false; // deprecated
+    std::string platform_name;
+
+    // according to the comments in BOINC's CLIENT_STATE::write_state_gui
+    // the net stats should not be sent, so it may be removed in the future;
+    std::unique_ptr<NetStats> net_stats = nullptr;
+#endif
+};
+
+} // namespace woinc
+
+#endif
