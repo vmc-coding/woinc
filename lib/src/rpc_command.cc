@@ -47,7 +47,10 @@ constexpr COMMAND_STATUS map__(CONNECTION_STATUS status) {
         case CONNECTION_STATUS::ERROR:
             return COMMAND_STATUS::CONNECTION_ERROR;
     }
+    // workaround for GCC bug 86678
+#if defined(__GNUC__) && __GNUC__ >= 9
     assert(false);
+#endif
     return COMMAND_STATUS::LOGIC_ERROR;
 }
 
