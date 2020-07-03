@@ -18,6 +18,7 @@
 
 #include "qt/dialogs/project_properties_dialog.h"
 
+#include <cassert>
 #ifndef NDEBUG
 #include <iostream>
 #endif

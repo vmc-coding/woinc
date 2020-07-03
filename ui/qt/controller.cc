@@ -19,6 +19,7 @@
 #include "qt/controller.h"
 
 #include <algorithm>
+#include <cassert>
 
 #include <woinc/ui/controller.h>
 

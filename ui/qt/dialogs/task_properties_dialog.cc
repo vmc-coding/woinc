@@ -69,7 +69,7 @@ TaskPropertiesDialog::TaskPropertiesDialog(Task in_task, QWidget *parent)
         add_row__(glyt, QStringLiteral("Resources"), task_.resources);
     if (task_.estimated_computation_size > 0)
         add_row__(glyt, QStringLiteral("Estimated computation size"),
-                  QStringLiteral("%1 GFLOPs").arg(QLocale::system().toString(static_cast<unsigned long>(task_.estimated_computation_size / 1e9))));
+                  QStringLiteral("%1 GFLOPs").arg(QLocale::system().toString(static_cast<qulonglong>(task_.estimated_computation_size / 1e9))));
     //if (!task_.keywords.isEmpty())
         //add_row__(glyt, QStringLiteral("Keywords"), tbd);
     if (task_.active_task) {

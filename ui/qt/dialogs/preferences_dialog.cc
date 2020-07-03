@@ -18,6 +18,7 @@
 
 #include "qt/dialogs/preferences_dialog.h"
 
+#include <cassert>
 #include <functional>
 #include <limits>
 #include <type_traits>
