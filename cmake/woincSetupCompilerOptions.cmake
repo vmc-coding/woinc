@@ -30,10 +30,12 @@ macro(woincSetupCompilerOptions target)
             -Wunused)
         if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
             target_compile_options(${target} PRIVATE
-                -Wduplicated-branches
                 -Wduplicated-cond
                 -Wlogical-op)
                 #-Wuseless-cast)
+            if(NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS "7")
+                target_compile_options(${target} PRIVATE -Wduplicated-branches)
+            endif()
         endif()
         #target_compile_definitions(${target} PRIVATE "WOINC_LOG_RPC_CONNECTION")
     endif()

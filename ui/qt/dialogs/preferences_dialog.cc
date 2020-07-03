@@ -60,7 +60,7 @@ const int DEFAULT_DAILY_XFER_PERIOD_DAYS = 30;
 
 template<typename T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
 constexpr bool parse__(const QString &input, T &t) {
-    bool b;
+    bool b = bool(); // initialized for gcc < 7
     auto parsed = input.toInt(&b);
     if (b)
         t = parsed;
@@ -69,7 +69,7 @@ constexpr bool parse__(const QString &input, T &t) {
 
 template<typename T, std::enable_if_t<std::is_floating_point<T>::value, int> = 0>
 constexpr bool parse__(const QString &input, T &t) {
-    bool b;
+    bool b = bool(); // initialized for gcc < 7
     auto parsed = input.toDouble(&b);
     if (b)
         t = parsed;
@@ -78,7 +78,7 @@ constexpr bool parse__(const QString &input, T &t) {
 
 template<typename T>
 constexpr bool validate__(const QString &input, T min, T max) {
-    T value;
+    T value = T(); // initialize for gcc < 7
     return parse__(input, value) && value >= min && value <= max;
 }
 
