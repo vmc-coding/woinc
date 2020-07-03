@@ -36,10 +36,6 @@ extern "C" {
 #include <iostream>
 #endif
 
-namespace {
-
-}
-
 namespace woinc {
 
 Socket::Socket(int version) : version_(version) {}
@@ -60,7 +56,7 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
 
-    int resolving_status = ::getaddrinfo(host.c_str(), NULL, &hints, &result);
+    int resolving_status = ::getaddrinfo(host.c_str(), std::to_string(port).c_str(), &hints, &result);
 
     if (resolving_status != 0)
         return Result (
@@ -76,17 +72,7 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
         if ((socket_ = ::socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol)) == -1)
             continue;
 
-        if (rp->ai_family == AF_INET) {
-            sockaddr_in *addr_in = reinterpret_cast<sockaddr_in *>(rp->ai_addr);
-            addr_in->sin_port = htons(port);
-        } else {
-            assert(rp->ai_family == AF_INET6);
-            sockaddr_in6 *addr_in = reinterpret_cast<sockaddr_in6 *>(rp->ai_addr);
-            addr_in->sin6_port = htons(port);
-        }
-
         if (::connect(socket_, rp->ai_addr, rp->ai_addrlen) == -1) {
-            perror("asd");
             ::close(socket_);
             continue;
         }

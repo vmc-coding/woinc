@@ -59,7 +59,6 @@ struct HostHandler {
  * This handler will not be called more than once at the same time
  * and not concurrently to HostHandler::on_host_removed().
  */
-// TODO Shouldn't this be (Periodic/Model)Update(s)Handler? The consumer doesn't care about periodic tasks at all.
 struct PeriodicTaskHandler {
     virtual ~PeriodicTaskHandler() = default;
 

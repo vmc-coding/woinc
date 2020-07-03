@@ -81,8 +81,6 @@ class Controller {
 
     public: // commands to the client; all of those commands are async
 
-        // TODO shouldn't these commands be const?
-
         virtual std::future<bool> file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
                                                    const std::string &master_url, const std::string &filename);
         virtual std::future<bool> project_op(const std::string &host, PROJECT_OP op, const std::string &master_url);
