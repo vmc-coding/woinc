@@ -59,6 +59,15 @@ const double DEFAULT_MAX_BYTES_SEC_UP = 100*1024;
 const double DEFAULT_SUSPEND_CPU_USAGE = 25;
 const int DEFAULT_DAILY_XFER_PERIOD_DAYS = 30;
 
+// gcc < 8 doesn't like lambdas when used as default parameters for function paramaters (multiple definitions when linking)
+// and std::identity is not available until c++20 , so let's define our own functor for this ..
+template<typename T>
+struct Identity {
+    constexpr T &&operator()(T &&t) const noexcept {
+        return std::forward<T>(t);
+    }
+};
+
 template<typename T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
 constexpr bool parse__(const QString &input, T &t) {
     bool b = bool(); // initialized for gcc < 7
@@ -194,8 +203,8 @@ QWidget *floating_point_input_widget__(const char *prefix, const char *postfix,
 
 template<typename T, typename DEFAULT_PROVIDER = std::function<T(T)>, typename CONVERTER = std::function<T(T)>>
 void as_checked_input__(QCheckBox *chk, QLineEdit *in, T &value, bool &mask,
-                        DEFAULT_PROVIDER default_provider = [](T t) { return t; },
-                        CONVERTER converter = [](T t) { return t; }) {
+                        DEFAULT_PROVIDER default_provider = Identity<T>(),
+                        CONVERTER converter = Identity<T>()) {
     in->setEnabled((mask = chk->isChecked()));
     T orig_value = value; // TODO why do we need this? we have as mask for it ..
     QObject::connect(chk, &QCheckBox::stateChanged, [=, &value, &mask](int state) {
