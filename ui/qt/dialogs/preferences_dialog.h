@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/preferences_dialog.h --
-   Written and Copyright (C) 2019 by vmc.
+   Written and Copyright (C) 2019-2020 by vmc.
 
    This file is part of woinc.
 
@@ -131,7 +131,7 @@ class PreferencesDialog : public QDialog {
     Q_OBJECT
 
     public:
-        PreferencesDialog(Controller &controller, GlobalPreferences prefs, QWidget *parent = nullptr);
+        PreferencesDialog(GlobalPreferences prefs, QWidget *parent = nullptr);
         virtual ~PreferencesDialog() = default;
 
         PreferencesDialog(const PreferencesDialog&) = delete;
@@ -140,11 +140,13 @@ class PreferencesDialog : public QDialog {
         PreferencesDialog &operator=(const PreferencesDialog&) = delete;
         PreferencesDialog &operator=(PreferencesDialog &&) = delete;
 
+    signals:
+        void save(GlobalPreferences prefs, GlobalPreferencesMask mask);
+
     private slots:
-        void save();
+        void save_();
 
     private:
-        Controller &controller_;
         GlobalPreferences prefs_;
         GlobalPreferencesMask mask_;
 };

@@ -27,6 +27,8 @@
 #include <QMenuBar>
 #include <QMessageBox>
 
+#include <woinc/ui/error.h>
+
 #include "qt/controller.h"
 #include "qt/dialogs/preferences_dialog.h"
 #include "qt/dialogs/select_computer_dialog.h"
@@ -129,12 +131,36 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
 #endif
 
     connect(options_menu, &OptionsMenu::computation_preferences_to_be_shown,
-            [=,&controller](QString host) {
+            [=, &controller](QString host) {
                 auto prefs_future = controller.load_global_prefs(host, GET_GLOBAL_PREFS_MODE::WORKING);
                 prefs_future.wait();
                 try {
-                    auto prefs = prefs_future.get();
-                    auto dlg = new PreferencesDialog(controller, std::move(prefs), this);
+                    auto *dlg = new PreferencesDialog(std::move(prefs_future.get()), this);
+
+                    connect(dlg, &PreferencesDialog::save, [=, &controller](GlobalPreferences prefs, GlobalPreferencesMask mask) {
+                        QString error;
+
+                        try {
+                            auto future = controller.save_global_prefs(host, prefs, mask);
+                            future.wait();
+
+                            if (future.get()) {
+                                controller.read_global_prefs(host);
+                                return;
+                            } else {
+                                error = QString::fromUtf8("The client could not save the preferences.");
+                            }
+                        } catch (woinc::ui::ShutdownException &) {
+                            error = QString::fromUtf8("Not connected to host");
+                        } catch (woinc::ui::UnknownHostException &e) {
+                            error = QString::fromUtf8("Not connected to host %1").arg(QString::fromStdString(e.host));
+                        } catch (std::exception &e) {
+                            error = QString::fromUtf8(e.what());
+                        }
+
+                        QMessageBox::critical(this, QString::fromUtf8("Error"), error, QMessageBox::Ok);
+                    });
+
                     dlg->setAttribute(Qt::WA_DeleteOnClose);
                     dlg->open();
                 } catch (std::exception &e) {

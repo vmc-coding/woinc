@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/preferences_dialog.cc --
-   Written and Copyright (C) 2019 by vmc.
+   Written and Copyright (C) 2019-2020 by vmc.
 
    This file is part of woinc.
 
@@ -41,10 +41,6 @@
 #include <QTabWidget>
 #include <QTimeEdit>
 #include <QVBoxLayout>
-
-#include <woinc/ui/error.h>
-
-#include "qt/controller.h"
 
 namespace {
 
@@ -721,8 +717,8 @@ TabsWidget::TabsWidget(GlobalPreferences &prefs, GlobalPreferencesMask &mask, QW
 
 // ----- PreferencesDialog -----
 
-PreferencesDialog::PreferencesDialog(Controller &controller, GlobalPreferences prefs, QWidget *parent)
-    : QDialog(parent, Qt::Dialog), controller_(controller), prefs_(std::move(prefs))
+PreferencesDialog::PreferencesDialog(GlobalPreferences prefs, QWidget *parent)
+    : QDialog(parent, Qt::Dialog), prefs_(std::move(prefs))
 {
     setWindowTitle(QString::fromUtf8("Preferences"));
 
@@ -732,33 +728,12 @@ PreferencesDialog::PreferencesDialog(Controller &controller, GlobalPreferences p
     layout()->addWidget(widget);
 
     connect(widget, &pref_dialog_internals::TabsWidget::cancel, this, &PreferencesDialog::reject);
-    connect(widget, &pref_dialog_internals::TabsWidget::save, this, &PreferencesDialog::save);
+    connect(widget, &pref_dialog_internals::TabsWidget::save, this, &PreferencesDialog::save_);
 }
 
-void PreferencesDialog::save() {
-    QString error;
-
-    try {
-        auto future = controller_.save_global_prefs("localhost", prefs_, mask_);
-        future.wait();
-
-        if (future.get()) {
-            controller_.read_global_prefs("localhost");
-            close();
-            return;
-        } else {
-            error = QString::fromUtf8("The client could not save the preferences.");
-        }
-    } catch (woinc::ui::ShutdownException &) {
-        error = QString::fromUtf8("Not connected to host");
-    } catch (woinc::ui::UnknownHostException &e) {
-        error = QString::fromUtf8("Not connected to host %1").arg(QString::fromStdString(e.host));
-    } catch (std::exception &e) {
-        error = QString::fromUtf8(e.what());
-    }
-
-    QMessageBox::critical(this, QString::fromUtf8("Error"), error, QMessageBox::Ok);
-    done(QDialog::Accepted);
+void PreferencesDialog::save_() {
+    emit save(prefs_, mask_);
+    close();
 }
 
 }}}
