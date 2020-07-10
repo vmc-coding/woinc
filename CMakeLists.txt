@@ -24,6 +24,7 @@ option(WOINC_EXPOSE_FULL_STRUCTURES
 option(WOINC_BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(WOINC_ENABLE_COVERAGE "Enable gcc's coverage reporting" OFF)
 option(WOINC_ENABLE_SANITIZER "Enable gcc's AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+option(WOINC_VERBOSE_DEBUG_LOGGING "Enable woinc's verbose debug logging" OFF)
 
 if(WOINC_BUILD_SHARED_LIBS)
     mark_as_advanced(FORCE WOINC_SONAME_VERSION)

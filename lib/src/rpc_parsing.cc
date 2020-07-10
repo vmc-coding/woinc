@@ -123,7 +123,7 @@ void parse__(const std::string &src, time_t &dest) {
 bool find_child(const wxml::Node &node, const wxml::Tag &child_tag, wxml::Nodes::const_iterator &it) {
     it = node.find_child(child_tag);
     if (!node.found_child(it)) {
-#ifndef NDEBUG
+#ifdef WOINC_VERBOSE_DEBUG_LOGGING
         static std::map<wxml::Tag, std::map<wxml::Tag, bool>> diag_found_nodes;
         if (!diag_found_nodes[node.tag][child_tag]) {
             std::cerr << "Child node \"" << child_tag << "\" of parent \"" << node.tag << "\" not found!\n";
