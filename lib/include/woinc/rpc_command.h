@@ -110,6 +110,16 @@ struct ExchangeVersionsResponse {
 
 typedef BOINCCommand<ExchangeVersionsRequest, ExchangeVersionsResponse, false> ExchangeVersionsCommand;
 
+// --- GetAllProjectsListCommand ---
+
+struct GetAllProjectsListRequest : public Void {};
+
+struct GetAllProjectsListResponse {
+	AllProjectsList projects;
+};
+
+typedef BOINCCommand<GetAllProjectsListRequest, GetAllProjectsListResponse, false> GetAllProjectsListCommand;
+
 // --- GetCCStatusCommand ---
 
 struct GetCCStatusRequest : public Void {};

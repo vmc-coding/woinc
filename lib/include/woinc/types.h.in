@@ -366,7 +366,7 @@ struct Notice {
 typedef std::vector<Notice> Notices;
 
 typedef std::string Platform;
-typedef std::vector<std::string> Platforms;
+typedef std::vector<Platform> Platforms;
 
 // TODO add the stuff about coprocs
 struct Project {
@@ -443,6 +443,20 @@ struct Project {
 };
 
 typedef std::vector<Project> Projects;
+
+struct ProjectListEntry {
+    std::string description;
+    std::string general_area;
+    std::string home;
+    std::string image;
+    std::string name;
+    std::string specific_area;
+    std::string url;
+    std::string web_url;
+    Platforms platforms;
+};
+
+typedef std::vector<ProjectListEntry> AllProjectsList;
 
 struct ProjectStatistics {
     std::string master_url;

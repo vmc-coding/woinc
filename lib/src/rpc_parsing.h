@@ -1,5 +1,5 @@
 /* lib/rpc_parsing.h --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2020 by vmc.
 
    This file is part of woinc.
 
@@ -26,6 +26,7 @@
 
 namespace woinc { namespace rpc {
 
+bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::AllProjectsList &projects);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::CCStatus &cc_status);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::ClientState &client_state);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::DiskUsage &disk_usage);

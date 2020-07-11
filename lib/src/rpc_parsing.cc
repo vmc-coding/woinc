@@ -1,5 +1,5 @@
 /* lib/rpc_parsing.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2020 by vmc.
 
    This file is part of woinc.
 
@@ -186,6 +186,7 @@ void parse_child_content_(const wxml::Node &node, const wxml::Tag &child_tag, bo
 }
 
 void parse_(const woinc::xml::Node &node, woinc::ActiveTask &active_task);
+void parse_(const woinc::xml::Node &node, woinc::AllProjectsList &projects);
 void parse_(const woinc::xml::Node &node, woinc::App &app);
 void parse_(const woinc::xml::Node &node, woinc::AppVersion &app_version);
 void parse_(const woinc::xml::Node &node, woinc::CCStatus &cc_status);
@@ -201,6 +202,7 @@ void parse_(const woinc::xml::Node &node, woinc::HostInfo &info);
 void parse_(const woinc::xml::Node &node, woinc::Message &msg);
 void parse_(const woinc::xml::Node &node, woinc::Notice &notice);
 void parse_(const woinc::xml::Node &node, woinc::PersistentFileXfer &persistent_file_xfer);
+void parse_(const woinc::xml::Node &node, woinc::Platform &platform);
 void parse_(const woinc::xml::Node &node, woinc::Project &project);
 void parse_(const woinc::xml::Node &node, woinc::ProjectStatistics &project_statistics);
 void parse_(const woinc::xml::Node &node, woinc::Statistics &statistics);
@@ -211,7 +213,6 @@ void parse_(const woinc::xml::Node &node, woinc::Workunit &workunit);
 
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
 void parse_(const woinc::xml::Node &node, woinc::NetStats &net_stats);
-void parse_(const woinc::xml::Node &node, woinc::Platform &platform);
 #endif
 
 #define PARSE_CHILD_CONTENT(NODE, RESULT_STRUCT, TAG) \
@@ -243,6 +244,31 @@ void parse_(const wxml::Node &node, woinc::ActiveTask &active_task) {
     PARSE_CHILD_CONTENT(node, active_task, web_graphics_url);
     PARSE_CHILD_CONTENT(node, active_task, remote_desktop_addr);
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
+}
+
+void parse_(const woinc::xml::Node &node, woinc::AllProjectsList &projects) {
+    for (auto &project_node : node.children) {
+        if (project_node.tag != "project")
+            continue;
+        woinc::ProjectListEntry entry;
+        PARSE_CHILD_CONTENT(project_node, entry, description);
+        PARSE_CHILD_CONTENT(project_node, entry, general_area);
+        PARSE_CHILD_CONTENT(project_node, entry, home);
+        PARSE_CHILD_CONTENT(project_node, entry, image);
+        PARSE_CHILD_CONTENT(project_node, entry, name);
+        PARSE_CHILD_CONTENT(project_node, entry, specific_area);
+        PARSE_CHILD_CONTENT(project_node, entry, url);
+        PARSE_CHILD_CONTENT(project_node, entry, web_url);
+        auto platforms_node = project_node.find_child("platforms");
+        if (project_node.found_child(platforms_node)) {
+            for (auto &platform_node : platforms_node->children) {
+                woinc::Platform platform;
+                parse_(platform_node, platform);
+                entry.platforms.push_back(std::move(platform));
+            }
+        }
+        projects.push_back(std::move(entry));
+    }
 }
 
 void parse_(const wxml::Node &node, woinc::App &app) {
@@ -575,11 +601,9 @@ void parse_(const woinc::xml::Node &node, woinc::PersistentFileXfer &persistent_
 #endif
 }
 
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
 void parse_(const wxml::Node &node, woinc::Platform &platform) {
     platform = node.content;
 }
-#endif
 
 // see PROJECT::write_state in BOINC/client/project.cpp
 void parse_(const wxml::Node &node, woinc::Project &project) {
@@ -789,6 +813,7 @@ namespace woinc { namespace rpc {
     return true; \
 }
 
+WRAPPED_PARSE(woinc::AllProjectsList)
 WRAPPED_PARSE(woinc::CCStatus)
 WRAPPED_PARSE(woinc::ClientState)
 WRAPPED_PARSE(woinc::DiskUsage)

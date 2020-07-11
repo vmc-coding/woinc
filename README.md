@@ -8,11 +8,11 @@ woinc should be compatible with C++-14 and above.
 
 This project is work in progress, the API may change without any public notices.
 
-# screenshots? screenshots!
+## screenshots? screenshots!
 
 They may be not up to date, but there are some [here](http://83.169.22.26/tmp/woinc/) 
 
-## woinc consists of
+# woinc consists of
 
 - **libwoinc**: the core library, implementing the communication with the BOINC clients by abstracting it through [commands](https://en.wikipedia.org/wiki/Command_pattern)
 - **libwoincui**: periodic queries and async communication with the clients; supports multiple clients

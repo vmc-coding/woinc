@@ -98,6 +98,11 @@ bool parse__(const wxml::Tree &response_tree, ExchangeVersionsResponse &response
     return response_tree.root.found_child(server_version_node) && parse(*server_version_node, response.version);
 }
 
+bool parse__(const wxml::Tree &response_tree, GetAllProjectsListResponse &response) {
+    auto all_projects_node = response_tree.root.find_child("projects");
+    return response_tree.root.found_child(all_projects_node) && parse(*all_projects_node, response.projects);
+}
+
 bool parse__(const wxml::Tree &response_tree, GetCCStatusResponse &response) {
     auto cc_status_node = response_tree.root.find_child("cc_status");
     return response_tree.root.found_child(cc_status_node) && parse(*cc_status_node, response.cc_status);
@@ -308,6 +313,11 @@ COMMAND_STATUS ExchangeVersionsCommand::execute(Connection &connection) {
     request_node["release"] = request_.version.release;
 
     return do_cmd__(connection, request_tree, error_, response());
+}
+
+template<>
+COMMAND_STATUS GetAllProjectsListCommand::execute(Connection &connection) {
+    return do_cmd__(connection, "get_all_projects_list", error_, response());
 }
 
 template<>
