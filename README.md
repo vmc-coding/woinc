@@ -10,9 +10,9 @@ This project is work in progress, the API may change without any public notices.
 
 ## screenshots? screenshots!
 
-They may be not up to date, but there are some [here](http://83.169.22.26/tmp/woinc/) 
+They may not be up to date, but there are some [here](http://83.169.22.26/tmp/woinc/)
 
-# woinc consists of
+## woinc consists of
 
 - **libwoinc**: the core library, implementing the communication with the BOINC clients by abstracting it through [commands](https://en.wikipedia.org/wiki/Command_pattern)
 - **libwoincui**: periodic queries and async communication with the clients; supports multiple clients
@@ -40,7 +40,7 @@ They may be not up to date, but there are some [here](http://83.169.22.26/tmp/wo
 - some tool cmake accepts as generator (make, ninja, ..)
 - optional: qttest to run the tests of woincqt
 
-### building woinc
+## building
 - get the source of woinc, e.g. by cloning the repo
     ```shell script
       $ git clone https://github.com/vmc-coding/woinc.git woinc.git
@@ -56,7 +56,7 @@ They may be not up to date, but there are some [here](http://83.169.22.26/tmp/wo
       $ cmake ..
       $ make
     ```
-    of course there are a lot of compiler options to set:
+    of course there are a lot of options to set:
     ```
     -DCMAKE_INSTALL_PREFIX=/tmp/woinc # the directory to install the compiled files to, e.g. via make install
     -DCMAKE_BUILD_TYPE="release" # let cmake set the compiler options; I'm not a fan of this one, please use the next one
@@ -70,12 +70,12 @@ They may be not up to date, but there are some [here](http://83.169.22.26/tmp/wo
     -DWOINC_BUILD_CLI_QT=<ON|OFF>  # build woincqt
     -DWOINC_CLI_COMMANDS<OIN|OFF>  # enable some extra commands in woinccmd
     -DWOINC_EXPOSE_FULL_STRUCTURES # also handle data from the client woinc doesn't need but maybe someone using this lib; off by default
-    -DWOINC_BUILD_SHARED_LIBS      # build shared instead of static libs of libwoinc and libwoincqt
+    -DWOINC_BUILD_SHARED_LIBS      # build shared instead of static libs of libwoinc and libwoincui
     ```
     and for dev
     ```
     -DWOINC_ENABLE_COVERAGE         # tells the compiler to enable coverage
-    -DWOINC_ENABLE_SANITIZER        # enabled some sanitizer in the compiler
+    -DWOINC_ENABLE_SANITIZER        # enables some sanitizer in the compiler
     -DWOINC_VERBOSE_DEBUG_LOGGING   # enables verbose debug logging
     ```
     example with flags
@@ -84,20 +84,20 @@ They may be not up to date, but there are some [here](http://83.169.22.26/tmp/wo
       $ mkdir -p woinc.git/build && cd woinc.git/build
       $ cmake -DCMAKE_INSTALL_PREFIX=~/woinc -DCMAKE_CXX_FLAGS="-march=native -O2 -DNDEBUG" ..
       $ make -j $(nproc) install
-      $ ~/woinc/bin/woincqt
+      $ ~/woinc/bin/woinccmd
     ```
-    
-# Running woinccmd
+
+## Running woinccmd
 Sorry, all I have is
 ```shell script
     $ woinccmd -?
 ```
 No manpage yet. But it's compatible with boinccmd - for the stuff implemented - so you may see their manpage.
 
-# Running woincqt
+## Running woincqt
 Just run it and add a client via UI. The application won't remember the user and/or password yet.
 Of course that is a really bad way if you've to do it a lot of times,
  e.g. while developing.
 So there is a shortcut by assuming the host ist localhost
  and password the first parameter to the program.
-This is for dev only, because all other users of your PC may see your password!
+This is for dev only, because all other logged in users on your computer may see your password!
