@@ -1,5 +1,5 @@
 /* ui/controller/controller.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2020 by vmc.
 
    This file is part of woinc.
 
@@ -102,6 +102,8 @@ class WOINCUI_LOCAL Controller::Impl {
         std::future<bool> run_mode(const std::string &host, RUN_MODE mode);
         std::future<bool> gpu_mode(const std::string &host, RUN_MODE mode);
         std::future<bool> network_mode(const std::string &host, RUN_MODE mode);
+
+        std::future<AllProjectsList> all_projects_list(const std::string &host);
 
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
@@ -516,6 +518,31 @@ std::future<bool> Controller::Impl::network_mode(const std::string &host, RUN_MO
     return future;
 }
 
+std::future<AllProjectsList> Controller::Impl::all_projects_list(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    std::promise<AllProjectsList> promise;
+    auto future = promise.get_future();
+
+    auto *job = new PromisedResultJob<AllProjectsList>(
+        new wrpc::GetAllProjectsListCommand,
+        std::move(promise),
+        [](wrpc::Command *c, std::promise<AllProjectsList> &p, wrpc::COMMAND_STATUS status) {
+            if (status == wrpc::COMMAND_STATUS::OK)
+                p.set_value(static_cast<wrpc::GetAllProjectsListCommand *>(c)->response().projects);
+            else
+                p.set_exception(std::make_exception_ptr(std::runtime_error("Error getting the projects list")));
+        });
+
+    {
+        WOINC_LOCK_GUARD;
+        schedule_now_(host, job, __func__);
+    }
+
+    return future;
+
+}
+
 void Controller::Impl::remove_host_(std::string host) {
     periodic_tasks_scheduler_context_.remove_host(host);
     host_controllers_.at(host)->shutdown();
@@ -692,6 +719,10 @@ std::future<bool> Controller::network_mode(const std::string &host, RUN_MODE mod
 
 std::future<bool> Controller::run_mode(const std::string &host, RUN_MODE mode) {
     return impl_->run_mode(host, mode);
+}
+
+std::future<AllProjectsList> Controller::all_projects_list(const std::string &host) {
+    return impl_->all_projects_list(host);
 }
 
 }}

@@ -1,5 +1,5 @@
 /* woinc/ui/controller.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2020 by vmc.
 
    This file is part of woinc.
 
@@ -97,6 +97,8 @@ class Controller {
         virtual std::future<bool> run_mode(const std::string &host, RUN_MODE mode);
         virtual std::future<bool> gpu_mode(const std::string &host, RUN_MODE mode);
         virtual std::future<bool> network_mode(const std::string &host, RUN_MODE mode);
+
+        virtual std::future<AllProjectsList> all_projects_list(const std::string &host);
 
     private:
         struct Impl;
