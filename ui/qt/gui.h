@@ -57,7 +57,7 @@ class Gui : public QMainWindow {
         void create_file_menu_();
         void create_activity_menu_(const Model &model, Controller &controller);
         void create_options_menu_(const Model &model, Controller &controller);
-        void create_tools_menu_();
+        void create_tools_menu_(const Model &model, Controller &controller);
         void create_help_menu_();
 
     signals:

@@ -117,12 +117,15 @@ class OptionsMenu : public HostAwareMenu {
         void computation_preferences_to_be_shown(QString host);
 };
 
-class ToolsMenu : public QMenu {
+class ToolsMenu : public HostAwareMenu {
     Q_OBJECT
 
     public:
         ToolsMenu(const QString &title, QWidget *parent = nullptr);
         virtual ~ToolsMenu() = default;
+
+    signals:
+        void add_project_wizard_to_be_shown(QString host);
 };
 
 class HelpMenu : public QMenu {

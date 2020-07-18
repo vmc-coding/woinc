@@ -73,6 +73,8 @@ class Controller : public QObject {
                                             const GlobalPreferencesMask &mask);
         std::future<bool> read_global_prefs(const QString &host);
 
+        std::future<AllProjectsList> load_all_projects_list(const QString &host);
+
         // TODO wording: do we add a host or a client?
         void add_host(QString host, QString url, unsigned short port, QString password);
 

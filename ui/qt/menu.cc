@@ -184,9 +184,14 @@ OptionsMenu::OptionsMenu(const QString &title, QWidget *parent)
 // ----- ToolsMenu -----
 
 ToolsMenu::ToolsMenu(const QString &title, QWidget *parent)
-    : QMenu(title, parent)
+    : HostAwareMenu(title, parent)
 {
-    addAction("&Add project...")->setEnabled(false);
+    setEnabled(false);
+
+    connect(addAction("&Add project"), &QAction::triggered, [&]() {
+        emit add_project_wizard_to_be_shown(selected_host_);
+    });
+
     addSeparator();
     addAction("Run CPU &benchmarks")->setEnabled(false);
     addAction("Retry pending transfers")->setEnabled(false);

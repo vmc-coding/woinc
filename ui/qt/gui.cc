@@ -30,6 +30,7 @@
 #include <woinc/ui/error.h>
 
 #include "qt/controller.h"
+#include "qt/dialogs/add_project_wizard.h"
 #include "qt/dialogs/preferences_dialog.h"
 #include "qt/dialogs/select_computer_dialog.h"
 #include "qt/menu.h"
@@ -48,7 +49,7 @@ void Gui::open(const Model &model, Controller &controller) {
     create_view_menu_();
     create_activity_menu_(model, controller);
     create_options_menu_(model, controller);
-    create_tools_menu_();
+    create_tools_menu_(model, controller);
     create_help_menu_();
 
     auto *tabs_widget = new TabsWidget(model, controller, this);
@@ -170,9 +171,22 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
 
 }
 
-void Gui::create_tools_menu_() {
+void Gui::create_tools_menu_(const Model &model, Controller &controller) {
     auto *menu = new ToolsMenu("&Tools", this);
     menuBar()->addMenu(menu);
+
+    connect(&model, &Model::host_selected,     menu, &ToolsMenu::select_host);
+    connect(&model, &Model::host_unselected,   menu, &ToolsMenu::unselect_host);
+#ifndef NDEBUG
+    menu->connected();
+#endif
+    connect(menu, &ToolsMenu::add_project_wizard_to_be_shown,
+            [=, &controller](QString host) {
+                auto all_projects_future = controller.load_all_projects_list(host);
+                all_projects_future.wait();
+                auto *wizard = new AddProjectWizard(std::move(all_projects_future.get()), this);
+                wizard->open();
+            });
 }
 
 void Gui::create_help_menu_() {

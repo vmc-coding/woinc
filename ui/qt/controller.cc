@@ -68,6 +68,10 @@ std::future<bool> Controller::read_global_prefs(const QString &host) {
     return ctrl_->read_global_prefs_override(host.toStdString());
 }
 
+std::future<AllProjectsList> Controller::load_all_projects_list(const QString &host) {
+    return ctrl_->all_projects_list(host.toStdString());
+}
+
 void Controller::add_host(QString host, QString url, unsigned short port, QString password) {
     {
         WOINC_LOCK_GUARD;
