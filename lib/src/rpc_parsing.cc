@@ -695,6 +695,45 @@ void parse_(const wxml::Node &node, woinc::Project &project) {
     }
 }
 
+void parse_(const woinc::xml::Node &node, woinc::ProjectConfig &project_config) {
+    project_config.error_num = 0; // it's not sent if polling is done, so let's reset it before parsing
+    PARSE_CHILD_CONTENT(node, project_config, error_num);
+    if (project_config.error_num != 0)
+        return;
+
+    PARSE_CHILD_CONTENT(node, project_config, account_creation_disabled);
+    PARSE_CHILD_CONTENT(node, project_config, client_account_creation_disabled);
+    PARSE_CHILD_CONTENT(node, project_config, error_msg);
+    PARSE_CHILD_CONTENT(node, project_config, master_url);
+    PARSE_CHILD_CONTENT(node, project_config, min_passwd_length);
+    PARSE_CHILD_CONTENT(node, project_config, name);
+    PARSE_CHILD_CONTENT(node, project_config, terms_of_use);
+    PARSE_CHILD_CONTENT(node, project_config, terms_of_use_is_html);
+    PARSE_CHILD_CONTENT(node, project_config, uses_username);
+    PARSE_CHILD_CONTENT(node, project_config, web_rpc_url_base);
+
+#ifdef WOINC_EXPOSE_FULL_STRUCTURES
+    PARSE_CHILD_CONTENT(node, project_config, account_manager);
+    PARSE_CHILD_CONTENT(node, project_config, ldap_auth);
+    PARSE_CHILD_CONTENT(node, project_config, sched_stopped);
+    PARSE_CHILD_CONTENT(node, project_config, web_stopped);
+    PARSE_CHILD_CONTENT(node, project_config, local_revision);
+    PARSE_CHILD_CONTENT(node, project_config, min_client_version);
+#endif // WOINC_EXPOSE_FULL_STRUCTURES
+
+    auto platforms_node = node.find_child("platforms");
+    if (node.found_child(platforms_node)) {
+        project_config.platforms.reserve(platforms_node->children.size());
+        for (auto &platform_node : platforms_node->children) {
+            woinc::ProjectConfig::Platform platform;
+            PARSE_CHILD_CONTENT(platform_node, platform, plan_class);
+            PARSE_CHILD_CONTENT(platform_node, platform, platform_name);
+            PARSE_CHILD_CONTENT(platform_node, platform, user_friendly_name);
+            project_config.platforms.push_back(std::move(platform));
+        }
+    }
+}
+
 void parse_(const woinc::xml::Node &node, woinc::ProjectStatistics &project_statistics) {
     PARSE_CHILD_CONTENT(node, project_statistics, master_url);
     for (const auto &child : node.children) {
@@ -823,6 +862,7 @@ WRAPPED_PARSE(woinc::HostInfo)
 WRAPPED_PARSE(woinc::Message)
 WRAPPED_PARSE(woinc::Notice)
 WRAPPED_PARSE(woinc::Project)
+WRAPPED_PARSE(woinc::ProjectConfig)
 WRAPPED_PARSE(woinc::Statistics)
 WRAPPED_PARSE(woinc::Task)
 WRAPPED_PARSE(woinc::Version)

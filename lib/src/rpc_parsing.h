@@ -36,6 +36,7 @@ bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::HostInfo &info);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Message &msg);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Notice &notice);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Project &project);
+bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::ProjectConfig &project_config);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Statistics &statistics);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Task &task);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::Version &version);

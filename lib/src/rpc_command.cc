@@ -174,6 +174,11 @@ bool parse__(const wxml::Tree &response_tree, GetNoticesResponse &response) {
     return true;
 }
 
+bool parse__(const wxml::Tree &response_tree, GetProjectConfigPollResponse &response) {
+    auto project_config_node = response_tree.root.find_child("project_config");
+    return response_tree.root.found_child(project_config_node) && parse(*project_config_node, response.project_config);
+}
+
 bool parse__(const wxml::Tree &response_tree, GetProjectStatusResponse &response) {
     auto projects_node = response_tree.root.find_child("projects");
     if (!response_tree.root.found_child(projects_node))
@@ -384,6 +389,19 @@ COMMAND_STATUS GetNoticesCommand::execute(Connection &connection) {
     request_node["seqno"] = request_.seqno;
 
     return do_cmd__(connection, request_tree, error_, response());
+}
+
+template<>
+COMMAND_STATUS GetProjectConfigCommand::execute(Connection &connection) {
+    wxml::Tree request_tree(wxml::create_boinc_request_tree());
+    request_tree.root["get_project_config"]["url"] = request().url;
+
+    return do_cmd__(connection, request_tree, error_, response());
+}
+
+template<>
+COMMAND_STATUS GetProjectConfigPollCommand::execute(Connection &connection) {
+    return do_cmd__(connection, "get_project_config_poll", error_, response());
 }
 
 template<>

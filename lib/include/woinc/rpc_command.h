@@ -210,6 +210,26 @@ struct GetNoticesResponse {
 
 typedef BOINCCommand<GetNoticesRequest, GetNoticesResponse, true> GetNoticesCommand;
 
+// --- GetProjectConfigCommand ---
+
+struct GetProjectConfigRequest {
+    std::string url;
+};
+
+struct GetProjectConfigResponse : public SuccessResponse {};
+
+typedef BOINCCommand<GetProjectConfigRequest, GetProjectConfigResponse, true> GetProjectConfigCommand;
+
+// --- GetProjectConfigPollCommand ---
+
+struct GetProjectConfigPollRequest : public Void {};
+
+struct GetProjectConfigPollResponse {
+    ProjectConfig project_config; // only valid if project_config.error_num == 0
+};
+
+typedef BOINCCommand<GetProjectConfigPollRequest, GetProjectConfigPollResponse, true> GetProjectConfigPollCommand;
+
 // --- GetProjectStatusCommand ---
 
 struct GetProjectStatusRequest : public Void {};

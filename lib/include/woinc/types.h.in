@@ -444,6 +444,37 @@ struct Project {
 
 typedef std::vector<Project> Projects;
 
+struct ProjectConfig {
+    bool account_creation_disabled;
+    bool client_account_creation_disabled;
+    bool terms_of_use_is_html;
+    bool uses_username;
+    int error_num;
+    int min_passwd_length;
+    std::string error_msg;
+    std::string master_url;
+    std::string name;
+    std::string terms_of_use;
+    std::string web_rpc_url_base;
+
+    struct Platform {
+        std::string plan_class;
+        std::string platform_name;
+        std::string user_friendly_name;
+    };
+    typedef std::vector<Platform> Platforms;
+
+    Platforms platforms;
+#if @WOINC_EXPOSE_FULL_STRUCTURES@
+    bool account_manager;
+    bool ldap_auth;
+    bool sched_stopped;
+    bool web_stopped;
+    int local_revision;
+    int min_client_version;
+#endif
+};
+
 struct ProjectListEntry {
     std::string description;
     std::string general_area;
