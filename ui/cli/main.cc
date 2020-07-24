@@ -202,6 +202,7 @@ COMMANDS:
   --get_host_info                   show host info
   --get_messages [ seqno ]          show messages with sequence number > seqno
   --get_notices [ seqno ]           show notices with sequence number > seqno
+  --get_project_config URL
   --get_project_status              show status of all attached projects
   --get_state                       show entire state
   --get_tasks                       show tasks
@@ -781,6 +782,12 @@ void print(std::ostream &out, const wrpc::SuccessResponse &response) {
         out << "Failure\n";
 }
 
+void print(std::ostream &out, const woinc::ProjectConfig &config) {
+    out << "uses_username: " << config.uses_username << NL
+        << "name: " << config.name << NL
+        << "min_passwd_length: " << config.min_passwd_length << NL;
+}
+
 } // printing helpers
 
 
@@ -915,6 +922,48 @@ woinc::FILE_TRANSFER_OP parse_file_transfer_op(const std::string &op) {
 }
 
 } // parsing helpers
+
+// --------------------------
+// --- the boinc commands ---
+// --------------------------
+
+namespace {
+
+void do_get_project_config_cmd(Client &client, CommandContext ctx) {
+    assert(ctx != nullptr);
+
+    {
+        wrpc::GetProjectConfigCommand *cmd = static_cast<wrpc::GetProjectConfigCommand *>(ctx);
+        client.do_cmd(*cmd);
+        delete cmd;
+    }
+
+    for (int i = 0; i < 60; ++i) {
+        wrpc::GetProjectConfigPollCommand poll_cmd;
+        client.do_cmd(poll_cmd);
+
+        auto config = std::move(poll_cmd.response().project_config);
+
+        if (config.error_num == 0) {
+            print(std::cout, config);
+            return;
+        } else if (config.error_num == -204) { // TODO don't harcode the error code
+            // print with forced flush to show progress
+            std::cout << "poll status: operation in progress" << std::endl;
+        } else {
+            std::cout << "poll status: " << config.error_num << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1s);
+    }
+
+    std::cout << "didn't receive answer in given time\n";
+    exit(EXIT_FAILURE);
+}
+
+} // boinc commands
 
 // --------------------------
 // --- the woinc commands ---
@@ -1193,6 +1242,12 @@ CommandMap command_map() {
                 return new wrpc::GetNoticesCommand({seqno});
             },
             EXECUTE(wrpc::GetNoticesCommand)
+        }}, { "--get_project_config", {
+            [](Arguments &args) -> CommandContext {
+                auto url = need_next_as_string(args, "Missing parameter URL for command --get_project_config");
+                return new wrpc::GetProjectConfigCommand({url});
+            },
+            &do_get_project_config_cmd
         }},
         CMD_WITHOUT_REQUEST_DATA("--get_project_status", wrpc::GetProjectStatusCommand),
         CMD_WITHOUT_REQUEST_DATA("--get_tasks", wrpc::GetResultsCommand),
