@@ -24,10 +24,10 @@ They may not be up to date, but there are some [here](http://83.169.22.26/tmp/wo
 ### runtime
 
 #### libwoinc
-- pugixml >= 1.9: for parsing the XML
+- [pugixml](https://pugixml.org/) >= 1.9: for parsing the XML
 
 #### woincqt
-- Qt 5: woinqt is compiling with qt >= 5.9 (maybe before, I don't know); version qt >= 5.12 is supported. Needed Qt components:
+- Qt 5: woincqt is compiling with qt >= 5.9 (maybe before, I don't know); version qt >= 5.12 is supported. Needed Qt components:
     - Qt5Widgets: for the UI
     - Qt5Charts: playing around with statistics, may be made optional in the future
     - Qt5Network: to load images rendered in the news tab, may be made optional in the future
