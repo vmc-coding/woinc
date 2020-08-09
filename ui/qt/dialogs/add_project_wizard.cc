@@ -26,6 +26,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QScrollArea>
 #include <QStringList>
 #include <QTextEdit>
 #include <QVBoxLayout>
@@ -47,14 +48,15 @@ QLabel *topic__(QString text, QWidget *parent = nullptr) {
 }
 
 template<typename Widget>
-void add_widgets__(QLayout *layout, Widget widget) {
+QLayout *add_widgets__(QLayout *layout, Widget widget) {
     layout->addWidget(widget);
+    return layout;
 }
 
 template<typename Widget, typename... Widgets>
-void add_widgets__(QLayout *layout, Widget widget, Widgets... others) {
+QLayout *add_widgets__(QLayout *layout, Widget widget, Widgets... others) {
     layout->addWidget(widget);
-    add_widgets__(layout, others...);
+    return add_widgets__(layout, others...);
 }
 
 template<typename... Widgets>
@@ -104,6 +106,8 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
 {
     // create all widgets of the wizard page
 
+    // left side
+
     auto *categories_lbl = new QLabel(QStringLiteral("Categories:"));
     auto *categories_cb = new QComboBox;
     auto *categories_wdgt = as_vertical_widget__(categories_lbl, categories_cb);
@@ -111,42 +115,76 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
     auto *projects_list_wdgt = new QListWidget;
     projects_list_wdgt->setSortingEnabled(true);
 
+    auto *project_selection_wdgt = as_vertical_widget__(categories_wdgt, projects_list_wdgt);
+    project_selection_wdgt->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::MinimumExpanding);
+
+    // right side
+
     auto *project_desc_wdgt = new QTextEdit;
     project_desc_wdgt->setReadOnly(true);
 
     auto *research_area_lbl = new QLabel(QStringLiteral("Research area:"));
     auto *research_area_value = new QLabel;
-    auto *research_area_wdgt = as_horizontal_widget__(research_area_lbl, research_area_value);
 
     auto *organization_lbl = new QLabel(QStringLiteral("Organization:"));
     auto *organization_value = new QLabel;
-    auto *organization_wdgt = as_horizontal_widget__(organization_lbl, organization_value);
 
     auto *website_lbl = new QLabel(QStringLiteral("Web site:"));
     auto *website_value = new QLabel;
-    website_value->setTextFormat(Qt::RichText);
     website_value->setOpenExternalLinks(true);
     website_value->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    auto *website_wdgt = as_horizontal_widget__(website_lbl, website_value);
 
     auto *supported_systems_lbl = new QLabel(QStringLiteral("Supported systems:"));
-    auto *supported_systems_value = new QLabel(QStringLiteral("tbd"));
-    auto *supported_systems_wdgt = as_horizontal_widget__(supported_systems_lbl, supported_systems_value);
+    auto *supported_systems_value = new QLabel;
 
-    auto *project_details_lyt = new QVBoxLayout;
-    add_widgets__(project_details_lyt,
-                  project_desc_wdgt,
-                  research_area_wdgt,
-                  organization_wdgt,
-                  website_wdgt,
-                  supported_systems_wdgt);
+    auto *project_details_lbls_wdgt = as_vertical_widget__(research_area_lbl,
+                                                           organization_lbl,
+                                                           website_lbl,
+                                                           supported_systems_lbl);
+    project_details_lbls_wdgt->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+    auto *project_details_values_wdgt = new QScrollArea;
+    project_details_values_wdgt->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    project_details_values_wdgt->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    project_details_values_wdgt->setWidgetResizable(true);
+    project_details_values_wdgt->setFrameShape(QFrame::NoFrame);
+    project_details_values_wdgt->setContentsMargins(0, 0, 0, 0);
+    {
+        auto *tmp_wdgt = new QWidget;
+        tmp_wdgt->setLayout(add_widgets__(new QVBoxLayout,
+                                          research_area_value,
+                                          organization_value,
+                                          website_value,
+                                          supported_systems_value));
+        // TODO a better aproach would be to have the scrollarea also containing
+        // the lables as kind of 'locked' columns at the beginning
+        project_details_values_wdgt->setWidget(tmp_wdgt);
+    }
+
+    auto *project_details_bottom_wdgt = as_horizontal_widget__(project_details_lbls_wdgt,
+                                                               project_details_values_wdgt);
+    project_details_bottom_wdgt->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
 
     auto *project_details_wdgt = new QGroupBox(QStringLiteral("Project details"));
-    project_details_wdgt->setLayout(project_details_lyt);
+    project_details_wdgt->setLayout(add_widgets__(new QVBoxLayout,
+                                                  project_desc_wdgt,
+                                                  project_details_bottom_wdgt));
+
+    // bottom widget
 
     auto *project_url_lbl = new QLabel(QStringLiteral("Project URL:"));
     auto *project_url_value = new QLineEdit;
     auto *project_url_wdgt = as_horizontal_widget__(project_url_lbl, project_url_value);
+
+    // setup the layout of the wizard page
+
+    setLayout(add_widgets__(new QVBoxLayout,
+                            topic__(QStringLiteral("Choose a project")),
+                            new QLabel(QStringLiteral("To choose a project, click its name or type its URL below.")),
+                            as_horizontal_widget__(
+                                project_selection_wdgt,
+                                project_details_wdgt),
+                            project_url_wdgt));
 
     // connect the widgets
 
@@ -176,30 +214,20 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
             project_url_value->clear();
         } else {
             project_desc_wdgt->setText(QString::fromStdString(project_iter->description));
-            research_area_value->setText(QString::fromStdString(project_iter->general_area));
+            research_area_value->setText(QString::fromStdString(project_iter->specific_area));
             organization_value->setText(QString::fromStdString(project_iter->home));
-            website_value->setText(QStringLiteral("<a href=\"%1\"></a>").arg(QString::fromStdString(project_iter->web_url)));
-            supported_systems_value->setText(QStringLiteral("tbd"));
+            website_value->setText(QStringLiteral("<a href=\"%1\">%1</a>").arg(QString::fromStdString(project_iter->web_url)));
+            QStringList platforms;
+            for (auto &&platform : project_iter->platforms)
+                platforms << QString::fromStdString(platform);
+            supported_systems_value->setText(platforms.join(", "));
             project_url_value->setText(QString::fromStdString(project_iter->url));
         }
     });
 
     // initialize the widgets
 
-    categories_cb->addItems(extract_categories__(all_projects));
-
-    // setup the wizard page
-
-    auto *layout = new QVBoxLayout;
-    setLayout(layout);
-
-    add_widgets__(layout,
-                  topic__(QStringLiteral("Choose a project")),
-                  new QLabel(QStringLiteral("To choose a project, click its name or type its URL below.")),
-                  as_horizontal_widget__(
-                      as_vertical_widget__(categories_wdgt, projects_list_wdgt),
-                      project_details_wdgt),
-                  project_url_wdgt);
+    categories_cb->addItems(extract_categories__(std::move(all_projects)));
 }
 
 // ----- ProjectAccountPage -----
