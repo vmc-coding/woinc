@@ -76,8 +76,6 @@ struct BOINCCommand : public Command {
         RESPONSE_TYPE response_;
 };
 
-struct Void {};
-
 struct SuccessResponse {
     bool success = false;
 };
@@ -112,7 +110,7 @@ typedef BOINCCommand<ExchangeVersionsRequest, ExchangeVersionsResponse, false> E
 
 // --- GetAllProjectsListCommand ---
 
-struct GetAllProjectsListRequest : public Void {};
+struct GetAllProjectsListRequest {};
 
 struct GetAllProjectsListResponse {
 	AllProjectsList projects;
@@ -122,7 +120,7 @@ typedef BOINCCommand<GetAllProjectsListRequest, GetAllProjectsListResponse, fals
 
 // --- GetCCStatusCommand ---
 
-struct GetCCStatusRequest : public Void {};
+struct GetCCStatusRequest {};
 
 struct GetCCStatusResponse {
     CCStatus cc_status;
@@ -132,7 +130,7 @@ typedef BOINCCommand<GetCCStatusRequest, GetCCStatusResponse, false> GetCCStatus
 
 // --- GetClientState ---
 
-struct GetClientStateRequest : public Void {};
+struct GetClientStateRequest {};
 
 struct GetClientStateResponse {
     ClientState client_state;
@@ -142,7 +140,7 @@ typedef BOINCCommand<GetClientStateRequest, GetClientStateResponse, false> GetCl
 
 // --- GetDiskUsage ---
 
-struct GetDiskUsageRequest : public Void {};
+struct GetDiskUsageRequest {};
 
 struct GetDiskUsageResponse {
     DiskUsage disk_usage;
@@ -165,7 +163,7 @@ typedef BOINCCommand<GetGlobalPreferencesRequest, GetGlobalPreferencesResponse, 
 
 // --- GetFileTransfers ---
 
-struct GetFileTransfersRequest : public Void {};
+struct GetFileTransfersRequest {};
 
 struct GetFileTransfersResponse {
     FileTransfers file_transfers;
@@ -175,7 +173,7 @@ typedef BOINCCommand<GetFileTransfersRequest, GetFileTransfersResponse, false> G
 
 // --- GetHostInfo ---
 
-struct GetHostInfoRequest : public Void {};
+struct GetHostInfoRequest {};
 
 struct GetHostInfoResponse {
     HostInfo host_info;
@@ -222,7 +220,7 @@ typedef BOINCCommand<GetProjectConfigRequest, GetProjectConfigResponse, true> Ge
 
 // --- GetProjectConfigPollCommand ---
 
-struct GetProjectConfigPollRequest : public Void {};
+struct GetProjectConfigPollRequest {};
 
 struct GetProjectConfigPollResponse {
     ProjectConfig project_config; // only valid if project_config.error_num == 0
@@ -232,7 +230,7 @@ typedef BOINCCommand<GetProjectConfigPollRequest, GetProjectConfigPollResponse, 
 
 // --- GetProjectStatusCommand ---
 
-struct GetProjectStatusRequest : public Void {};
+struct GetProjectStatusRequest {};
 
 struct GetProjectStatusResponse {
     Projects projects;
@@ -254,7 +252,7 @@ typedef BOINCCommand<GetResultsRequest, GetResultsResponse, false> GetResultsCom
 
 // --- GetStatistics ---
 
-struct GetStatisticsRequest : public Void {};
+struct GetStatisticsRequest {};
 
 struct GetStatisticsResponse {
     Statistics statistics;
@@ -277,7 +275,7 @@ typedef BOINCCommand<FileTransferOpRequest, FileTransferOpResponse, true> FileTr
 
 // --- NetworkAvailable ---
 
-struct NetworkAvailableRequest : public Void {};
+struct NetworkAvailableRequest {};
 
 struct NetworkAvailableResponse : public SuccessResponse {};
 
@@ -310,7 +308,7 @@ typedef BOINCCommand<ProjectOpRequest, ProjectOpResponse, true> ProjectOpCommand
 
 // --- Quit ---
 
-struct QuitRequest : public Void {};
+struct QuitRequest {};
 
 struct QuitResponse : public SuccessResponse {};
 
@@ -318,7 +316,7 @@ typedef BOINCCommand<QuitRequest, QuitResponse, true> QuitCommand;
 
 // --- ReadCCConfig ---
 
-struct ReadCCConfigRequest : public Void {};
+struct ReadCCConfigRequest {};
 
 struct ReadCCConfigResponse : public SuccessResponse {};
 
@@ -326,7 +324,7 @@ typedef BOINCCommand<ReadCCConfigRequest, ReadCCConfigResponse, true> ReadCCConf
 
 // --- ReadGlobalPreferencesOverride ---
 
-struct ReadGlobalPreferencesOverrideRequest : public Void {};
+struct ReadGlobalPreferencesOverrideRequest {};
 
 struct ReadGlobalPreferencesOverrideResponse : public SuccessResponse {};
 
@@ -334,7 +332,7 @@ typedef BOINCCommand<ReadGlobalPreferencesOverrideRequest, ReadGlobalPreferences
 
 // --- RunBenchmarks ---
 
-struct RunBenchmarksRequest : public Void {};
+struct RunBenchmarksRequest {};
 
 struct RunBenchmarksResponse : public SuccessResponse {};
 
