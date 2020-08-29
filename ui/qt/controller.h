@@ -75,6 +75,9 @@ class Controller : public QObject {
 
         std::future<AllProjectsList> load_all_projects_list(const QString &host);
 
+        std::future<bool> start_loading_project_config(const QString &host, const QString &master_url);
+        std::future<ProjectConfig> poll_project_config(const QString &host);
+
         // TODO wording: do we add a host or a client?
         void add_host(QString host, QString url, unsigned short port, QString password);
 

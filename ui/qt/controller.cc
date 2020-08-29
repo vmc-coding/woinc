@@ -21,6 +21,10 @@
 #include <algorithm>
 #include <cassert>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 #include <woinc/ui/controller.h>
 
 #include "qt/adapter.h"
@@ -70,6 +74,15 @@ std::future<bool> Controller::read_global_prefs(const QString &host) {
 
 std::future<AllProjectsList> Controller::load_all_projects_list(const QString &host) {
     return ctrl_->all_projects_list(host.toStdString());
+}
+
+std::future<bool> Controller::start_loading_project_config(const QString &host, const QString &master_url) {
+    std::cout << "Controller::start_loading_project_config(): " << master_url.toStdString() << std::endl;
+    return ctrl_->start_loading_project_config(host.toStdString(), master_url.toStdString());
+}
+
+std::future<ProjectConfig> Controller::poll_project_config(const QString &host) {
+    return ctrl_->poll_project_config(host.toStdString());
 }
 
 void Controller::add_host(QString host, QString url, unsigned short port, QString password) {

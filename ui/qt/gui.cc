@@ -182,9 +182,8 @@ void Gui::create_tools_menu_(const Model &model, Controller &controller) {
 //#endif
     connect(menu, &ToolsMenu::add_project_wizard_to_be_shown,
             [=, &controller](QString host) {
-                auto all_projects_future = controller.load_all_projects_list(host);
-                all_projects_future.wait();
-                auto *wizard = new AddProjectWizard(std::move(all_projects_future.get()), this);
+                auto *wizard = new AddProjectWizard(controller, std::move(host), this);
+                wizard->setAttribute(Qt::WA_DeleteOnClose);
                 wizard->open();
             });
 }

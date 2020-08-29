@@ -18,22 +18,27 @@
 
 #include "qt/dialogs/add_project_wizard.h"
 
+#include <chrono>
 #include <set>
 
 #include <QComboBox>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QMessageBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QScrollArea>
 #include <QStringList>
 #include <QTextEdit>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #ifndef NDEBUG
 #include <iostream>
 #endif
+
+#include "qt/controller.h"
 
 namespace {
 
@@ -102,7 +107,8 @@ namespace add_project_wizard_internals {
 
 // ----- ChooseProjectPage -----
 
-ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *parent) : QWizardPage(parent)
+ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidget *parent)
+    : QWizardPage(parent), controller_(controller), host_(std::move(host))
 {
     // create all widgets of the wizard page
 
@@ -157,7 +163,7 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
                                           website_value,
                                           supported_systems_value));
         // TODO a better aproach would be to have the scrollarea also containing
-        // the lables as kind of 'locked' columns at the beginning
+        // the lables as kind of 'locked' columns on the left side
         project_details_values_wdgt->setWidget(tmp_wdgt);
     }
 
@@ -175,6 +181,7 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
     auto *project_url_lbl = new QLabel(QStringLiteral("Project URL:"));
     auto *project_url_value = new QLineEdit;
     auto *project_url_wdgt = as_horizontal_widget__(project_url_lbl, project_url_value);
+    registerField("master_url*", project_url_value);
 
     // setup the layout of the wizard page
 
@@ -191,7 +198,7 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
     connect(categories_cb, &QComboBox::currentTextChanged, [=](QString category) {
         auto all = all_category();
         QStringList projects;
-        for (auto &&project : all_projects)
+        for (auto &&project : all_projects_)
             if (category == all || project.general_area == category.toStdString())
                 projects.append(QString::fromStdString(project.name));
         projects_list_wdgt->clear();
@@ -201,11 +208,11 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
     connect(projects_list_wdgt, &QListWidget::itemSelectionChanged, [=]() {
         auto selected = projects_list_wdgt->selectedItems();
         assert(selected.size() <= 1);
-        auto project_iter = selected.isEmpty() ? all_projects.end() :
-            std::find_if(all_projects.begin(), all_projects.end(), [&](auto &&project) {
+        auto project_iter = selected.isEmpty() ? all_projects_.end() :
+            std::find_if(all_projects_.begin(), all_projects_.end(), [&](auto &&project) {
                 return project.name == selected[0]->text().toStdString();
             });
-        if (project_iter == all_projects.end()) {
+        if (project_iter == all_projects_.end()) {
             project_desc_wdgt->clear();
             research_area_value->clear();
             organization_value->clear();
@@ -225,28 +232,98 @@ ChooseProjectPage::ChooseProjectPage(AllProjectsList all_projects, QWidget *pare
         }
     });
 
-    // initialize the widgets
+    connect(this, &ChooseProjectPage::all_project_list_loaded, [=]() {
+        categories_cb->addItems(extract_categories__(all_projects_));
+    });
+}
 
-    categories_cb->addItems(extract_categories__(std::move(all_projects)));
+void ChooseProjectPage::initializePage() {
+    // TODO show loading animation
+    QTimer::singleShot(0, [&]() {
+        try {
+            auto all_projects_future = controller_.load_all_projects_list(host_);
+            all_projects_future.wait();
+            all_projects_ = all_projects_future.get();
+            emit all_project_list_loaded();
+        } catch (std::exception &err) {
+            QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
+            close();
+        } catch (...) {
+            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
+            close();
+        }
+    });
 }
 
 // ----- ProjectAccountPage -----
 
-ProjectAccountPage::ProjectAccountPage(QWidget *parent) : QWizardPage(parent)
+ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWidget *parent)
+    : QWizardPage(parent), controller_(controller), host_(host)
 {
 
+}
+
+void ProjectAccountPage::initializePage() {
+    // TODO show loading animation
+    QTimer::singleShot(0, [&]() {
+        try {
+            // --- start loading the config ---
+
+            auto load_config_future = controller_.start_loading_project_config(host_, field("master_url").toString());
+            load_config_future.wait();
+            // TODO do we get an error message from the client?
+            if (!load_config_future.get()) {
+                QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
+                close();
+            }
+#ifndef NDEBUG
+            std::cout << "Started loading project config of " << field("master_url").toString().toStdString() << std::endl;
+#endif
+
+            // --- poll the config for an arbitrary value of one minute .. ---
+
+            for (int i = 0; i < 60; ++i) {
+                auto poll_future = controller_.poll_project_config(host_);
+                config_ = poll_future.get();
+
+                if (config_.error_num == 0) {
+                    break;
+                } else if (config_.error_num != -204) { // -204 is still loading.. terrible API
+                    QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
+                    close();
+                }
+
+#ifndef NDEBUG
+            std::cout << "Still polling .. " << std::endl;
+#endif
+                // TODO would it be better to schedule another timer and end this one?
+                //      I'm thinking about blocking the event queue here ..
+                using namespace std::chrono_literals;
+                std::this_thread::sleep_for(1s);
+            }
+#ifndef NDEBUG
+            std::cout << "Loaded project config of " << field("master_url").toString().toStdString() << std::endl;
+#endif
+        } catch (std::exception &err) {
+            QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
+            close();
+        } catch (...) {
+            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
+            close();
+        }
+    });
 }
 
 } // namespace add_project_wizard_internals
 
 // ----- AddProjectWizard -----
 
-AddProjectWizard::AddProjectWizard(AllProjectsList all_projects, QWidget *parent) : QWizard(parent)
+AddProjectWizard::AddProjectWizard(Controller &controller, QString host, QWidget *parent) : QWizard(parent)
 {
     using namespace woinc::ui::qt::add_project_wizard_internals;
 
-    addPage(new ChooseProjectPage(all_projects, this));
-    addPage(new ProjectAccountPage(this));
+    addPage(new ChooseProjectPage(controller, host, this));
+    addPage(new ProjectAccountPage(controller, host, this));
 }
 
 }}}

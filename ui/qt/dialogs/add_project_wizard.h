@@ -26,31 +26,48 @@
 
 namespace woinc { namespace ui { namespace qt {
 
+struct Controller;
+
 namespace add_project_wizard_internals {
 
 class ChooseProjectPage: public QWizardPage {
     Q_OBJECT
 
     public:
-        ChooseProjectPage(AllProjectsList all_projects, QWidget *parent = nullptr);
+        ChooseProjectPage(Controller &controller, QString host, QWidget *parent = nullptr);
+
+        void initializePage() final;
+
+    signals:
+        void all_project_list_loaded();
+
+    private:
+        Controller &controller_;
+        QString host_;
+        AllProjectsList all_projects_;
 };
 
 class ProjectAccountPage: public QWizardPage {
     Q_OBJECT
 
     public:
-        ProjectAccountPage(QWidget *parent = nullptr);
+        ProjectAccountPage(Controller &controller, QString host, QWidget *parent = nullptr);
+
+        void initializePage() final;
+
+    private:
+        Controller &controller_;
+        QString host_;
+        ProjectConfig config_;
 };
 
 } // namespace add_project_wizard_internals
-
-struct Controller;
 
 class AddProjectWizard: public QWizard {
     Q_OBJECT
 
     public:
-        AddProjectWizard(AllProjectsList all_projects, QWidget *parent = nullptr);
+        AddProjectWizard(Controller &controller, QString host, QWidget *parent = nullptr);
 };
 
 }}}
