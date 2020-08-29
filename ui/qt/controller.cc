@@ -77,7 +77,6 @@ std::future<AllProjectsList> Controller::load_all_projects_list(const QString &h
 }
 
 std::future<bool> Controller::start_loading_project_config(const QString &host, const QString &master_url) {
-    std::cout << "Controller::start_loading_project_config(): " << master_url.toStdString() << std::endl;
     return ctrl_->start_loading_project_config(host.toStdString(), master_url.toStdString());
 }
 
