@@ -105,6 +105,9 @@ class WOINCUI_LOCAL Controller::Impl {
 
         std::future<AllProjectsList> all_projects_list(const std::string &host);
 
+        std::future<bool> start_loading_project_config(const std::string &host, std::string master_url);
+        std::future<ProjectConfig> poll_project_config(const std::string &host);
+
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
         // which will be deleted in the erase call leading to a use after free access later on
@@ -540,7 +543,53 @@ std::future<AllProjectsList> Controller::Impl::all_projects_list(const std::stri
     }
 
     return future;
+}
 
+std::future<bool> Controller::Impl::start_loading_project_config(const std::string &host, std::string master_url) {
+    check_not_empty_host_name__(host);
+    check_not_empty__(master_url, "Missing master url");
+
+    std::promise<bool> promise;
+    auto future = promise.get_future();
+
+    auto *job = new PromisedResultJob<bool>(
+        new wrpc::GetProjectConfigCommand{wrpc::GetProjectConfigRequest{master_url}},
+        std::move(promise),
+        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
+            if (status == wrpc::COMMAND_STATUS::OK)
+                p.set_value(static_cast<wrpc::GetProjectConfigCommand *>(c)->response().success);
+            else
+                p.set_exception(std::make_exception_ptr(std::runtime_error("Error loading the project config")));
+        });
+
+    {
+        WOINC_LOCK_GUARD;
+        schedule_now_(host, job, __func__);
+    }
+
+    return future;
+}
+
+std::future<ProjectConfig> Controller::Impl::poll_project_config(const std::string &host) {
+    std::promise<ProjectConfig> promise;
+    auto future = promise.get_future();
+
+    auto *job = new PromisedResultJob<ProjectConfig>(
+        new wrpc::GetProjectConfigPollCommand,
+        std::move(promise),
+        [](wrpc::Command *c, std::promise<ProjectConfig> &p, wrpc::COMMAND_STATUS status) {
+            if (status == wrpc::COMMAND_STATUS::OK)
+                p.set_value(static_cast<wrpc::GetProjectConfigPollCommand *>(c)->response().project_config);
+            else
+                p.set_exception(std::make_exception_ptr(std::runtime_error("Error polling the project config")));
+        });
+
+    {
+        WOINC_LOCK_GUARD;
+        schedule_now_(host, job, __func__);
+    }
+
+    return future;
 }
 
 void Controller::Impl::remove_host_(std::string host) {
@@ -572,8 +621,7 @@ void Controller::Impl::schedule_now_(const std::string &host, Job *job, const ch
     decltype(host_controllers_.find(host)) hc;
 
     try {
-        if (shutdown_)
-            throw ShutdownException();
+        verify_not_shutdown_();
 
         hc = host_controllers_.find(host);
         if (hc == host_controllers_.end()) {
@@ -587,7 +635,7 @@ void Controller::Impl::schedule_now_(const std::string &host, Job *job, const ch
         throw;
     }
 
-    // not in the tye-catch-block as the job queue takes ownership of the job
+    // not in the try-catch-block as the job queue takes ownership of the job
     hc->second->schedule_now(job);
 }
 
@@ -723,6 +771,14 @@ std::future<bool> Controller::run_mode(const std::string &host, RUN_MODE mode) {
 
 std::future<AllProjectsList> Controller::all_projects_list(const std::string &host) {
     return impl_->all_projects_list(host);
+}
+
+std::future<bool> Controller::start_loading_project_config(const std::string &host, std::string master_url) {
+    return impl_->start_loading_project_config(host, std::move(master_url));
+}
+
+std::future<ProjectConfig> Controller::poll_project_config(const std::string &host) {
+    return impl_->poll_project_config(host);
 }
 
 }}

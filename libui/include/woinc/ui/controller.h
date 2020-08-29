@@ -100,6 +100,11 @@ class Controller {
 
         virtual std::future<AllProjectsList> all_projects_list(const std::string &host);
 
+        virtual std::future<bool> start_loading_project_config(const std::string &host, std::string master_url);
+        // if it's still loading the resulting config.error_num will be -204, poll again after some delay;
+        // yep, that's not a nice interface, we'll use std::variant when switching to std-c++17
+        virtual std::future<ProjectConfig> poll_project_config(const std::string &host);
+
     private:
         struct Impl;
         std::unique_ptr<Impl> impl_;
