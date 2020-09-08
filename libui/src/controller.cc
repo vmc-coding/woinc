@@ -303,7 +303,7 @@ std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, FI
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::FileTransferOpCommand(wrpc::FileTransferOpRequest(op, master_url, filename)),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -329,7 +329,7 @@ std::future<bool> Controller::Impl::project_op(const std::string &host, PROJECT_
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::ProjectOpCommand(wrpc::ProjectOpRequest(op, master_url)),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -357,7 +357,7 @@ std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::TaskOpCommand(wrpc::TaskOpRequest(op, master_url, task_name)),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -382,7 +382,7 @@ std::future<GlobalPreferences> Controller::Impl::load_global_preferences(const s
     std::promise<GlobalPreferences> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<woinc::GlobalPreferences>(
+    auto job = new AsyncJob<woinc::GlobalPreferences>(
         new wrpc::GetGlobalPreferencesCommand(wrpc::GetGlobalPreferencesRequest{ mode }),
         std::move(promise),
         [](wrpc::Command *c, std::promise<woinc::GlobalPreferences> &p, wrpc::COMMAND_STATUS status) {
@@ -407,7 +407,7 @@ std::future<bool> Controller::Impl::save_global_preferences(const std::string &h
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::SetGlobalPreferencesCommand(wrpc::SetGlobalPreferencesRequest{ prefs, mask }),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -431,7 +431,7 @@ std::future<bool> Controller::Impl::read_global_prefs_override(const std::string
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::ReadGlobalPreferencesOverrideCommand,
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -455,7 +455,7 @@ std::future<bool> Controller::Impl::run_mode(const std::string &host, RUN_MODE m
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::SetRunModeCommand(wrpc::SetRunModeRequest{mode}),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -479,7 +479,7 @@ std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RUN_MODE m
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::SetGpuModeCommand(wrpc::SetGpuModeRequest{mode}),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -503,7 +503,7 @@ std::future<bool> Controller::Impl::network_mode(const std::string &host, RUN_MO
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto job = new PromisedResultJob<bool>(
+    auto job = new AsyncJob<bool>(
         new wrpc::SetNetworkModeCommand(wrpc::SetNetworkModeRequest{mode}),
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -527,7 +527,7 @@ std::future<AllProjectsList> Controller::Impl::all_projects_list(const std::stri
     std::promise<AllProjectsList> promise;
     auto future = promise.get_future();
 
-    auto *job = new PromisedResultJob<AllProjectsList>(
+    auto *job = new AsyncJob<AllProjectsList>(
         new wrpc::GetAllProjectsListCommand,
         std::move(promise),
         [](wrpc::Command *c, std::promise<AllProjectsList> &p, wrpc::COMMAND_STATUS status) {
@@ -552,7 +552,7 @@ std::future<bool> Controller::Impl::start_loading_project_config(const std::stri
     std::promise<bool> promise;
     auto future = promise.get_future();
 
-    auto *job = new PromisedResultJob<bool>(
+    auto *job = new AsyncJob<bool>(
         new wrpc::GetProjectConfigCommand{wrpc::GetProjectConfigRequest{master_url}},
         std::move(promise),
         [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
@@ -574,7 +574,7 @@ std::future<ProjectConfig> Controller::Impl::poll_project_config(const std::stri
     std::promise<ProjectConfig> promise;
     auto future = promise.get_future();
 
-    auto *job = new PromisedResultJob<ProjectConfig>(
+    auto *job = new AsyncJob<ProjectConfig>(
         new wrpc::GetProjectConfigPollCommand,
         std::move(promise),
         [](wrpc::Command *c, std::promise<ProjectConfig> &p, wrpc::COMMAND_STATUS status) {
