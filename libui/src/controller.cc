@@ -24,6 +24,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 
 #ifndef NDEBUG
 #include <iostream>
@@ -120,6 +121,34 @@ class WOINCUI_LOCAL Controller::Impl {
 
         void verify_not_shutdown_() const;
         void verify_known_host_(const std::string &host, const char *func) const;
+
+        template<typename CMD,
+                 typename RESULT,
+                 typename GETTER = RESULT (*)(decltype(std::declval<CMD>().response()) &),
+                 typename REQUEST = decltype(std::declval<CMD>().request())>
+        std::future<RESULT> create_and_schedule_async_job_(const char *func,
+                                                           const std::string &host,
+                                                           GETTER getter,
+                                                           std::string error_msg,
+                                                           std::remove_reference_t<REQUEST> request = {}) {
+            typedef std::promise<RESULT> Promise;
+            Promise promise;
+            auto future = promise.get_future();
+
+            auto *job = new woinc::ui::AsyncJob<RESULT>(
+                new CMD{request},
+                std::move(promise),
+                [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::COMMAND_STATUS status) {
+                    if (status == woinc::rpc::COMMAND_STATUS::OK)
+                        p.set_value(getter(static_cast<CMD *>(cmd)->response()));
+                    else
+                        p.set_exception(std::make_exception_ptr(std::runtime_error{error_msg}));
+                });
+
+            schedule_now_(host, job, func);
+            return future;
+        }
+
 
     private:
         std::mutex lock_;
@@ -295,29 +324,21 @@ void Controller::Impl::active_only_tasks(const std::string &host, bool value) {
 }
 
 std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
-                                        const std::string &master_url, const std::string &filename) {
+                                                     const std::string &master_url, const std::string &filename) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
     check_not_empty__(filename, "Missing filename");
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::FileTransferOpCommand(wrpc::FileTransferOpRequest(op, master_url, filename)),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::FileTransferOpCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error while executing file transfer operation")));
-        });
+    auto future = create_and_schedule_async_job_<wrpc::FileTransferOpCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error while executing file transfer operation",
+        {op, master_url, filename});
 
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-        periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_FILE_TRANSFERS);
-    }
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_FILE_TRANSFERS);
 
     return future;
 }
@@ -326,24 +347,16 @@ std::future<bool> Controller::Impl::project_op(const std::string &host, PROJECT_
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::ProjectOpCommand(wrpc::ProjectOpRequest(op, master_url)),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::ProjectOpCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error while executing project operation")));
-        });
+    auto future = create_and_schedule_async_job_<wrpc::ProjectOpCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error while executing project operation",
+        {op, master_url});
 
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-        periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_PROJECT_STATUS);
-    }
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_PROJECT_STATUS);
 
     return future;
 }
@@ -354,24 +367,16 @@ std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
     check_not_empty__(master_url, "Missing master url");
     check_not_empty__(task_name, "Missing task name");
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::TaskOpCommand(wrpc::TaskOpRequest(op, master_url, task_name)),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::TaskOpCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error while executing task operation")));
-        });
+    auto future = create_and_schedule_async_job_<rpc::TaskOpCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error while executing task operation",
+        {op, master_url, task_name});
 
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-        periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_TASKS);
-    }
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_TASKS);
 
     return future;
 }
@@ -379,217 +384,116 @@ std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
 std::future<GlobalPreferences> Controller::Impl::load_global_preferences(const std::string &host, GET_GLOBAL_PREFS_MODE mode) {
     check_not_empty_host_name__(host);
 
-    std::promise<GlobalPreferences> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<woinc::GlobalPreferences>(
-        new wrpc::GetGlobalPreferencesCommand(wrpc::GetGlobalPreferencesRequest{ mode }),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<woinc::GlobalPreferences> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK) {
-                p.set_value(static_cast<wrpc::GetGlobalPreferencesCommand *>(c)->response().preferences);
-            } else {
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error while loading the preferences")));
-            }
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::GetGlobalPreferencesCommand, GlobalPreferences>(
+        __func__,
+        host,
+        [](auto &r) { return r.preferences; },
+        "Error while loading the preferences",
+        {mode});
 }
 
 std::future<bool> Controller::Impl::save_global_preferences(const std::string &host, const GlobalPreferences &prefs, const GlobalPreferencesMask &mask) {
     check_not_empty_host_name__(host);
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::SetGlobalPreferencesCommand(wrpc::SetGlobalPreferencesRequest{ prefs, mask }),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::SetGlobalPreferencesCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error while setting the preferences")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::SetGlobalPreferencesCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error while setting the preferences",
+        {prefs, mask});
 }
 
 std::future<bool> Controller::Impl::read_global_prefs_override(const std::string &host) {
     check_not_empty_host_name__(host);
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::ReadGlobalPreferencesOverrideCommand,
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::ReadGlobalPreferencesOverrideCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error reading the preferences")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::ReadGlobalPreferencesOverrideCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error reading the preferences");
 }
 
 std::future<bool> Controller::Impl::run_mode(const std::string &host, RUN_MODE mode) {
     check_not_empty_host_name__(host);
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::SetRunModeCommand(wrpc::SetRunModeRequest{mode}),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::SetRunModeCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error setting the run mode")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::SetRunModeCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error setting the run mode",
+        mode);
 }
 
 std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RUN_MODE mode) {
     check_not_empty_host_name__(host);
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::SetGpuModeCommand(wrpc::SetGpuModeRequest{mode}),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::SetGpuModeCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error setting the gpu run mode")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::SetGpuModeCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error setting the gpu run mode",
+        mode);
 }
 
 std::future<bool> Controller::Impl::network_mode(const std::string &host, RUN_MODE mode) {
     check_not_empty_host_name__(host);
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto job = new AsyncJob<bool>(
-        new wrpc::SetNetworkModeCommand(wrpc::SetNetworkModeRequest{mode}),
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::SetNetworkModeCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error setting the network mode")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::SetNetworkModeCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error setting the network mode",
+        mode);
 }
 
 std::future<AllProjectsList> Controller::Impl::all_projects_list(const std::string &host) {
     check_not_empty_host_name__(host);
 
-    std::promise<AllProjectsList> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto *job = new AsyncJob<AllProjectsList>(
-        new wrpc::GetAllProjectsListCommand,
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<AllProjectsList> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::GetAllProjectsListCommand *>(c)->response().projects);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error getting the projects list")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::GetAllProjectsListCommand, AllProjectsList>(
+        __func__,
+        host,
+        [](auto &r) { return r.projects; },
+        "Error getting the projects list");
 }
 
 std::future<bool> Controller::Impl::start_loading_project_config(const std::string &host, std::string master_url) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
 
-    std::promise<bool> promise;
-    auto future = promise.get_future();
+    WOINC_LOCK_GUARD;
 
-    auto *job = new AsyncJob<bool>(
-        new wrpc::GetProjectConfigCommand{wrpc::GetProjectConfigRequest{master_url}},
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<bool> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::GetProjectConfigCommand *>(c)->response().success);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error loading the project config")));
-        });
-
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::GetProjectConfigCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error loading the project config",
+        {master_url});
 }
 
 std::future<ProjectConfig> Controller::Impl::poll_project_config(const std::string &host) {
-    std::promise<ProjectConfig> promise;
-    auto future = promise.get_future();
+    check_not_empty_host_name__(host);
 
-    auto *job = new AsyncJob<ProjectConfig>(
-        new wrpc::GetProjectConfigPollCommand,
-        std::move(promise),
-        [](wrpc::Command *c, std::promise<ProjectConfig> &p, wrpc::COMMAND_STATUS status) {
-            if (status == wrpc::COMMAND_STATUS::OK)
-                p.set_value(static_cast<wrpc::GetProjectConfigPollCommand *>(c)->response().project_config);
-            else
-                p.set_exception(std::make_exception_ptr(std::runtime_error("Error polling the project config")));
-        });
+    WOINC_LOCK_GUARD;
 
-    {
-        WOINC_LOCK_GUARD;
-        schedule_now_(host, job, __func__);
-    }
-
-    return future;
+    return create_and_schedule_async_job_<wrpc::GetProjectConfigPollCommand, ProjectConfig>(
+        __func__,
+        host,
+        [](auto &r) { return r.project_config; },
+        "Error polling the project config");
 }
 
 void Controller::Impl::remove_host_(std::string host) {

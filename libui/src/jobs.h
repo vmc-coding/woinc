@@ -90,7 +90,7 @@ struct WOINCUI_LOCAL AsyncJob : public Job {
 
     // the job takes the ownership of the command
     AsyncJob(woinc::rpc::Command *cmd, Promise promise, ResultHandler handler)
-        : cmd_(cmd), promise_(std::move(promise)), handler_(handler) {}
+        : cmd_(cmd), promise_(std::move(promise)), handler_(std::move(handler)) {}
     virtual ~AsyncJob() = default;
 
     void execute(Client &client) final {
