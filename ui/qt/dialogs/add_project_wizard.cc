@@ -260,15 +260,19 @@ void ChooseProjectPage::initializePage() {
 ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWidget *parent)
     : QWizardPage(parent), controller_(controller), host_(host), poll_config_timer_(new QTimer(this))
 {
+    connect(this, &ProjectAccountPage::project_config_loaded, this, &ProjectAccountPage::show_project_config_);
     connect(poll_config_timer_, &QTimer::timeout, [=]() {
         QString error;
 
         try {
-            std::cout << "Still polling .. " << remaining_pollings_ << "\n";
+#ifndef NDEBUG
+            std::cout << "Poll project config of " << field("master_url").toString().toStdString() << std::endl;
+#endif
             config_ = controller_.poll_project_config(host_).get();
 
             if (config_.error_num == 0) {
                 poll_config_timer_->stop();
+                emit project_config_loaded();
             } else if (config_.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
                 error = QStringLiteral("Failed to load the project configuration");
             }
@@ -314,6 +318,48 @@ void ProjectAccountPage::initializePage() {
 
 void ProjectAccountPage::cleanupPage() {
     poll_config_timer_->stop();
+}
+
+void ProjectAccountPage::show_project_config_() {
+    auto *title_lbl = new QLabel(QStringLiteral("Identify your account at ").append(QString::fromStdString(config_.name)));
+    title_lbl->setStyleSheet("font-weight: bold;");
+
+    auto *email_lbl = new QLabel(QStringLiteral("Email address:"));
+    auto *email_value = new QLineEdit;
+
+    auto *password_lbl = new QLabel(QStringLiteral("Password:"));
+    auto *password_value = new QLineEdit;
+
+    auto *mail_pwd_lyt = new QGridLayout;
+    mail_pwd_lyt->addWidget(email_lbl, 0, 0);
+    mail_pwd_lyt->addWidget(email_value, 0, 1);
+    mail_pwd_lyt->addWidget(password_lbl, 1, 0);
+    mail_pwd_lyt->addWidget(password_value, 1, 1);
+
+    auto *mail_pwd_wdgt = new QGroupBox;
+    mail_pwd_wdgt->setContentsMargins(0, 0, 0, 0);
+    mail_pwd_wdgt->setLayout(mail_pwd_lyt);
+
+    auto *or_lbl = new QLabel(QStringLiteral("OR"));
+    or_lbl->setStyleSheet("font-weight: bold;");
+    or_lbl->setAlignment(Qt::AlignCenter);
+
+    auto *account_key_lbl = new QLabel(QStringLiteral("Account key:"));
+    auto *account_key_value = new QLineEdit;
+
+    auto *account_key_wdgt = new QGroupBox;
+    account_key_wdgt->setContentsMargins(0, 0, 0, 0);
+    account_key_wdgt->setLayout(add_widgets__(new QHBoxLayout, account_key_lbl, account_key_value));
+
+    auto *vertical_filler = new QWidget;
+    vertical_filler->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+
+    setLayout(add_widgets__(new QVBoxLayout,
+                            title_lbl,
+                            mail_pwd_wdgt,
+                            or_lbl,
+                            account_key_wdgt,
+                            vertical_filler));
 }
 
 } // namespace add_project_wizard_internals

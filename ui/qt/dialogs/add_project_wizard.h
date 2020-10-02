@@ -58,6 +58,12 @@ class ProjectAccountPage: public QWizardPage {
         void initializePage() final;
         void cleanupPage() final;
 
+    signals:
+        void project_config_loaded();
+
+    private slots:
+        void show_project_config_();
+
     private:
         Controller &controller_;
         QString host_;
