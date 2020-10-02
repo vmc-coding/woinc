@@ -175,11 +175,10 @@ void Gui::create_tools_menu_(const Model &model, Controller &controller) {
     auto *menu = new ToolsMenu("&Tools", this);
     menuBar()->addMenu(menu);
 
-    //connect(&model, &Model::host_selected,     menu, &ToolsMenu::select_host);
-    //connect(&model, &Model::host_unselected,   menu, &ToolsMenu::unselect_host);
-//#ifndef NDEBUG
-    //menu->connected();
-//#endif
+    connect(&model, &Model::host_selected,     menu, &ToolsMenu::select_host);
+    connect(&model, &Model::host_unselected,   menu, &ToolsMenu::unselect_host);
+    menu->connected();
+
     connect(menu, &ToolsMenu::add_project_wizard_to_be_shown,
             [=, &controller](QString host) {
                 auto *wizard = new AddProjectWizard(controller, std::move(host), this);

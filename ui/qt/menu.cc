@@ -188,7 +188,9 @@ ToolsMenu::ToolsMenu(const QString &title, QWidget *parent)
 {
     setEnabled(false);
 
-    connect(addAction("&Add project"), &QAction::triggered, [&]() {
+    auto *add_project_action = addAction("&Add project");
+    add_project_action->setEnabled(false);
+    connect(add_project_action, &QAction::triggered, [&]() {
         emit add_project_wizard_to_be_shown(selected_host_);
     });
 

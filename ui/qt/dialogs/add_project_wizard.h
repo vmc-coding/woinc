@@ -24,6 +24,8 @@
 
 #include <woinc/types.h>
 
+struct QTimer;
+
 namespace woinc { namespace ui { namespace qt {
 
 struct Controller;
@@ -54,11 +56,15 @@ class ProjectAccountPage: public QWizardPage {
         ProjectAccountPage(Controller &controller, QString host, QWidget *parent = nullptr);
 
         void initializePage() final;
+        void cleanupPage() final;
 
     private:
         Controller &controller_;
         QString host_;
         ProjectConfig config_;
+
+        int remaining_pollings_;
+        QTimer *poll_config_timer_;
 };
 
 } // namespace add_project_wizard_internals

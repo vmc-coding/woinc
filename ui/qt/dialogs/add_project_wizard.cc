@@ -258,60 +258,62 @@ void ChooseProjectPage::initializePage() {
 // ----- ProjectAccountPage -----
 
 ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWidget *parent)
-    : QWizardPage(parent), controller_(controller), host_(host)
+    : QWizardPage(parent), controller_(controller), host_(host), poll_config_timer_(new QTimer(this))
 {
+    connect(poll_config_timer_, &QTimer::timeout, [=]() {
+        QString error;
 
-}
-
-void ProjectAccountPage::initializePage() {
-    // TODO show loading animation
-    QTimer::singleShot(0, [&]() {
         try {
-            // --- start loading the config ---
+            std::cout << "Still polling .. " << remaining_pollings_ << "\n";
+            config_ = controller_.poll_project_config(host_).get();
 
-            auto load_config_future = controller_.start_loading_project_config(host_, field("master_url").toString());
-            load_config_future.wait();
-            // TODO do we get an error message from the client?
-            if (!load_config_future.get()) {
-                QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
-                close();
+            if (config_.error_num == 0) {
+                poll_config_timer_->stop();
+            } else if (config_.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
+                error = QStringLiteral("Failed to load the project configuration");
             }
-#ifndef NDEBUG
-            std::cout << "Started loading project config of " << field("master_url").toString().toStdString() << std::endl;
-#endif
-
-            // --- poll the config for an arbitrary value of one minute .. ---
-
-            for (int i = 0; i < 60; ++i) {
-                auto poll_future = controller_.poll_project_config(host_);
-                config_ = poll_future.get();
-
-                if (config_.error_num == 0) {
-                    break;
-                } else if (config_.error_num != -204) { // -204 is still loading.. terrible API
-                    QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
-                    close();
-                }
-
-#ifndef NDEBUG
-            std::cout << "Still polling .. " << std::endl;
-#endif
-                // TODO would it be better to schedule another timer and end this one?
-                //      I'm thinking about blocking the event queue here ..
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(1s);
-            }
-#ifndef NDEBUG
-            std::cout << "Loaded project config of " << field("master_url").toString().toStdString() << std::endl;
-#endif
         } catch (std::exception &err) {
-            QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
-            close();
+            error = QString::fromStdString(err.what());
         } catch (...) {
-            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
+            error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
+        }
+
+        if (!error.isEmpty()) {
+            poll_config_timer_->stop();
+            QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
             close();
         }
     });
+}
+
+// TODO show loading animation
+void ProjectAccountPage::initializePage() {
+    try { // start loading the config
+        auto load_config_future = controller_.start_loading_project_config(host_, field("master_url").toString());
+        load_config_future.wait();
+        // TODO do we get an error message from the client?
+        if (!load_config_future.get()) {
+            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
+            close();
+        }
+#ifndef NDEBUG
+        std::cout << "Started loading project config of " << field("master_url").toString().toStdString() << std::endl;
+#endif
+    } catch (std::exception &err) {
+        QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
+        close();
+    } catch (...) {
+        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
+        close();
+    }
+
+    // start polling the config for an arbitrary value of one minute
+    remaining_pollings_ = 60;
+    poll_config_timer_->start(1000);
+}
+
+void ProjectAccountPage::cleanupPage() {
+    poll_config_timer_->stop();
 }
 
 } // namespace add_project_wizard_internals
