@@ -206,6 +206,7 @@ COMMANDS:
   --get_project_status              show status of all attached projects
   --get_state                       show entire state
   --get_tasks                       show tasks
+  --lookup_account URL email passwd lookup account key for given project
   --network_available               retry deferred network communication
   --project URL op                  project operation
     op = reset | detach | update | suspend | resume | nomorework | allowmorework | detach_when_done | dont_detach_when_done
@@ -394,6 +395,10 @@ std::string resolve_project_name(const woinc::Projects &projects, const std::str
     auto project = std::find_if(projects.cbegin(), projects.cend(),
                                 [&](const woinc::Project &p) { return p.master_url == url; });
     return project == projects.cend() ? "" : project->project_name;
+}
+
+void print(std::ostream &out, const woinc::AccountOut &account_out) {
+    out << "account key: " << account_out.authenticator << NL;
 }
 
 void print(std::ostream &out, const wrpc::ExchangeVersionsResponse &response) {
@@ -947,7 +952,7 @@ void do_get_project_config_cmd(Client &client, CommandContext ctx) {
         if (config.error_num == 0) {
             print(std::cout, config);
             return;
-        } else if (config.error_num == -204) { // TODO don't harcode the error code
+        } else if (config.error_num == -204) { // TODO don't hardcode the error code
             // print with forced flush to show progress
             std::cout << "poll status: operation in progress" << std::endl;
         } else {
@@ -963,6 +968,39 @@ void do_get_project_config_cmd(Client &client, CommandContext ctx) {
     exit(EXIT_FAILURE);
 }
 
+void do_lookup_account_cmd(Client &client, CommandContext ctx) {
+    assert(ctx != nullptr);
+
+    {
+        wrpc::LookupAccountCommand *cmd = static_cast<wrpc::LookupAccountCommand *>(ctx);
+        client.do_cmd(*cmd);
+        delete cmd;
+    }
+
+    for (int i = 0; i < 60; ++i) {
+        wrpc::LookupAccountPollCommand poll_cmd;
+        client.do_cmd(poll_cmd);
+
+        auto account = std::move(poll_cmd.response().account_out);
+
+        if (account.error_num == 0) {
+            print(std::cout, account);
+            return;
+        } else if (account.error_num == -204) { // TODO don't hardcode the error code
+            // print with forced flush to show progress
+            std::cout << "poll status: operation in progress" << std::endl;
+        } else {
+            std::cout << "poll status: " << account.error_num << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(1s);
+    }
+
+    std::cout << "didn't receive answer in given time\n";
+    exit(EXIT_FAILURE);
+}
 } // boinc commands
 
 // --------------------------
@@ -1252,6 +1290,16 @@ CommandMap command_map() {
         CMD_WITHOUT_REQUEST_DATA("--get_project_status", wrpc::GetProjectStatusCommand),
         CMD_WITHOUT_REQUEST_DATA("--get_tasks", wrpc::GetResultsCommand),
         CMD_WITHOUT_REQUEST_DATA("--get_state", wrpc::GetClientStateCommand),
+        { "--lookup_account", {
+            [](Arguments &args) -> CommandContext {
+                wrpc::LookupAccountRequest req;
+                req.master_url = need_next_as_string(args, "Missing parameter URL for command --lookup_account");
+                req.email = need_next_as_string(args, "Missing parameter email for command --lookup_account");
+                req.passwd = need_next_as_string(args, "Missing parameter passwd for command --lookup_account");
+                return new wrpc::LookupAccountCommand{std::move(req)};
+            },
+            &do_lookup_account_cmd
+        }},
         CMD_WITHOUT_REQUEST_DATA("--network_available", wrpc::NetworkAvailableCommand),
         { "--project", {
             [](Arguments &args) -> CommandContext {
