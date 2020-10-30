@@ -273,6 +273,31 @@ struct FileTransferOpResponse : public SuccessResponse {};
 
 typedef BOINCCommand<FileTransferOpRequest, FileTransferOpResponse, true> FileTransferOpCommand;
 
+// --- LookupAccount ---
+
+struct LookupAccountRequest {
+    bool ldap_auth = false;
+    bool server_assigned_cookie = false;
+    std::string email;
+    std::string master_url;
+    std::string passwd;
+    std::string server_cookie;
+};
+
+struct LookupAccountResponse : public SuccessResponse {};
+
+typedef BOINCCommand<LookupAccountRequest, LookupAccountResponse, true> LookupAccountCommand;
+
+// --- LookupAccountPollCommand ---
+
+struct LookupAccountPollRequest {};
+
+struct LookupAccountPollResponse {
+    AccountOut account_out;
+};
+
+typedef BOINCCommand<LookupAccountPollRequest, LookupAccountPollResponse, true> LookupAccountPollCommand;
+
 // --- NetworkAvailable ---
 
 struct NetworkAvailableRequest {};

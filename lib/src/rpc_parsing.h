@@ -26,6 +26,7 @@
 
 namespace woinc { namespace rpc {
 
+bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::AccountOut &account_out);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::AllProjectsList &projects);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::CCStatus &cc_status);
 bool WOINC_LOCAL parse(const woinc::xml::Node &node, woinc::ClientState &client_state);

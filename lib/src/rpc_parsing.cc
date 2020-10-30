@@ -185,6 +185,7 @@ void parse_child_content_(const wxml::Node &node, const wxml::Tag &child_tag, bo
     dest = node.found_child(child) && child->content != "0";
 }
 
+void parse_(const woinc::xml::Node &node, woinc::AccountOut &account_out);
 void parse_(const woinc::xml::Node &node, woinc::ActiveTask &active_task);
 void parse_(const woinc::xml::Node &node, woinc::AllProjectsList &projects);
 void parse_(const woinc::xml::Node &node, woinc::App &app);
@@ -217,6 +218,15 @@ void parse_(const woinc::xml::Node &node, woinc::NetStats &net_stats);
 
 #define PARSE_CHILD_CONTENT(NODE, RESULT_STRUCT, TAG) \
     parse_child_content_(NODE, #TAG, RESULT_STRUCT . TAG)
+
+void parse_(const wxml::Node &node, woinc::AccountOut &account_out) {
+    account_out.error_num = 0; // it's not sent if polling is done, so let's reset it before parsing
+    PARSE_CHILD_CONTENT(node, account_out, error_num);
+    if (account_out.error_num != 0)
+        return;
+    PARSE_CHILD_CONTENT(node, account_out, authenticator);
+    PARSE_CHILD_CONTENT(node, account_out, error_msg);
+}
 
 // see ACTIVE_TASK::write_gui() in BOINC/client/app.cpp
 void parse_(const wxml::Node &node, woinc::ActiveTask &active_task) {
@@ -852,6 +862,7 @@ namespace woinc { namespace rpc {
     return true; \
 }
 
+WRAPPED_PARSE(woinc::AccountOut)
 WRAPPED_PARSE(woinc::AllProjectsList)
 WRAPPED_PARSE(woinc::CCStatus)
 WRAPPED_PARSE(woinc::ClientState)

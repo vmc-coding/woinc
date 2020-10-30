@@ -219,6 +219,11 @@ bool parse__(const wxml::Tree &response_tree, GetGlobalPreferencesResponse &resp
     return response_tree.root.found_child(prefs_node) && parse(*prefs_node, response.preferences);
 }
 
+bool parse__(const wxml::Tree &response_tree, LookupAccountPollResponse &response) {
+    auto account_out_node = response_tree.root.find_child("account_out");
+    return response_tree.root.found_child(account_out_node) && parse(*account_out_node, response.account_out);
+}
+
 template<typename RESPONSE>
 COMMAND_STATUS do_cmd__(Connection &connection,
                         const wxml::Tree &request_tree,
@@ -420,6 +425,30 @@ COMMAND_STATUS GetResultsCommand::execute(Connection &connection) {
 template<>
 COMMAND_STATUS GetStatisticsCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_statistics", error_, response());
+}
+
+template<>
+COMMAND_STATUS LookupAccountCommand::execute(Connection &connection) {
+    assert(!request().master_url.empty());
+    assert(!request().email.empty());
+    assert(!request().passwd.empty());
+
+    wxml::Tree request_tree(wxml::create_boinc_request_tree());
+
+    auto &cmd_node = request_tree.root["lookup_account"];
+    cmd_node["url"] = request().master_url;
+    cmd_node["email_addr"] = request().email;
+    cmd_node["passwd_hash"] = md5(request().passwd + request().email);
+    cmd_node["ldap_auth"] = request().ldap_auth ? 1 : 0;
+    cmd_node["server_assigned_cookie"] = request().server_assigned_cookie ? 1 : 0;
+    cmd_node["server_cookie"] = request().server_cookie;
+
+    return do_cmd__(connection, request_tree, error_, response());
+}
+
+template<>
+COMMAND_STATUS LookupAccountPollCommand::execute(Connection &connection) {
+    return do_cmd__(connection, "lookup_account_poll", error_, response());
 }
 
 template<>

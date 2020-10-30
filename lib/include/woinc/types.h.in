@@ -41,6 +41,12 @@ struct FileRef {
 
 typedef std::vector<FileRef> FileRefs;
 
+struct AccountOut {
+    int error_num = 0;
+    std::string authenticator; // only valid if error_num == 0
+    std::string error_msg;
+};
+
 struct ActiveTask {
     ACTIVE_TASK_STATE active_task_state = ACTIVE_TASK_STATE::UNINITIALIZED;
     SCHEDULER_STATE scheduler_state = SCHEDULER_STATE::UNINITIALIZED;
