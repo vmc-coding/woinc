@@ -282,6 +282,9 @@ struct LookupAccountRequest {
     std::string master_url;
     std::string passwd;
     std::string server_cookie;
+
+    LookupAccountRequest() = default;
+    LookupAccountRequest(std::string master_url, std::string email, std::string password);
 };
 
 struct LookupAccountResponse : public SuccessResponse {};

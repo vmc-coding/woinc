@@ -427,6 +427,9 @@ COMMAND_STATUS GetStatisticsCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_statistics", error_, response());
 }
 
+LookupAccountRequest::LookupAccountRequest(std::string url, std::string mail, std::string password)
+    : email(std::move(mail)), master_url(std::move(url)), passwd(std::move(password)) {}
+
 template<>
 COMMAND_STATUS LookupAccountCommand::execute(Connection &connection) {
     assert(!request().master_url.empty());
