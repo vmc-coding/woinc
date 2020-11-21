@@ -84,6 +84,16 @@ std::future<ProjectConfig> Controller::poll_project_config(const QString &host) 
     return ctrl_->poll_project_config(host.toStdString());
 }
 
+std::future<bool> Controller::start_account_lookup(const QString &host, const QString &master_url,
+                                                   const QString &email, const QString &password) {
+    return ctrl_->start_account_lookup(host.toStdString(), master_url.toStdString(),
+                                       email.toStdString(), password.toStdString());
+}
+
+std::future<AccountOut> Controller::poll_account_lookup(const QString &host) {
+    return ctrl_->poll_account_lookup(host.toStdString());
+}
+
 void Controller::add_host(QString host, QString url, unsigned short port, QString password) {
     {
         WOINC_LOCK_GUARD;

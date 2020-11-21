@@ -60,9 +60,11 @@ class ProjectAccountPage: public QWizardPage {
 
     signals:
         void project_config_loaded();
+        void go_back();
 
     private slots:
         void show_project_config_();
+        void on_error_(QString error);
 
     private:
         Controller &controller_;
@@ -71,6 +73,51 @@ class ProjectAccountPage: public QWizardPage {
 
         int remaining_pollings_;
         QTimer *poll_config_timer_;
+};
+
+class BackgroundLoginPage : public QWizardPage {
+    Q_OBJECT
+
+    public:
+        BackgroundLoginPage(Controller &controller, QString host, QWidget *parent = nullptr);
+
+        void initializePage() final;
+        void cleanupPage() final;
+
+    signals:
+        void account_key_to_be_loaded(QString email, QString password);
+        void log_in(QString account_key);
+        void logged_in();
+        void login_failed();
+
+    private slots:
+        void load_account_key_(QString email, QString password);
+        void poll_account_key_();
+        void log_in_(QString account_key);
+        void on_error_(QString error);
+
+    private:
+        Controller &controller_;
+        QString host_;
+        bool connected_ = false;
+
+        int remaining_pollings_;
+        QTimer *poll_timer_;
+
+        QString project_url_;
+};
+
+class CompletionPage: public QWizardPage {
+    Q_OBJECT
+
+    public:
+        CompletionPage(QWidget *parent = nullptr);
+
+        void initializePage() final;
+        void cleanupPage() final;
+
+    private:
+        void setup_success_page_();
 };
 
 } // namespace add_project_wizard_internals

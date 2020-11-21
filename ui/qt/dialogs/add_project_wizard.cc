@@ -19,8 +19,10 @@
 #include "qt/dialogs/add_project_wizard.h"
 
 #include <chrono>
+#include <exception>
 #include <set>
 
+#include <QAbstractButton>
 #include <QComboBox>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -41,6 +43,11 @@
 #include "qt/controller.h"
 
 namespace {
+
+const char * const FIELD_ATTACH_PROJECT_URL = "project_url";
+const char * const FIELD_LOGIN_EMAIL = "email";
+const char * const FIELD_LOGIN_PASSWORD = "password";
+const char * const FIELD_LOGIN_ACCOUNT_KEY = "account_key";
 
 QString all_category() {
     return QStringLiteral("All");
@@ -181,7 +188,7 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
     auto *project_url_lbl = new QLabel(QStringLiteral("Project URL:"));
     auto *project_url_value = new QLineEdit;
     auto *project_url_wdgt = as_horizontal_widget__(project_url_lbl, project_url_value);
-    registerField("master_url*", project_url_value);
+    registerField(FIELD_ATTACH_PROJECT_URL, project_url_value);
 
     // setup the layout of the wizard page
 
@@ -266,8 +273,9 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
 
         try {
 #ifndef NDEBUG
-            std::cout << "Poll project config of " << field("master_url").toString().toStdString() << std::endl;
+            std::cout << "Poll project config of " << field(FIELD_ATTACH_PROJECT_URL).toString().toStdString() << std::endl;
 #endif
+            // TODO should we stop the timer before this blocking wait?
             config_ = controller_.poll_project_config(host_).get();
 
             if (config_.error_num == 0) {
@@ -292,28 +300,35 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
 
 // TODO show loading animation
 void ProjectAccountPage::initializePage() {
-    try { // start loading the config
-        auto load_config_future = controller_.start_loading_project_config(host_, field("master_url").toString());
-        load_config_future.wait();
-        // TODO do we get an error message from the client?
-        if (!load_config_future.get()) {
-            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Error loading the project config"), QMessageBox::Ok);
-            close();
-        }
-#ifndef NDEBUG
-        std::cout << "Started loading project config of " << field("master_url").toString().toStdString() << std::endl;
-#endif
-    } catch (std::exception &err) {
-        QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
-        close();
-    } catch (...) {
-        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
-        close();
-    }
+    // it has to be queued so we're on this page when calling back, not on the stage switching to this page;
+    // connecting in the c'tor would be to early, because wizard's not yet set
+    connect(this, &ProjectAccountPage::go_back, wizard(), &QWizard::back, Qt::QueuedConnection);
 
-    // start polling the config for an arbitrary value of one minute
-    remaining_pollings_ = 60;
-    poll_config_timer_->start(1000);
+    try { // start loading the config
+        auto project_url = field(FIELD_ATTACH_PROJECT_URL).toString();
+
+        auto load_config_future = controller_.start_loading_project_config(host_, project_url);
+
+        // TODO this blocks the event queue until we get a result;
+        // a better approach would be to poll instead of blocking waiting
+        load_config_future.wait();
+
+        // TODO do we get an error message from the client?
+        if (!load_config_future.get())
+            throw std::runtime_error("Error loading the project config");
+
+#ifndef NDEBUG
+        std::cout << "Started loading project config of " << project_url.toStdString() << std::endl;
+#endif
+
+        // start polling the config for an arbitrary value of one minute
+        remaining_pollings_ = 60;
+        poll_config_timer_->start(1000);
+    } catch (std::exception &err) {
+        on_error_(QString::fromStdString(err.what()));
+    } catch (...) {
+        on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
+    }
 }
 
 void ProjectAccountPage::cleanupPage() {
@@ -360,6 +375,136 @@ void ProjectAccountPage::show_project_config_() {
                             or_lbl,
                             account_key_wdgt,
                             vertical_filler));
+
+    registerField(FIELD_LOGIN_EMAIL, email_value);
+    registerField(FIELD_LOGIN_PASSWORD, password_value);
+    registerField(FIELD_LOGIN_ACCOUNT_KEY, account_key_value);
+}
+
+void ProjectAccountPage::on_error_(QString error) {
+    poll_config_timer_->stop();
+    QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+    emit go_back();
+}
+
+// ----- BackgroundLoginPage -----
+
+BackgroundLoginPage::BackgroundLoginPage(Controller &controller, QString host, QWidget *parent)
+    : QWizardPage(parent), controller_(controller), host_(host), poll_timer_(new QTimer(this))
+{
+    setCommitPage(true);
+}
+
+void BackgroundLoginPage::initializePage() {
+    if (!connected_) {
+        connect(this, &BackgroundLoginPage::account_key_to_be_loaded, this, &BackgroundLoginPage::load_account_key_, Qt::QueuedConnection);
+        connect(this, &BackgroundLoginPage::log_in, this, &BackgroundLoginPage::log_in_, Qt::QueuedConnection);
+        // don't connect in the c'tor, the wizard isn't set yet!
+        connect(this, &BackgroundLoginPage::logged_in, wizard(), &QWizard::next, Qt::QueuedConnection);
+        connect(this, &BackgroundLoginPage::login_failed, wizard(), &QWizard::back, Qt::QueuedConnection);
+        connect(poll_timer_, &QTimer::timeout, this, &BackgroundLoginPage::poll_account_key_);
+        connected_ = true;
+    }
+
+    project_url_ = field(FIELD_ATTACH_PROJECT_URL).toString();
+    auto account_key = field(FIELD_LOGIN_ACCOUNT_KEY).toString();
+
+    if (account_key.isEmpty())
+        emit account_key_to_be_loaded(field(FIELD_LOGIN_EMAIL).toString(), field(FIELD_LOGIN_PASSWORD).toString());
+    else
+        emit log_in(std::move(account_key));
+}
+
+void BackgroundLoginPage::cleanupPage() {
+    poll_timer_->stop();
+}
+
+// TODO show loading animation
+void BackgroundLoginPage::load_account_key_(QString email, QString password) {
+    try { // start the account lookup
+        auto load_future = controller_.start_account_lookup(host_, project_url_, email, password);
+
+        // TODO this blocks the event queue until we get a result;
+        // a better approach would be to poll instead of blocking waiting
+        load_future.wait();
+
+        // TODO do we get an error message from the client?
+        if (!load_future.get())
+            throw std::runtime_error("Error looking up the account");
+
+#ifndef NDEBUG
+        std::cout << "Started looking up the account info" << std::endl;
+#endif
+
+        // start polling the config for an arbitrary value of one minute
+        remaining_pollings_ = 60;
+        poll_timer_->start(1000);
+    } catch (std::exception &err) {
+        on_error_(QString::fromStdString(err.what()));
+    } catch (...) {
+        on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
+    }
+}
+
+void BackgroundLoginPage::poll_account_key_() {
+    QString error;
+
+    try {
+#ifndef NDEBUG
+        std::cout << "Poll account info" << std::endl;
+#endif
+        // TODO should we stop the timer before this blocking wait?
+        auto account = controller_.poll_account_lookup(host_).get();
+
+        if (account.error_num == 0) {
+            poll_timer_->stop();
+            emit log_in(QString::fromStdString(account.authenticator));
+        } else if (account.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
+            error = QStringLiteral("Failed to lookup the account");
+        }
+    } catch (std::exception &err) {
+        error = QString::fromStdString(err.what());
+    } catch (...) {
+        error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
+    }
+
+    if (!error.isEmpty())
+        on_error_(std::move(error));
+}
+
+void BackgroundLoginPage::on_error_(QString error) {
+    poll_timer_->stop();
+    QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+    emit login_failed();
+}
+
+void BackgroundLoginPage::log_in_(QString account_key) {
+#ifndef NDEBUG
+    std::cout << "Login with account key " << account_key.toStdString() << "\n";
+#endif
+    emit logged_in();
+}
+
+// ----- CompletionPage -----
+
+CompletionPage::CompletionPage(QWidget *parent) : QWizardPage(parent) {}
+
+void CompletionPage::initializePage() {
+    setup_success_page_();
+}
+
+void CompletionPage::cleanupPage() {
+    delete layout();
+}
+
+void CompletionPage::setup_success_page_() {
+    auto *title_lbl = new QLabel(QStringLiteral("Project"));
+    title_lbl->setStyleSheet("font-weight: bold;");
+
+    auto *success_lbl = new QLabel(QStringLiteral("This project has been successfully added."));
+    auto *finish_lbl = new QLabel(QStringLiteral("Click Finish to close."));
+
+    setLayout(add_widgets__(new QVBoxLayout, title_lbl, success_lbl, finish_lbl));
 }
 
 } // namespace add_project_wizard_internals
@@ -370,8 +515,12 @@ AddProjectWizard::AddProjectWizard(Controller &controller, QString host, QWidget
 {
     using namespace woinc::ui::qt::add_project_wizard_internals;
 
+    setOptions(options() | QWizard::NoCancelButtonOnLastPage);
+
     addPage(new ChooseProjectPage(controller, host, this));
     addPage(new ProjectAccountPage(controller, host, this));
+    addPage(new BackgroundLoginPage(controller, host, this));
+    addPage(new CompletionPage(this));
 }
 
 }}}

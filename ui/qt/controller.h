@@ -78,6 +78,10 @@ class Controller : public QObject {
         std::future<bool> start_loading_project_config(const QString &host, const QString &master_url);
         std::future<ProjectConfig> poll_project_config(const QString &host);
 
+        std::future<bool> start_account_lookup(const QString &host, const QString &master_url,
+                                               const QString &email, const QString &password);
+        std::future<AccountOut> poll_account_lookup(const QString &host);
+
         // TODO wording: do we add a host or a client?
         void add_host(QString host, QString url, unsigned short port, QString password);
 
