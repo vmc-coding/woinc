@@ -110,6 +110,10 @@ class Controller {
         // if it's still loading the resulting config.error_num will be -204, poll again after some delay;
         virtual std::future<AccountOut> poll_account_lookup(const std::string &host);
 
+        virtual std::future<bool> attach_project(const std::string &host,
+                                                 std::string master_url,
+                                                 std::string authenticator);
+
     private:
         struct Impl;
         std::unique_ptr<Impl> impl_;

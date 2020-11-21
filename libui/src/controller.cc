@@ -113,6 +113,8 @@ class WOINCUI_LOCAL Controller::Impl {
                                                std::string email, std::string password);
         std::future<AccountOut> poll_account_lookup(const std::string &host);
 
+        std::future<bool> attach_project(const std::string &host, std::string master_url, std::string authenticator);
+
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
         // which will be deleted in the erase call leading to a use after free access later on
@@ -366,7 +368,7 @@ std::future<bool> Controller::Impl::project_op(const std::string &host, PROJECT_
 }
 
 std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
-                               const std::string &master_url, const std::string &task_name) {
+                                            const std::string &master_url, const std::string &task_name) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
     check_not_empty__(task_name, "Missing task name");
@@ -527,6 +529,23 @@ std::future<AccountOut> Controller::Impl::poll_account_lookup(const std::string 
         host,
         [](auto &r) { return r.account_out; },
         "Error polling the account info");
+}
+
+std::future<bool> Controller::Impl::attach_project(const std::string &host,
+                                                   std::string master_url,
+                                                   std::string authenticator) {
+    check_not_empty_host_name__(host);
+    check_not_empty__(master_url, "Missing master url");
+    check_not_empty__(authenticator, "Missing authenticator");
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::ProjectAttachCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error attaching the project",
+        {std::move(master_url), std::move(authenticator)});
 }
 
 void Controller::Impl::remove_host_(std::string host) {
@@ -725,6 +744,12 @@ std::future<bool> Controller::start_account_lookup(const std::string &host, std:
 
 std::future<AccountOut> Controller::poll_account_lookup(const std::string &host) {
     return impl_->poll_account_lookup(host);
+}
+
+std::future<bool> Controller::attach_project(const std::string &host,
+                                             std::string master_url,
+                                             std::string authenticator) {
+    return impl_->attach_project(host, std::move(master_url), std::move(authenticator));
 }
 
 }}
