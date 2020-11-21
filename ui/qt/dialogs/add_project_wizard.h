@@ -75,25 +75,25 @@ class ProjectAccountPage: public QWizardPage {
         QTimer *poll_config_timer_;
 };
 
-class BackgroundLoginPage : public QWizardPage {
+class AttachProjectPage : public QWizardPage {
     Q_OBJECT
 
     public:
-        BackgroundLoginPage(Controller &controller, QString host, QWidget *parent = nullptr);
+        AttachProjectPage(Controller &controller, QString host, QWidget *parent = nullptr);
 
         void initializePage() final;
         void cleanupPage() final;
 
     signals:
         void account_key_to_be_loaded(QString email, QString password);
-        void log_in(QString account_key);
-        void logged_in();
-        void login_failed();
+        void project_to_be_attached(QString account_key);
+        void project_attached();
+        void failed();
 
     private slots:
         void load_account_key_(QString email, QString password);
         void poll_account_key_();
-        void log_in_(QString account_key);
+        void attach_project_(QString account_key);
         void on_error_(QString error);
 
     private:

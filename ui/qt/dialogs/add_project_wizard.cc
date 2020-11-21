@@ -387,22 +387,22 @@ void ProjectAccountPage::on_error_(QString error) {
     emit go_back();
 }
 
-// ----- BackgroundLoginPage -----
+// ----- AttachProjectPage -----
 
-BackgroundLoginPage::BackgroundLoginPage(Controller &controller, QString host, QWidget *parent)
+AttachProjectPage::AttachProjectPage(Controller &controller, QString host, QWidget *parent)
     : QWizardPage(parent), controller_(controller), host_(host), poll_timer_(new QTimer(this))
 {
     setCommitPage(true);
 }
 
-void BackgroundLoginPage::initializePage() {
+void AttachProjectPage::initializePage() {
     if (!connected_) {
-        connect(this, &BackgroundLoginPage::account_key_to_be_loaded, this, &BackgroundLoginPage::load_account_key_, Qt::QueuedConnection);
-        connect(this, &BackgroundLoginPage::log_in, this, &BackgroundLoginPage::log_in_, Qt::QueuedConnection);
+        connect(this, &AttachProjectPage::account_key_to_be_loaded, this, &AttachProjectPage::load_account_key_, Qt::QueuedConnection);
+        connect(this, &AttachProjectPage::project_to_be_attached, this, &AttachProjectPage::attach_project_, Qt::QueuedConnection);
         // don't connect in the c'tor, the wizard isn't set yet!
-        connect(this, &BackgroundLoginPage::logged_in, wizard(), &QWizard::next, Qt::QueuedConnection);
-        connect(this, &BackgroundLoginPage::login_failed, wizard(), &QWizard::back, Qt::QueuedConnection);
-        connect(poll_timer_, &QTimer::timeout, this, &BackgroundLoginPage::poll_account_key_);
+        connect(this, &AttachProjectPage::project_attached, wizard(), &QWizard::next, Qt::QueuedConnection);
+        connect(this, &AttachProjectPage::failed, wizard(), &QWizard::back, Qt::QueuedConnection);
+        connect(poll_timer_, &QTimer::timeout, this, &AttachProjectPage::poll_account_key_);
         connected_ = true;
     }
 
@@ -412,15 +412,15 @@ void BackgroundLoginPage::initializePage() {
     if (account_key.isEmpty())
         emit account_key_to_be_loaded(field(FIELD_LOGIN_EMAIL).toString(), field(FIELD_LOGIN_PASSWORD).toString());
     else
-        emit log_in(std::move(account_key));
+        emit project_to_be_attached(std::move(account_key));
 }
 
-void BackgroundLoginPage::cleanupPage() {
+void AttachProjectPage::cleanupPage() {
     poll_timer_->stop();
 }
 
 // TODO show loading animation
-void BackgroundLoginPage::load_account_key_(QString email, QString password) {
+void AttachProjectPage::load_account_key_(QString email, QString password) {
     try { // start the account lookup
         auto load_future = controller_.start_account_lookup(host_, project_url_, email, password);
 
@@ -446,7 +446,7 @@ void BackgroundLoginPage::load_account_key_(QString email, QString password) {
     }
 }
 
-void BackgroundLoginPage::poll_account_key_() {
+void AttachProjectPage::poll_account_key_() {
     QString error;
 
     try {
@@ -458,7 +458,7 @@ void BackgroundLoginPage::poll_account_key_() {
 
         if (account.error_num == 0) {
             poll_timer_->stop();
-            emit log_in(QString::fromStdString(account.authenticator));
+            emit project_to_be_attached(QString::fromStdString(account.authenticator));
         } else if (account.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
             error = QStringLiteral("Failed to lookup the account");
         }
@@ -472,21 +472,21 @@ void BackgroundLoginPage::poll_account_key_() {
         on_error_(std::move(error));
 }
 
-void BackgroundLoginPage::on_error_(QString error) {
+void AttachProjectPage::on_error_(QString error) {
     poll_timer_->stop();
     QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
-    emit login_failed();
+    emit failed();
 }
 
-void BackgroundLoginPage::log_in_(QString account_key) {
+void AttachProjectPage::attach_project_(QString account_key) {
 #ifndef NDEBUG
-    std::cout << "Attach with account key " << account_key.toStdString() << "\n";
+    std::cout << "Attach project\n";
 #endif
     QString error;
 
     try {
         if (controller_.attach_project(host_, std::move(project_url_), std::move(account_key)).get())
-            emit logged_in();
+            emit project_attached();
         else
             error = QStringLiteral("Failed to attach the project");
     } catch (std::exception &err) {
@@ -533,7 +533,7 @@ AddProjectWizard::AddProjectWizard(Controller &controller, QString host, QWidget
 
     addPage(new ChooseProjectPage(controller, host, this));
     addPage(new ProjectAccountPage(controller, host, this));
-    addPage(new BackgroundLoginPage(controller, host, this));
+    addPage(new AttachProjectPage(controller, host, this));
     addPage(new CompletionPage(this));
 }
 
