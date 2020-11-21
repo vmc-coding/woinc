@@ -109,6 +109,10 @@ class WOINCUI_LOCAL Controller::Impl {
         std::future<bool> start_loading_project_config(const std::string &host, std::string master_url);
         std::future<ProjectConfig> poll_project_config(const std::string &host);
 
+        std::future<bool> start_account_lookup(const std::string &host, std::string master_url,
+                                               std::string email, std::string password);
+        std::future<AccountOut> poll_account_lookup(const std::string &host);
+
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
         // which will be deleted in the erase call leading to a use after free access later on
@@ -496,6 +500,35 @@ std::future<ProjectConfig> Controller::Impl::poll_project_config(const std::stri
         "Error polling the project config");
 }
 
+std::future<bool> Controller::Impl::start_account_lookup(const std::string &host, std::string master_url,
+                                                         std::string email, std::string password) {
+    check_not_empty_host_name__(host);
+    check_not_empty__(master_url, "Missing master url");
+    check_not_empty__(email, "Missing email");
+    check_not_empty__(password, "Missing password");
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::LookupAccountCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error looking up the account info",
+        {master_url, email, password});
+}
+
+std::future<AccountOut> Controller::Impl::poll_account_lookup(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::LookupAccountPollCommand, AccountOut>(
+        __func__,
+        host,
+        [](auto &r) { return r.account_out; },
+        "Error polling the account info");
+}
+
 void Controller::Impl::remove_host_(std::string host) {
     periodic_tasks_scheduler_context_.remove_host(host);
     host_controllers_.at(host)->shutdown();
@@ -683,6 +716,15 @@ std::future<bool> Controller::start_loading_project_config(const std::string &ho
 
 std::future<ProjectConfig> Controller::poll_project_config(const std::string &host) {
     return impl_->poll_project_config(host);
+}
+
+std::future<bool> Controller::start_account_lookup(const std::string &host, std::string master_url,
+                                                   std::string email, std::string password) {
+    return impl_->start_account_lookup(host, std::move(master_url), std::move(email), std::move(password));
+}
+
+std::future<AccountOut> Controller::poll_account_lookup(const std::string &host) {
+    return impl_->poll_account_lookup(host);
 }
 
 }}

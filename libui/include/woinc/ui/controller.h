@@ -105,6 +105,11 @@ class Controller {
         // yep, that's not a nice interface, we'll use std::variant when switching to std-c++17
         virtual std::future<ProjectConfig> poll_project_config(const std::string &host);
 
+        virtual std::future<bool> start_account_lookup(const std::string &host, std::string master_url,
+                                                       std::string email, std::string password);
+        // if it's still loading the resulting config.error_num will be -204, poll again after some delay;
+        virtual std::future<AccountOut> poll_account_lookup(const std::string &host);
+
     private:
         struct Impl;
         std::unique_ptr<Impl> impl_;
