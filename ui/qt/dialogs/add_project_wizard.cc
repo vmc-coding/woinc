@@ -480,9 +480,23 @@ void BackgroundLoginPage::on_error_(QString error) {
 
 void BackgroundLoginPage::log_in_(QString account_key) {
 #ifndef NDEBUG
-    std::cout << "Login with account key " << account_key.toStdString() << "\n";
+    std::cout << "Attach with account key " << account_key.toStdString() << "\n";
 #endif
-    emit logged_in();
+    QString error;
+
+    try {
+        if (controller_.attach_project(host_, std::move(project_url_), std::move(account_key)).get())
+            emit logged_in();
+        else
+            error = QStringLiteral("Failed to attach the project");
+    } catch (std::exception &err) {
+        error = QString::fromStdString(err.what());
+    } catch (...) {
+        error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
+    }
+
+    if (!error.isEmpty())
+        on_error_(std::move(error));
 }
 
 // ----- CompletionPage -----

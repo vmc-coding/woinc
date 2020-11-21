@@ -82,6 +82,8 @@ class Controller : public QObject {
                                                const QString &email, const QString &password);
         std::future<AccountOut> poll_account_lookup(const QString &host);
 
+        std::future<bool> attach_project(const QString &host, const QString &master_url, const QString &account_key);
+
         // TODO wording: do we add a host or a client?
         void add_host(QString host, QString url, unsigned short port, QString password);
 
