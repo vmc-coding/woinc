@@ -90,6 +90,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
     WOINC_ADD_BTN(Command::NO_NEW_TASKS, "No new tasks");
     WOINC_ADD_BTN(Command::ALLOW_NEW_TASKS, "Allow new tasks");
     WOINC_ADD_BTN(Command::RESET, "Reset project");
+    // TODO should we ask the user before removing it?
     WOINC_ADD_BTN(Command::REMOVE, "Remove");
     WOINC_ADD_BTN(Command::PROPERTIES, "Properties");
 
