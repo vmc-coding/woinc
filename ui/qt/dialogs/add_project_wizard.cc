@@ -356,6 +356,7 @@ void ProjectAccountPage::show_project_config_() {
 
     auto *password_lbl = new QLabel(QStringLiteral("Password:"));
     auto *password_value = new QLineEdit;
+    password_value->setEchoMode(QLineEdit::Password);
 
     auto *mail_pwd_lyt = new QGridLayout;
     mail_pwd_lyt->addWidget(email_lbl, 0, 0);
@@ -373,6 +374,7 @@ void ProjectAccountPage::show_project_config_() {
 
     auto *account_key_lbl = new QLabel(QStringLiteral("Account key:"));
     auto *account_key_value = new QLineEdit;
+    account_key_value->setEchoMode(QLineEdit::Password);
 
     auto *account_key_wdgt = new QGroupBox;
     account_key_wdgt->setContentsMargins(0, 0, 0, 0);
