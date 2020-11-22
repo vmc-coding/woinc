@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/add_project_wizard.h --
-   Written and Copyright (C) 2020 by vmc.
+   Written and Copyright (C) 2020, 2021 by vmc.
 
    This file is part of woinc.
 
@@ -19,18 +19,60 @@
 #ifndef WOINC_UI_QT_ADD_PROJECT_WIZARD_H_
 #define WOINC_UI_QT_ADD_PROJECT_WIZARD_H_
 
+#include <future>
+
+#include <QTimer>
 #include <QWizard>
 #include <QWizardPage>
+#include <QVariant>
 
 #include <woinc/types.h>
 
-struct QTimer;
+// not really nice to do it here, but haven't found a better place for the moment
+Q_DECLARE_METATYPE(woinc::ProjectListEntry)
+Q_DECLARE_METATYPE(woinc::AllProjectsList)
 
 namespace woinc { namespace ui { namespace qt {
 
 struct Controller;
 
 namespace add_project_wizard_internals {
+
+template<typename SUBJECT, typename IMPL>
+class Poller {
+    public:
+        Poller();
+
+    protected:
+        ~Poller() = default;
+
+    public:
+        void start(std::future<SUBJECT> &&future, int timeout_secs = 60);
+        void stop();
+
+    private:
+        QTimer timer_;
+        std::future<SUBJECT> future_;
+        int remaining_tries_;
+};
+
+class PollerSignals : public QObject {
+    Q_OBJECT
+
+    public:
+        PollerSignals(QObject *parent = nullptr) : QObject(parent) {}
+        virtual ~PollerSignals() = default;
+
+    signals:
+        void timed_out();
+        void failed(QString error);
+        void loaded(QVariant subject);
+};
+
+struct AllProjectsListPoller : public PollerSignals, public Poller<AllProjectsList, AllProjectsListPoller>{
+    AllProjectsListPoller(QObject *parent = nullptr) : PollerSignals(parent), Poller() {}
+    virtual ~AllProjectsListPoller() = default;
+};
 
 class ChooseProjectPage: public QWizardPage {
     Q_OBJECT
@@ -39,6 +81,7 @@ class ChooseProjectPage: public QWizardPage {
         ChooseProjectPage(Controller &controller, QString host, QWidget *parent = nullptr);
 
         void initializePage() final;
+        void cleanupPage() final;
         bool isComplete() const final;
 
     signals:
@@ -47,6 +90,7 @@ class ChooseProjectPage: public QWizardPage {
     private:
         Controller &controller_;
         QString host_;
+        AllProjectsListPoller poller_;
         AllProjectsList all_projects_;
 };
 

@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/add_project_wizard.cc --
-   Written and Copyright (C) 2020 by vmc.
+   Written and Copyright (C) 2020, 2021 by vmc.
 
    This file is part of woinc.
 
@@ -31,9 +31,11 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QScrollArea>
+#include <QStackedLayout>
 #include <QStringList>
 #include <QTextEdit>
 #include <QTimer>
+#include <QVariant>
 #include <QVBoxLayout>
 
 #ifndef NDEBUG
@@ -48,6 +50,10 @@ const char * const FIELD_ATTACH_PROJECT_URL = "project_url";
 const char * const FIELD_LOGIN_EMAIL = "email";
 const char * const FIELD_LOGIN_PASSWORD = "password";
 const char * const FIELD_LOGIN_ACCOUNT_KEY = "account_key";
+
+enum {
+    POLLING_INTERVAL_MSEC = 200
+};
 
 QString all_category() {
     return QStringLiteral("All");
@@ -112,12 +118,53 @@ namespace woinc { namespace ui { namespace qt {
 
 namespace add_project_wizard_internals {
 
+// ----- Poller -----
+
+template<typename SUBJECT, typename IMPL>
+Poller<SUBJECT, IMPL>::Poller() {
+    timer_.setInterval(POLLING_INTERVAL_MSEC);
+
+    QObject::connect(&timer_, &QTimer::timeout, [&]() {
+        if (future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            timer_.stop();
+            try {
+                emit static_cast<IMPL *>(this)->loaded(QVariant::fromValue(std::move(future_.get())));
+            } catch (const std::exception &err) {
+                emit static_cast<IMPL *>(this)->failed(QString::fromStdString(err.what()));
+            }
+        } else if (--remaining_tries_ == 0) {
+            timer_.stop();
+            emit static_cast<IMPL *>(this)->timed_out();
+        }
+    });
+}
+
+template<typename SUBJECT, typename IMPL>
+void Poller<SUBJECT, IMPL>::start(std::future<SUBJECT> &&future, int timeout_secs) {
+    assert(!timer_.isActive());
+    future_ = std::move(future);
+    remaining_tries_ = timeout_secs * 1000 / POLLING_INTERVAL_MSEC;
+    timer_.start();
+}
+
+template<typename SUBJECT, typename IMPL>
+void Poller<SUBJECT, IMPL>::stop() {
+    timer_.stop();
+}
+
 // ----- ChooseProjectPage -----
 
 ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidget *parent)
     : QWizardPage(parent), controller_(controller), host_(std::move(host))
 {
+    setLayout(new QStackedLayout);
+
     // create all widgets of the wizard page
+
+    // loading widget
+
+    auto *loading_lbl = new QLabel(QStringLiteral("Loading project list ."));
+    layout()->addWidget(loading_lbl);
 
     // left side
 
@@ -192,13 +239,13 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
 
     // setup the layout of the wizard page
 
-    setLayout(add_widgets__(new QVBoxLayout,
-                            topic__(QStringLiteral("Choose a project")),
-                            new QLabel(QStringLiteral("To choose a project, click its name or type its URL below.")),
-                            as_horizontal_widget__(
-                                project_selection_wdgt,
-                                project_details_wdgt),
-                            project_url_wdgt));
+    layout()->addWidget(as_combined_widget__(new QVBoxLayout,
+                                             topic__(QStringLiteral("Choose a project")),
+                                             new QLabel(QStringLiteral("To choose a project, click its name or type its URL below.")),
+                                             as_horizontal_widget__(
+                                                 project_selection_wdgt,
+                                                 project_details_wdgt),
+                                             project_url_wdgt));
 
     // connect the widgets
 
@@ -241,27 +288,43 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
 
     connect(this, &ChooseProjectPage::all_project_list_loaded, [=]() {
         categories_cb->addItems(extract_categories__(all_projects_));
+        static_cast<QStackedLayout*>(layout())->setCurrentIndex(1);
     });
 
     connect(project_url_value, &QLineEdit::textChanged, this, &ChooseProjectPage::completeChanged);
+
+    // connect the poller
+
+    connect(&poller_, &AllProjectsListPoller::loaded, [=](QVariant apl) {
+        all_projects_ = std::move(apl.value<AllProjectsList>());
+        emit all_project_list_loaded();
+    });
+
+    connect(&poller_, &AllProjectsListPoller::timed_out, [=]() {
+        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Timeout while loading the projects list"), QMessageBox::Ok);
+        close();
+    });
+
+    connect(&poller_, &AllProjectsListPoller::failed, [=](QString error) {
+        QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+        close();
+    });
 }
 
 void ChooseProjectPage::initializePage() {
-    // TODO show loading animation
-    QTimer::singleShot(0, [&]() {
-        try {
-            auto all_projects_future = controller_.load_all_projects_list(host_);
-            all_projects_future.wait();
-            all_projects_ = all_projects_future.get();
-            emit all_project_list_loaded();
-        } catch (std::exception &err) {
-            QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
-            close();
-        } catch (...) {
-            QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
-            close();
-        }
-    });
+    try {
+        poller_.start(std::move(controller_.load_all_projects_list(host_)));
+    } catch (const std::exception &err) {
+        QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
+        close();
+    } catch (...) {
+        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Unhandled error occurred, please inform a dev about it"), QMessageBox::Ok);
+        close();
+    }
+}
+
+void ChooseProjectPage::cleanupPage() {
+    poller_.stop();
 }
 
 bool ChooseProjectPage::isComplete() const {
@@ -290,7 +353,7 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
             } else if (config_.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
                 error = QStringLiteral("Failed to load the project configuration");
             }
-        } catch (std::exception &err) {
+        } catch (const std::exception &err) {
             error = QString::fromStdString(err.what());
         } catch (...) {
             error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
@@ -330,7 +393,7 @@ void ProjectAccountPage::initializePage() {
         // start polling the config for an arbitrary value of one minute
         remaining_pollings_ = 60;
         poll_config_timer_->start(1000);
-    } catch (std::exception &err) {
+    } catch (const std::exception &err) {
         on_error_(QString::fromStdString(err.what()));
     } catch (...) {
         on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
@@ -458,7 +521,7 @@ void AttachProjectPage::load_account_key_(QString email, QString password) {
         // start polling the config for an arbitrary value of one minute
         remaining_pollings_ = 60;
         poll_timer_->start(1000);
-    } catch (std::exception &err) {
+    } catch (const std::exception &err) {
         on_error_(QString::fromStdString(err.what()));
     } catch (...) {
         on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
@@ -481,7 +544,7 @@ void AttachProjectPage::poll_account_key_() {
         } else if (account.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
             error = QStringLiteral("Failed to lookup the account");
         }
-    } catch (std::exception &err) {
+    } catch (const std::exception &err) {
         error = QString::fromStdString(err.what());
     } catch (...) {
         error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
@@ -508,7 +571,7 @@ void AttachProjectPage::attach_project_(QString account_key) {
             emit project_attached();
         else
             error = QStringLiteral("Failed to attach the project");
-    } catch (std::exception &err) {
+    } catch (const std::exception &err) {
         error = QString::fromStdString(err.what());
     } catch (...) {
         error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
