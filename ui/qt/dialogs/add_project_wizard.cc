@@ -242,6 +242,8 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
     connect(this, &ChooseProjectPage::all_project_list_loaded, [=]() {
         categories_cb->addItems(extract_categories__(all_projects_));
     });
+
+    connect(project_url_value, &QLineEdit::textChanged, this, &ChooseProjectPage::completeChanged);
 }
 
 void ChooseProjectPage::initializePage() {
@@ -262,6 +264,10 @@ void ChooseProjectPage::initializePage() {
     });
 }
 
+bool ChooseProjectPage::isComplete() const {
+    return !field(FIELD_ATTACH_PROJECT_URL).toString().trimmed().isEmpty();
+}
+
 // ----- ProjectAccountPage -----
 
 ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWidget *parent)
@@ -273,7 +279,7 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
 
         try {
 #ifndef NDEBUG
-            std::cout << "Poll project config of " << field(FIELD_ATTACH_PROJECT_URL).toString().toStdString() << std::endl;
+            std::cout << "Poll project config of " << field(FIELD_ATTACH_PROJECT_URL).toString().trimmed().toStdString() << std::endl;
 #endif
             // TODO should we stop the timer before this blocking wait?
             config_ = controller_.poll_project_config(host_).get();
@@ -305,7 +311,7 @@ void ProjectAccountPage::initializePage() {
     connect(this, &ProjectAccountPage::go_back, wizard(), &QWizard::back, Qt::QueuedConnection);
 
     try { // start loading the config
-        auto project_url = field(FIELD_ATTACH_PROJECT_URL).toString();
+        auto project_url = field(FIELD_ATTACH_PROJECT_URL).toString().trimmed();
 
         auto load_config_future = controller_.start_loading_project_config(host_, project_url);
 
@@ -333,6 +339,12 @@ void ProjectAccountPage::initializePage() {
 
 void ProjectAccountPage::cleanupPage() {
     poll_config_timer_->stop();
+}
+
+bool ProjectAccountPage::isComplete() const {
+    return (!field(FIELD_LOGIN_EMAIL).toString().trimmed().isEmpty() &&
+            !field(FIELD_LOGIN_PASSWORD).toString().trimmed().isEmpty())
+        || !field(FIELD_LOGIN_ACCOUNT_KEY).toString().trimmed().isEmpty();
 }
 
 void ProjectAccountPage::show_project_config_() {
@@ -379,6 +391,10 @@ void ProjectAccountPage::show_project_config_() {
     registerField(FIELD_LOGIN_EMAIL, email_value);
     registerField(FIELD_LOGIN_PASSWORD, password_value);
     registerField(FIELD_LOGIN_ACCOUNT_KEY, account_key_value);
+
+    connect(email_value, &QLineEdit::textChanged, this, &ProjectAccountPage::completeChanged);
+    connect(password_value, &QLineEdit::textChanged, this, &ProjectAccountPage::completeChanged);
+    connect(account_key_value, &QLineEdit::textChanged, this, &ProjectAccountPage::completeChanged);
 }
 
 void ProjectAccountPage::on_error_(QString error) {
@@ -406,11 +422,12 @@ void AttachProjectPage::initializePage() {
         connected_ = true;
     }
 
-    project_url_ = field(FIELD_ATTACH_PROJECT_URL).toString();
-    auto account_key = field(FIELD_LOGIN_ACCOUNT_KEY).toString();
+    project_url_ = field(FIELD_ATTACH_PROJECT_URL).toString().trimmed();
+    auto account_key = field(FIELD_LOGIN_ACCOUNT_KEY).toString().trimmed();
 
     if (account_key.isEmpty())
-        emit account_key_to_be_loaded(field(FIELD_LOGIN_EMAIL).toString(), field(FIELD_LOGIN_PASSWORD).toString());
+        emit account_key_to_be_loaded(field(FIELD_LOGIN_EMAIL).toString().trimmed(),
+                                      field(FIELD_LOGIN_PASSWORD).toString().trimmed());
     else
         emit project_to_be_attached(std::move(account_key));
 }

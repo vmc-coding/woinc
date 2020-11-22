@@ -39,6 +39,7 @@ class ChooseProjectPage: public QWizardPage {
         ChooseProjectPage(Controller &controller, QString host, QWidget *parent = nullptr);
 
         void initializePage() final;
+        bool isComplete() const final;
 
     signals:
         void all_project_list_loaded();
@@ -57,6 +58,7 @@ class ProjectAccountPage: public QWizardPage {
 
         void initializePage() final;
         void cleanupPage() final;
+        bool isComplete() const final;
 
     signals:
         void project_config_loaded();
