@@ -161,6 +161,8 @@ SimpleProgressAnimation::SimpleProgressAnimation(QWidget *parent)
     : QWidget(parent), timer_(new QTimer(this)), label_(new QLabel(this))
 {
     label_->setStyleSheet("font-weight: bold");
+    label_->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    label_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     setLayout(add_widgets__(new QVBoxLayout, label_));
 
     connect(timer_, &QTimer::timeout, [=]() {
@@ -467,6 +469,7 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
 void ProjectAccountPage::initializePage() {
     // it has to be queued so we're on this page when calling back, not on the stage switching to this page;
     // connecting in the c'tor would be too early, because wizard's not yet set
+    // TODO do we have to check if we're already connected? see AttachProjectPage
     connect(this, &ProjectAccountPage::go_back, wizard(), &QWizard::back, Qt::QueuedConnection);
 
     progress_animation_->start(QStringLiteral("Loading project configuration"));
@@ -521,9 +524,11 @@ void ProjectAccountPage::on_error_(QString error) {
 // ----- AttachProjectPage -----
 
 AttachProjectPage::AttachProjectPage(Controller &controller, QString host, QWidget *parent)
-    : QWizardPage(parent), controller_(controller), host_(host), poll_timer_(new QTimer(this))
+    : QWizardPage(parent), controller_(controller), host_(host), poll_timer_(new QTimer(this)), progress_animation_(new SimpleProgressAnimation(this))
 {
     setCommitPage(true);
+
+    setLayout(add_widgets__(new QVBoxLayout, progress_animation_));
 }
 
 void AttachProjectPage::initializePage() {
@@ -550,10 +555,12 @@ void AttachProjectPage::initializePage() {
 void AttachProjectPage::cleanupPage() {
     QWizardPage::cleanupPage();
     poll_timer_->stop();
+    progress_animation_->stop();
 }
 
-// TODO show loading animation
 void AttachProjectPage::load_account_key_(QString email, QString password) {
+    progress_animation_->start(QStringLiteral("Looking up the account key"));
+
     try { // start the account lookup
         auto load_future = controller_.start_account_lookup(host_, project_url_, email, password);
 
@@ -591,6 +598,7 @@ void AttachProjectPage::poll_account_key_() {
 
         if (account.error_num == 0) {
             poll_timer_->stop();
+            progress_animation_->stop();
             emit project_to_be_attached(QString::fromStdString(account.authenticator));
         } else if (account.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
             error = QStringLiteral("Failed to lookup the account");
@@ -607,6 +615,7 @@ void AttachProjectPage::poll_account_key_() {
 
 void AttachProjectPage::on_error_(QString error) {
     poll_timer_->stop();
+    progress_animation_->stop();
     QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
     emit failed();
 }
@@ -617,7 +626,10 @@ void AttachProjectPage::attach_project_(QString account_key) {
 #endif
     QString error;
 
+    progress_animation_->start(QStringLiteral("Attaching project"));
+
     try {
+        // TODO don't block the event queue
         if (controller_.attach_project(host_, std::move(project_url_), std::move(account_key)).get())
             emit project_attached();
         else
@@ -627,6 +639,8 @@ void AttachProjectPage::attach_project_(QString account_key) {
     } catch (...) {
         error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
     }
+
+    progress_animation_->stop();
 
     if (!error.isEmpty())
         on_error_(std::move(error));

@@ -174,6 +174,8 @@ class AttachProjectPage : public QWizardPage {
         QTimer *poll_timer_;
 
         QString project_url_;
+
+        SimpleProgressAnimation *progress_animation_;
 };
 
 class CompletionPage: public QWizardPage {
