@@ -20,8 +20,8 @@
 #define WOINC_UI_QT_ADD_PROJECT_WIZARD_H_
 
 #include <future>
+#include <memory>
 
-#include <QTimer>
 #include <QWidget>
 #include <QWizard>
 #include <QWizardPage>
@@ -34,6 +34,7 @@ Q_DECLARE_METATYPE(woinc::ProjectListEntry)
 Q_DECLARE_METATYPE(woinc::AllProjectsList)
 
 struct QLabel;
+struct QTimer;
 
 namespace woinc { namespace ui { namespace qt {
 
@@ -47,14 +48,14 @@ class Poller {
         Poller();
 
     protected:
-        ~Poller() = default;
+        ~Poller();
 
     public:
         void start(std::future<SUBJECT> &&future, int timeout_secs = 60);
         void stop();
 
     private:
-        QTimer timer_;
+        std::unique_ptr<QTimer> timer_;
         std::future<SUBJECT> future_;
         int remaining_tries_;
 };
@@ -82,14 +83,14 @@ class SimpleProgressAnimation : public QWidget {
 
     public:
         SimpleProgressAnimation(QWidget *parent = nullptr);
-        virtual ~SimpleProgressAnimation() = default;
+        virtual ~SimpleProgressAnimation();
 
         void start(QString base_msg);
         void stop();
 
     private:
+        QTimer *timer_;
         QString base_msg_;
-        QTimer timer_;
         int counter_;
         QLabel *label_;
 };

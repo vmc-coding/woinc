@@ -121,56 +121,61 @@ namespace add_project_wizard_internals {
 // ----- Poller -----
 
 template<typename SUBJECT, typename IMPL>
-Poller<SUBJECT, IMPL>::Poller() {
-    timer_.setInterval(POLLING_INTERVAL_MSEC);
+Poller<SUBJECT, IMPL>::Poller() : timer_(new QTimer) {
+    timer_->setInterval(POLLING_INTERVAL_MSEC);
 
-    QObject::connect(&timer_, &QTimer::timeout, [&]() {
+    QObject::connect(timer_.get(), &QTimer::timeout, [&]() {
         if (future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            timer_.stop();
+            timer_->stop();
             try {
                 emit static_cast<IMPL *>(this)->loaded(QVariant::fromValue(std::move(future_.get())));
             } catch (const std::exception &err) {
                 emit static_cast<IMPL *>(this)->failed(QString::fromStdString(err.what()));
             }
         } else if (--remaining_tries_ == 0) {
-            timer_.stop();
+            timer_->stop();
             emit static_cast<IMPL *>(this)->timed_out();
         }
     });
 }
 
 template<typename SUBJECT, typename IMPL>
+Poller<SUBJECT, IMPL>::~Poller() = default;
+
+template<typename SUBJECT, typename IMPL>
 void Poller<SUBJECT, IMPL>::start(std::future<SUBJECT> &&future, int timeout_secs) {
-    assert(!timer_.isActive());
+    assert(!timer_->isActive());
     future_ = std::move(future);
     remaining_tries_ = timeout_secs * 1000 / POLLING_INTERVAL_MSEC;
-    timer_.start();
+    timer_->start();
 }
 
 template<typename SUBJECT, typename IMPL>
 void Poller<SUBJECT, IMPL>::stop() {
-    timer_.stop();
+    timer_->stop();
 }
 
 // ----- SimpleProgressAnimation -----
 
 SimpleProgressAnimation::SimpleProgressAnimation(QWidget *parent)
-    : QWidget(parent), label_(new QLabel(this))
+    : QWidget(parent), timer_(new QTimer(this)), label_(new QLabel(this))
 {
-    connect(&timer_, &QTimer::timeout, [=]() {
+    connect(timer_, &QTimer::timeout, [=]() {
         label_->setText(base_msg_ + QStringLiteral(".").repeated(counter_));
         counter_ = (counter_ + 1) % 4;
 
-        if (timer_.isSingleShot()) {
-            timer_.setInterval(500);
-            timer_.setSingleShot(false);
-            timer_.start();
+        if (timer_->isSingleShot()) {
+            timer_->setInterval(500);
+            timer_->setSingleShot(false);
+            timer_->start();
         }
     });
 
     label_->setStyleSheet("font-weight: bold");
     setLayout(add_widgets__(new QVBoxLayout, label_));
 }
+
+SimpleProgressAnimation::~SimpleProgressAnimation() = default;
 
 void SimpleProgressAnimation::start(QString base_msg) {
     base_msg_ = std::move(base_msg);
@@ -179,13 +184,13 @@ void SimpleProgressAnimation::start(QString base_msg) {
 
     // don't show anything for an initial delay of 200ms
     label_->clear();
-    timer_.setInterval(200);
-    timer_.setSingleShot(true);
-    timer_.start();
+    timer_->setInterval(200);
+    timer_->setSingleShot(true);
+    timer_->start();
 }
 
 void SimpleProgressAnimation::stop() {
-    timer_.stop();
+    timer_->stop();
 }
 
 // ----- ChooseProjectPage -----
