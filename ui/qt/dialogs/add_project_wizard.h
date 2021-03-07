@@ -102,7 +102,6 @@ class ChooseProjectPage: public QWizardPage {
         ChooseProjectPage(Controller &controller, QString host, QWidget *parent = nullptr);
 
         void initializePage() final;
-        void cleanupPage() final;
         bool isComplete() const final;
 
     signals:
@@ -132,7 +131,6 @@ class ProjectAccountPage: public QWizardPage {
         void go_back();
 
     private slots:
-        void show_project_config_();
         void on_error_(QString error);
 
     private:
@@ -142,6 +140,8 @@ class ProjectAccountPage: public QWizardPage {
 
         int remaining_pollings_;
         QTimer *poll_config_timer_;
+
+        SimpleProgressAnimation *progress_animation_;
 };
 
 class AttachProjectPage : public QWizardPage {
