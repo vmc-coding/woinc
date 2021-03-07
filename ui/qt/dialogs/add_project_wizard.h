@@ -22,6 +22,7 @@
 #include <future>
 
 #include <QTimer>
+#include <QWidget>
 #include <QWizard>
 #include <QWizardPage>
 #include <QVariant>
@@ -31,6 +32,8 @@
 // not really nice to do it here, but haven't found a better place for the moment
 Q_DECLARE_METATYPE(woinc::ProjectListEntry)
 Q_DECLARE_METATYPE(woinc::AllProjectsList)
+
+struct QLabel;
 
 namespace woinc { namespace ui { namespace qt {
 
@@ -74,6 +77,23 @@ struct AllProjectsListPoller : public PollerSignals, public Poller<AllProjectsLi
     virtual ~AllProjectsListPoller() = default;
 };
 
+class SimpleProgressAnimation : public QWidget {
+    Q_OBJECT
+
+    public:
+        SimpleProgressAnimation(QWidget *parent = nullptr);
+        virtual ~SimpleProgressAnimation() = default;
+
+        void start(QString base_msg);
+        void stop();
+
+    private:
+        QString base_msg_;
+        QTimer timer_;
+        int counter_;
+        QLabel *label_;
+};
+
 class ChooseProjectPage: public QWizardPage {
     Q_OBJECT
 
@@ -90,8 +110,10 @@ class ChooseProjectPage: public QWizardPage {
     private:
         Controller &controller_;
         QString host_;
-        AllProjectsListPoller poller_;
         AllProjectsList all_projects_;
+
+        AllProjectsListPoller poller_;
+        SimpleProgressAnimation *progress_animation_;
 };
 
 class ProjectAccountPage: public QWizardPage {

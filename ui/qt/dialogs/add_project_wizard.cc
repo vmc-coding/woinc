@@ -152,19 +152,54 @@ void Poller<SUBJECT, IMPL>::stop() {
     timer_.stop();
 }
 
+// ----- SimpleProgressAnimation -----
+
+SimpleProgressAnimation::SimpleProgressAnimation(QWidget *parent)
+    : QWidget(parent), label_(new QLabel(this))
+{
+    connect(&timer_, &QTimer::timeout, [=]() {
+        label_->setText(base_msg_ + QStringLiteral(".").repeated(counter_));
+        counter_ = (counter_ + 1) % 4;
+
+        if (timer_.isSingleShot()) {
+            timer_.setInterval(500);
+            timer_.setSingleShot(false);
+            timer_.start();
+        }
+    });
+
+    label_->setStyleSheet("font-weight: bold");
+    setLayout(add_widgets__(new QVBoxLayout, label_));
+}
+
+void SimpleProgressAnimation::start(QString base_msg) {
+    base_msg_ = std::move(base_msg);
+    base_msg_.append(' ');
+    counter_ = 0;
+
+    // don't show anything for an initial delay of 200ms
+    label_->clear();
+    timer_.setInterval(200);
+    timer_.setSingleShot(true);
+    timer_.start();
+}
+
+void SimpleProgressAnimation::stop() {
+    timer_.stop();
+}
+
 // ----- ChooseProjectPage -----
 
 ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidget *parent)
-    : QWizardPage(parent), controller_(controller), host_(std::move(host))
+    : QWizardPage(parent), controller_(controller), host_(std::move(host)), progress_animation_(new SimpleProgressAnimation(this))
 {
     setLayout(new QStackedLayout);
 
+    // progress indicator
+
+    layout()->addWidget(progress_animation_);
+
     // create all widgets of the wizard page
-
-    // loading widget
-
-    auto *loading_lbl = new QLabel(QStringLiteral("Loading project list ."));
-    layout()->addWidget(loading_lbl);
 
     // left side
 
@@ -313,6 +348,7 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
 
 void ChooseProjectPage::initializePage() {
     try {
+        progress_animation_->start(QStringLiteral("Progress project list"));
         poller_.start(std::move(controller_.load_all_projects_list(host_)));
     } catch (const std::exception &err) {
         QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
@@ -325,6 +361,7 @@ void ChooseProjectPage::initializePage() {
 
 void ChooseProjectPage::cleanupPage() {
     poller_.stop();
+    progress_animation_->stop();
 }
 
 bool ChooseProjectPage::isComplete() const {
