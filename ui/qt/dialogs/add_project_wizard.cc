@@ -35,7 +35,6 @@
 #include <QStringList>
 #include <QTextEdit>
 #include <QTimer>
-#include <QVariant>
 #include <QVBoxLayout>
 
 #ifndef NDEBUG
@@ -50,10 +49,6 @@ const char * const FIELD_ATTACH_PROJECT_URL = "project_url";
 const char * const FIELD_LOGIN_EMAIL = "email";
 const char * const FIELD_LOGIN_PASSWORD = "password";
 const char * const FIELD_LOGIN_ACCOUNT_KEY = "account_key";
-
-enum {
-    POLLING_INTERVAL_MSEC = 200
-};
 
 QString all_category() {
     return QStringLiteral("All");
@@ -117,43 +112,6 @@ QStringList extract_categories__(const woinc::AllProjectsList &projects) {
 namespace woinc { namespace ui { namespace qt {
 
 namespace add_project_wizard_internals {
-
-// ----- Poller -----
-
-template<typename SUBJECT, typename IMPL>
-Poller<SUBJECT, IMPL>::Poller() : timer_(new QTimer) {
-    timer_->setInterval(POLLING_INTERVAL_MSEC);
-
-    QObject::connect(timer_.get(), &QTimer::timeout, [&]() {
-        if (future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            timer_->stop();
-            try {
-                emit static_cast<IMPL *>(this)->loaded(QVariant::fromValue(std::move(future_.get())));
-            } catch (const std::exception &err) {
-                emit static_cast<IMPL *>(this)->failed(QString::fromStdString(err.what()));
-            }
-        } else if (--remaining_tries_ == 0) {
-            timer_->stop();
-            emit static_cast<IMPL *>(this)->timed_out();
-        }
-    });
-}
-
-template<typename SUBJECT, typename IMPL>
-Poller<SUBJECT, IMPL>::~Poller() = default;
-
-template<typename SUBJECT, typename IMPL>
-void Poller<SUBJECT, IMPL>::start(std::future<SUBJECT> &&future, int timeout_secs) {
-    assert(!timer_->isActive());
-    future_ = std::move(future);
-    remaining_tries_ = timeout_secs * 1000 / POLLING_INTERVAL_MSEC;
-    timer_->start();
-}
-
-template<typename SUBJECT, typename IMPL>
-void Poller<SUBJECT, IMPL>::stop() {
-    timer_->stop();
-}
 
 // ----- SimpleProgressAnimation -----
 
@@ -331,33 +289,26 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
 
     connect(this, &ChooseProjectPage::all_project_list_loaded, [=]() {
         categories_cb->addItems(extract_categories__(all_projects_));
+        progress_animation_->stop();
         static_cast<QStackedLayout*>(layout())->setCurrentIndex(1);
     });
 
     connect(project_url_value, &QLineEdit::textChanged, this, &ChooseProjectPage::completeChanged);
-
-    // connect the poller
-
-    connect(&poller_, &AllProjectsListPoller::loaded, [=](QVariant apl) {
-        all_projects_ = std::move(apl.value<AllProjectsList>());
-        emit all_project_list_loaded();
-    });
-
-    connect(&poller_, &AllProjectsListPoller::timed_out, [=]() {
-        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Timeout while loading the projects list"), QMessageBox::Ok);
-        close();
-    });
-
-    connect(&poller_, &AllProjectsListPoller::failed, [=](QString error) {
-        QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
-        close();
-    });
 }
 
 void ChooseProjectPage::initializePage() {
     try {
         progress_animation_->start(QStringLiteral("Loading project list"));
-        poller_.start(std::move(controller_.load_all_projects_list(host_)));
+        controller_.load_all_projects_list(
+            host_,
+            [=](AllProjectsList apl) {
+                all_projects_ = std::move(apl);
+                emit all_project_list_loaded();
+            },
+            [=](QString error) {
+                QMessageBox::critical(this, QStringLiteral("Error"), error.isEmpty() ? QStringLiteral("Failed to load the projects list") : error, QMessageBox::Ok);
+                close();
+            });
     } catch (const std::exception &err) {
         QMessageBox::critical(this, QStringLiteral("Error"), QString::fromStdString(err.what()), QMessageBox::Ok);
         close();

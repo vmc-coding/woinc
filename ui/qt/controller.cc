@@ -1,5 +1,5 @@
 /* ui/qt/controller.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -20,10 +20,14 @@
 
 #include <algorithm>
 #include <cassert>
+#include <exception>
+#include <chrono>
 
 #ifndef NDEBUG
 #include <iostream>
 #endif
+
+#include <QTimer>
 
 #include <woinc/ui/controller.h>
 
@@ -31,11 +35,94 @@
 
 #define WOINC_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
 
+namespace {
+
+enum {
+    SUBSCRIPTION_POLLING_INTERVAL_MSEC = 100
+};
+
+struct Subscription {
+    virtual ~Subscription() = default;
+    virtual bool tick() = 0;
+};
+
+template<typename SUBJECT>
+struct SubscriptionImpl : public Subscription {
+    SubscriptionImpl(woinc::ui::qt::Controller::Receiver<SUBJECT> receiver,
+                     woinc::ui::qt::Controller::ErrorHandler error_handler,
+                     std::future<SUBJECT> &&future,
+                     int timeout_msecs = 30 * 1000)
+        : receiver_(std::move(receiver))
+        , error_handler_(std::move(error_handler))
+        , future_(std::move(future))
+        , remaining_tries_(timeout_msecs / SUBSCRIPTION_POLLING_INTERVAL_MSEC)
+    { assert(remaining_tries_ > 0); }
+
+    bool tick() final {
+        bool done = false;
+        if (future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            done = true;
+            try {
+                receiver_(std::move(future_.get()));
+            } catch (const std::exception &err) {
+                error_handler_(QString::fromStdString(err.what()));
+            }
+        } else if (--remaining_tries_ == 0) {
+            done = true;
+            error_handler_(QString());
+        }
+        return done;
+    }
+
+    private:
+        woinc::ui::qt::Controller::Receiver<SUBJECT> receiver_;
+        woinc::ui::qt::Controller::ErrorHandler error_handler_;
+        std::future<SUBJECT> future_;
+        int remaining_tries_;
+};
+
+}
+
 namespace woinc { namespace ui { namespace qt {
+
+// ----- Controller::Poller -----
+
+class Controller::Poller {
+    public:
+        Poller() {
+            QObject::connect(&timer_, &QTimer::timeout, [=]() {
+                for (auto iter = subscriptions_.begin(); iter != subscriptions_.end();) {
+                    if ((*iter)->tick()) {
+                        iter = subscriptions_.erase(iter);
+                    } else {
+                        ++ iter;
+                    }
+                }
+            });
+
+            timer_.setInterval(SUBSCRIPTION_POLLING_INTERVAL_MSEC);
+            timer_.start();
+        }
+
+        void add(Subscription *subscription) {
+            subscriptions_.push_back(std::unique_ptr<Subscription>(subscription));
+        }
+
+        void stop() {
+            timer_.stop();
+        }
+
+    private:
+        QTimer timer_;
+        std::vector<std::unique_ptr<Subscription>> subscriptions_;
+};
+
+// ----- Controller -----
 
 Controller::Controller(QObject *parent)
     : QObject(parent)
     , ctrl_(new woinc::ui::Controller)
+    , poller_(new Poller)
 {}
 
 Controller::~Controller() = default;
@@ -48,7 +135,6 @@ void Controller::deregister_handler(HostHandler *handler){
     ctrl_->deregister_handler(handler);
 }
 
-
 void Controller::register_handler(PeriodicTaskHandler *handler){
     ctrl_->register_handler(handler);
 }
@@ -56,7 +142,6 @@ void Controller::register_handler(PeriodicTaskHandler *handler){
 void Controller::deregister_handler(PeriodicTaskHandler *handler){
     ctrl_->deregister_handler(handler);
 }
-
 
 std::future<GlobalPreferences> Controller::load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode) {
     return ctrl_->load_global_preferences(host.toStdString(), mode);
@@ -72,8 +157,11 @@ std::future<bool> Controller::read_global_prefs(const QString &host) {
     return ctrl_->read_global_prefs_override(host.toStdString());
 }
 
-std::future<AllProjectsList> Controller::load_all_projects_list(const QString &host) {
-    return ctrl_->all_projects_list(host.toStdString());
+void Controller::load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler) {
+    WOINC_LOCK_GUARD;
+    poller_->add(new SubscriptionImpl<woinc::AllProjectsList>(std::move(receiver),
+                                                              std::move(error_handler),
+                                                              std::move(ctrl_->all_projects_list(host.toStdString()))));
 }
 
 std::future<bool> Controller::start_loading_project_config(const QString &host, const QString &master_url) {

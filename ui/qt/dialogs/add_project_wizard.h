@@ -29,10 +29,6 @@
 
 #include <woinc/types.h>
 
-// not really nice to do it here, but haven't found a better place for the moment
-Q_DECLARE_METATYPE(woinc::ProjectListEntry)
-Q_DECLARE_METATYPE(woinc::AllProjectsList)
-
 struct QLabel;
 struct QTimer;
 
@@ -41,42 +37,6 @@ namespace woinc { namespace ui { namespace qt {
 struct Controller;
 
 namespace add_project_wizard_internals {
-
-template<typename SUBJECT, typename IMPL>
-class Poller {
-    public:
-        Poller();
-
-    protected:
-        ~Poller();
-
-    public:
-        void start(std::future<SUBJECT> &&future, int timeout_secs = 60);
-        void stop();
-
-    private:
-        std::unique_ptr<QTimer> timer_;
-        std::future<SUBJECT> future_;
-        int remaining_tries_;
-};
-
-class PollerSignals : public QObject {
-    Q_OBJECT
-
-    public:
-        PollerSignals(QObject *parent = nullptr) : QObject(parent) {}
-        virtual ~PollerSignals() = default;
-
-    signals:
-        void timed_out();
-        void failed(QString error);
-        void loaded(QVariant subject);
-};
-
-struct AllProjectsListPoller : public PollerSignals, public Poller<AllProjectsList, AllProjectsListPoller>{
-    AllProjectsListPoller(QObject *parent = nullptr) : PollerSignals(parent), Poller() {}
-    virtual ~AllProjectsListPoller() = default;
-};
 
 class SimpleProgressAnimation : public QWidget {
     Q_OBJECT
@@ -112,7 +72,6 @@ class ChooseProjectPage: public QWizardPage {
         QString host_;
         AllProjectsList all_projects_;
 
-        AllProjectsListPoller poller_;
         SimpleProgressAnimation *progress_animation_;
 };
 

@@ -1,5 +1,5 @@
 /* ui/qt/controller.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -19,6 +19,7 @@
 #ifndef WOINC_UI_QT_CONTROLLER_H_
 #define WOINC_UI_QT_CONTROLLER_H_
 
+#include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -32,6 +33,10 @@
 #include <woinc/ui/defs.h>
 #include <woinc/ui/handler.h>
 
+// not really nice to do it here, but haven't found a better place for the moment
+Q_DECLARE_METATYPE(woinc::ProjectListEntry)
+Q_DECLARE_METATYPE(woinc::AllProjectsList)
+
 namespace woinc { namespace ui {
 
 struct Controller;
@@ -44,6 +49,11 @@ struct HandlerAdapter;
 
 class Controller : public QObject {
     Q_OBJECT
+
+    public:
+        template<typename T>
+        using Receiver = std::function<void (T)>;
+        using ErrorHandler = std::function<void (QString)>;
 
     public:
         Controller(QObject *parent = nullptr);
@@ -73,7 +83,7 @@ class Controller : public QObject {
                                             const GlobalPreferencesMask &mask);
         std::future<bool> read_global_prefs(const QString &host);
 
-        std::future<AllProjectsList> load_all_projects_list(const QString &host);
+        void load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler);
 
         std::future<bool> start_loading_project_config(const QString &host, const QString &master_url);
         std::future<ProjectConfig> poll_project_config(const QString &host);
@@ -115,7 +125,9 @@ class Controller : public QObject {
         void handle_host_error(QString host, Error error);
 
     private:
+        struct Poller;
         std::unique_ptr<woinc::ui::Controller> ctrl_;
+        std::unique_ptr<Poller> poller_;
         std::mutex lock_;
         std::vector<std::pair<QString, QString>> pending_logins_;
 };
