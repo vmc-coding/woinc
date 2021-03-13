@@ -41,44 +41,71 @@ enum {
     SUBSCRIPTION_POLLING_INTERVAL_MSEC = 100
 };
 
-struct Subscription {
-    virtual ~Subscription() = default;
-    virtual bool tick() = 0;
+using Controller = woinc::ui::qt::Controller;
+
+class Subscription {
+    public:
+        Subscription(Controller::ErrorHandler error_handler, int timeout_msecs)
+            : error_handler_(std::move(error_handler))
+            , remaining_tries_(timeout_msecs / SUBSCRIPTION_POLLING_INTERVAL_MSEC)
+        { assert(remaining_tries_ > 0); }
+        virtual ~Subscription() = default;
+
+        Subscription(const Subscription &) = delete;
+        Subscription &operator=(const Subscription &) = delete;
+
+        bool tick() {
+            return status_() == std::future_status::ready || --remaining_tries_ == 0;
+        }
+
+        void finish() {
+            if (remaining_tries_ == 0)
+                fail(QString());
+            else
+                finish_();
+        }
+
+    protected:
+        void fail(QString err) {
+            error_handler_(std::move(err));
+        }
+
+        virtual std::future_status status_() = 0;
+        virtual void finish_() = 0;
+
+    private:
+        Controller::ErrorHandler error_handler_;
+        int remaining_tries_;
 };
 
 template<typename SUBJECT>
-struct SubscriptionImpl : public Subscription {
-    SubscriptionImpl(woinc::ui::qt::Controller::Receiver<SUBJECT> receiver,
-                     woinc::ui::qt::Controller::ErrorHandler error_handler,
-                     std::future<SUBJECT> &&future,
-                     int timeout_msecs = 30 * 1000)
-        : receiver_(std::move(receiver))
-        , error_handler_(std::move(error_handler))
-        , future_(std::move(future))
-        , remaining_tries_(timeout_msecs / SUBSCRIPTION_POLLING_INTERVAL_MSEC)
-    { assert(remaining_tries_ > 0); }
+class SubscriptionImpl : public Subscription {
+    public:
+        SubscriptionImpl(Controller::Receiver<SUBJECT> receiver,
+                         Controller::ErrorHandler error_handler,
+                         std::future<SUBJECT> &&future,
+                         int timeout_msecs = 30 * 1000)
+            : Subscription(std::move(error_handler), timeout_msecs)
+            , receiver_(std::move(receiver))
+            , future_(std::move(future)) {}
+        virtual ~SubscriptionImpl() = default;
 
-    bool tick() final {
-        bool done = false;
-        if (future_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            done = true;
+    private:
+        std::future_status status_() final {
+            return future_.wait_for(std::chrono::seconds(0));
+        }
+
+        void finish_() final {
             try {
                 receiver_(std::move(future_.get()));
             } catch (const std::exception &err) {
-                error_handler_(QString::fromStdString(err.what()));
+                fail(QString::fromStdString(err.what()));
             }
-        } else if (--remaining_tries_ == 0) {
-            done = true;
-            error_handler_(QString());
-        }
-        return done;
-    }
+        };
 
     private:
-        woinc::ui::qt::Controller::Receiver<SUBJECT> receiver_;
-        woinc::ui::qt::Controller::ErrorHandler error_handler_;
+        Controller::Receiver<SUBJECT> receiver_;
         std::future<SUBJECT> future_;
-        int remaining_tries_;
 };
 
 }
@@ -91,13 +118,23 @@ class Controller::Poller {
     public:
         Poller() {
             QObject::connect(&timer_, &QTimer::timeout, [=]() {
-                for (auto iter = subscriptions_.begin(); iter != subscriptions_.end();) {
-                    if ((*iter)->tick()) {
-                        iter = subscriptions_.erase(iter);
-                    } else {
-                        ++ iter;
+                // we have to collect the subscriptions to be finished,
+                // because we don't know what the receiver will do and
+                // thus we've to call it without locking the poller
+                std::vector<std::unique_ptr<Subscription>> to_finish;
+                {
+                    WOINC_LOCK_GUARD;
+                    for (auto iter = subscriptions_.begin(); iter != subscriptions_.end();) {
+                        if ((*iter)->tick()) {
+                            to_finish.push_back(std::move(*iter));
+                            iter = subscriptions_.erase(iter);
+                        } else {
+                            ++ iter;
+                        }
                     }
                 }
+                for (auto &&iter : to_finish)
+                    iter->finish();
             });
 
             timer_.setInterval(SUBSCRIPTION_POLLING_INTERVAL_MSEC);
@@ -105,6 +142,7 @@ class Controller::Poller {
         }
 
         void add(Subscription *subscription) {
+            WOINC_LOCK_GUARD;
             subscriptions_.push_back(std::unique_ptr<Subscription>(subscription));
         }
 
@@ -113,6 +151,7 @@ class Controller::Poller {
         }
 
     private:
+        std::mutex lock_;
         QTimer timer_;
         std::vector<std::unique_ptr<Subscription>> subscriptions_;
 };
@@ -158,7 +197,6 @@ std::future<bool> Controller::read_global_prefs(const QString &host) {
 }
 
 void Controller::load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler) {
-    WOINC_LOCK_GUARD;
     poller_->add(new SubscriptionImpl<woinc::AllProjectsList>(std::move(receiver),
                                                               std::move(error_handler),
                                                               std::move(ctrl_->all_projects_list(host.toStdString()))));
