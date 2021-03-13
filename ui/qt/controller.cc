@@ -117,6 +117,8 @@ namespace woinc { namespace ui { namespace qt {
 class Controller::Poller {
     public:
         Poller() {
+            timer_.setInterval(SUBSCRIPTION_POLLING_INTERVAL_MSEC);
+
             QObject::connect(&timer_, &QTimer::timeout, [=]() {
                 // we have to collect the subscriptions to be finished,
                 // because we don't know what the receiver will do and
@@ -132,18 +134,19 @@ class Controller::Poller {
                             ++ iter;
                         }
                     }
+                    if (subscriptions_.empty())
+                        timer_.stop();
                 }
                 for (auto &&iter : to_finish)
                     iter->finish();
             });
-
-            timer_.setInterval(SUBSCRIPTION_POLLING_INTERVAL_MSEC);
-            timer_.start();
         }
 
         void add(Subscription *subscription) {
             WOINC_LOCK_GUARD;
             subscriptions_.push_back(std::unique_ptr<Subscription>(subscription));
+            if (!timer_.isActive())
+                timer_.start();
         }
 
         void stop() {
