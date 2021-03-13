@@ -85,14 +85,16 @@ class Controller : public QObject {
 
         void load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler);
 
-        std::future<bool> start_loading_project_config(const QString &host, const QString &master_url);
-        std::future<ProjectConfig> poll_project_config(const QString &host);
+        void start_loading_project_config(const QString &host, const QString &master_url, Receiver<bool> receiver, ErrorHandler error_handler);
+        void poll_project_config(const QString &host, Receiver<ProjectConfig> receiver, ErrorHandler error_handler);
 
-        std::future<bool> start_account_lookup(const QString &host, const QString &master_url,
-                                               const QString &email, const QString &password);
-        std::future<AccountOut> poll_account_lookup(const QString &host);
+        void start_account_lookup(const QString &host, const QString &master_url,
+                                  const QString &email, const QString &password,
+                                  Receiver<bool> receiver, ErrorHandler error_handler);
+        void poll_account_lookup(const QString &host, Receiver<AccountOut> receiver, ErrorHandler error_handler);
 
-        std::future<bool> attach_project(const QString &host, const QString &master_url, const QString &account_key);
+        void attach_project(const QString &host, const QString &master_url, const QString &account_key,
+                            Receiver<bool> receiver, ErrorHandler error_handler);
 
         // TODO wording: do we add a host or a client?
         void add_host(QString host, QString url, unsigned short port, QString password);

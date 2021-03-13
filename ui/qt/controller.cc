@@ -200,31 +200,43 @@ std::future<bool> Controller::read_global_prefs(const QString &host) {
 }
 
 void Controller::load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler) {
-    poller_->add(new SubscriptionImpl<woinc::AllProjectsList>(std::move(receiver),
+    poller_->add(new SubscriptionImpl<AllProjectsList>(std::move(receiver),
                                                               std::move(error_handler),
                                                               std::move(ctrl_->all_projects_list(host.toStdString()))));
 }
 
-std::future<bool> Controller::start_loading_project_config(const QString &host, const QString &master_url) {
-    return ctrl_->start_loading_project_config(host.toStdString(), master_url.toStdString());
+void Controller::start_loading_project_config(const QString &host, const QString &master_url, Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            std::move(ctrl_->start_loading_project_config(host.toStdString(), master_url.toStdString()))));
 }
 
-std::future<ProjectConfig> Controller::poll_project_config(const QString &host) {
-    return ctrl_->poll_project_config(host.toStdString());
+void Controller::poll_project_config(const QString &host, Receiver<ProjectConfig> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<ProjectConfig>(std::move(receiver),
+                                                     std::move(error_handler),
+                                                     std::move(ctrl_->poll_project_config(host.toStdString()))));
 }
 
-std::future<bool> Controller::start_account_lookup(const QString &host, const QString &master_url,
-                                                   const QString &email, const QString &password) {
-    return ctrl_->start_account_lookup(host.toStdString(), master_url.toStdString(),
-                                       email.toStdString(), password.toStdString());
+void Controller::start_account_lookup(const QString &host, const QString &master_url,
+                                      const QString &email, const QString &password,
+                                      Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            std::move(ctrl_->start_account_lookup(host.toStdString(), master_url.toStdString(),
+                                                                                  email.toStdString(), password.toStdString()))));
 }
 
-std::future<AccountOut> Controller::poll_account_lookup(const QString &host) {
-    return ctrl_->poll_account_lookup(host.toStdString());
+void Controller::poll_account_lookup(const QString &host, Receiver<AccountOut> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<AccountOut>(std::move(receiver),
+                                                     std::move(error_handler),
+                                                     std::move(ctrl_->poll_account_lookup(host.toStdString()))));
 }
 
-std::future<bool> Controller::attach_project(const QString &host, const QString &master_url, const QString &account_key) {
-    return ctrl_->attach_project(host.toStdString(), master_url.toStdString(), account_key.toStdString());
+void Controller::attach_project(const QString &host, const QString &master_url, const QString &account_key,
+                                             Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            std::move(ctrl_->attach_project(host.toStdString(), master_url.toStdString(), account_key.toStdString()))));
 }
 
 void Controller::add_host(QString host, QString url, unsigned short port, QString password) {

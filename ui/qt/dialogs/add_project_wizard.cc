@@ -45,6 +45,12 @@
 
 namespace {
 
+enum {
+    POLLING_INTERVAL_MSECS = 500,
+    POLLING_TIMEOUT_SECS = 30,
+    STILL_LOADING = -204
+};
+
 const char * const FIELD_ATTACH_PROJECT_URL = "project_url";
 const char * const FIELD_LOGIN_EMAIL = "email";
 const char * const FIELD_LOGIN_PASSWORD = "password";
@@ -383,6 +389,8 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
     // connections
 
     connect(this, &ProjectAccountPage::project_config_loaded, [=]() {
+        poll_config_timer_->stop();
+        progress_animation_->stop();
         static_cast<QStackedLayout*>(layout())->setCurrentIndex(1);
     });
 
@@ -390,72 +398,56 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
     connect(password_value, &QLineEdit::textChanged, this, &ProjectAccountPage::completeChanged);
     connect(account_key_value, &QLineEdit::textChanged, this, &ProjectAccountPage::completeChanged);
 
+    poll_config_timer_->setSingleShot(true);
+    poll_config_timer_->setInterval(POLLING_INTERVAL_MSECS);
+
     connect(poll_config_timer_, &QTimer::timeout, [=]() {
-        QString error;
-
-        try {
-            // TODO should we stop the timer before this blocking wait?
-            config_ = controller_.poll_project_config(host_).get();
-
-            if (config_.error_num == 0) {
-                poll_config_timer_->stop();
-                emit project_config_loaded();
-            } else if (config_.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
-                error = QStringLiteral("Failed to load the project configuration");
-            }
-        } catch (const std::exception &err) {
-            error = QString::fromStdString(err.what());
-        } catch (...) {
-            error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
-        }
-
-        if (!error.isEmpty()) {
-            poll_config_timer_->stop();
-            QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
-            close();
-        }
+        controller_.poll_project_config(
+            host_,
+            [=](ProjectConfig config) {
+                if (config.error_num == 0) {
+                    config_ = std::move(config);
+                    emit project_config_loaded();
+                } else if (config.error_num != STILL_LOADING) {
+                    on_error_(QStringLiteral("Loading the project configuration failed."));
+                } else if (std::chrono::steady_clock::now() - polling_start_ > std::chrono::seconds(POLLING_TIMEOUT_SECS)) {
+                    on_error_(QStringLiteral("Timeout while loading the project configuration."));
+                } else {
+                    poll_config_timer_->start();
+                }
+            },
+            [=](QString error) {
+                on_error_(error.isEmpty() ? QStringLiteral("Timeout while loading the project configuration.")
+                          : QStringLiteral("Loading the project configuration failed."));
+            });
     });
 }
 
 void ProjectAccountPage::initializePage() {
     // it has to be queued so we're on this page when calling back, not on the stage switching to this page;
-    // connecting in the c'tor would be too early, because wizard's not yet set
-    // TODO do we have to check if we're already connected? see AttachProjectPage
+    // connecting in the c'tor would be too early, because the wizard is not yet set
     connect(this, &ProjectAccountPage::go_back, wizard(), &QWizard::back, Qt::QueuedConnection);
 
-    progress_animation_->start(QStringLiteral("Loading project configuration"));
-
-    try { // start loading the config
-        auto project_url = field(FIELD_ATTACH_PROJECT_URL).toString().trimmed();
-
-        auto load_config_future = controller_.start_loading_project_config(host_, project_url);
-
-        // TODO this blocks the event queue until we get a result;
-        // a better approach would be to poll instead of blocking waiting
-        load_config_future.wait();
-
-        // TODO do we get an error message from the client?
-        if (!load_config_future.get())
-            throw std::runtime_error("Error loading the project config");
-
-#ifndef NDEBUG
-        std::cout << "Started loading project config of " << project_url.toStdString() << std::endl;
-#endif
-
-        // start polling the config for an arbitrary value of one minute
-        remaining_pollings_ = 60;
-        poll_config_timer_->start(1000);
-    } catch (const std::exception &err) {
-        on_error_(QString::fromStdString(err.what()));
-    } catch (...) {
-        on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
-    }
+    progress_animation_->start(QStringLiteral("Loading the project configuration"));
+    controller_.start_loading_project_config(
+        host_,
+        field(FIELD_ATTACH_PROJECT_URL).toString().trimmed(),
+        [=](bool result) {
+            if (result) {
+                polling_start_ = std::chrono::steady_clock::now();
+                poll_config_timer_->start();
+            } else {
+                on_error_(QStringLiteral("Loading the project configuration failed,"));
+            }
+        },
+        [=](QString) { on_error_(QStringLiteral("Loading the project configuration failed.")); });
 }
 
 void ProjectAccountPage::cleanupPage() {
     QWizardPage::cleanupPage();
     poll_config_timer_->stop();
     progress_animation_->stop();
+    disconnect(this, &ProjectAccountPage::go_back, wizard(), &QWizard::back);
     static_cast<QStackedLayout*>(layout())->setCurrentIndex(0);
 }
 
@@ -480,18 +472,20 @@ AttachProjectPage::AttachProjectPage(Controller &controller, QString host, QWidg
     setCommitPage(true);
 
     setLayout(add_widgets__(new QVBoxLayout, progress_animation_));
+
+    poll_timer_->setSingleShot(true);
+    poll_timer_->setInterval(POLLING_INTERVAL_MSECS);
+
+    connect(poll_timer_, &QTimer::timeout, this, &AttachProjectPage::poll_account_key_);
+
+    connect(this, &AttachProjectPage::account_key_to_be_loaded, this, &AttachProjectPage::load_account_key_, Qt::QueuedConnection);
+    connect(this, &AttachProjectPage::project_to_be_attached, this, &AttachProjectPage::attach_project_, Qt::QueuedConnection);
 }
 
 void AttachProjectPage::initializePage() {
-    if (!connected_) {
-        connect(this, &AttachProjectPage::account_key_to_be_loaded, this, &AttachProjectPage::load_account_key_, Qt::QueuedConnection);
-        connect(this, &AttachProjectPage::project_to_be_attached, this, &AttachProjectPage::attach_project_, Qt::QueuedConnection);
-        // don't connect in the c'tor, the wizard isn't set yet!
-        connect(this, &AttachProjectPage::project_attached, wizard(), &QWizard::next, Qt::QueuedConnection);
-        connect(this, &AttachProjectPage::failed, wizard(), &QWizard::back, Qt::QueuedConnection);
-        connect(poll_timer_, &QTimer::timeout, this, &AttachProjectPage::poll_account_key_);
-        connected_ = true;
-    }
+    // don't connect in the c'tor, the wizard isn't set yet!
+    connect(this, &AttachProjectPage::project_attached, wizard(), &QWizard::next, Qt::QueuedConnection);
+    connect(this, &AttachProjectPage::failed, wizard(), &QWizard::back, Qt::QueuedConnection);
 
     project_url_ = field(FIELD_ATTACH_PROJECT_URL).toString().trimmed();
     auto account_key = field(FIELD_LOGIN_ACCOUNT_KEY).toString().trimmed();
@@ -504,6 +498,8 @@ void AttachProjectPage::initializePage() {
 }
 
 void AttachProjectPage::cleanupPage() {
+    disconnect(this, &AttachProjectPage::project_attached, wizard(), &QWizard::next);
+    disconnect(this, &AttachProjectPage::failed, wizard(), &QWizard::back);
     QWizardPage::cleanupPage();
     poll_timer_->stop();
     progress_animation_->stop();
@@ -511,57 +507,41 @@ void AttachProjectPage::cleanupPage() {
 
 void AttachProjectPage::load_account_key_(QString email, QString password) {
     progress_animation_->start(QStringLiteral("Looking up the account key"));
-
-    try { // start the account lookup
-        auto load_future = controller_.start_account_lookup(host_, project_url_, email, password);
-
-        // TODO this blocks the event queue until we get a result;
-        // a better approach would be to poll instead of blocking waiting
-        load_future.wait();
-
-        // TODO do we get an error message from the client?
-        if (!load_future.get())
-            throw std::runtime_error("Error looking up the account");
-
-#ifndef NDEBUG
-        std::cout << "Started looking up the account info" << std::endl;
-#endif
-
-        // start polling the config for an arbitrary value of one minute
-        remaining_pollings_ = 60;
-        poll_timer_->start(1000);
-    } catch (const std::exception &err) {
-        on_error_(QString::fromStdString(err.what()));
-    } catch (...) {
-        on_error_(QStringLiteral("Unhandled error occurred, please inform a dev about it"));
-    }
+    controller_.start_account_lookup(
+        host_,
+        project_url_,
+        email,
+        password,
+        [=](bool result) {
+            if (result) {
+                polling_start_ = std::chrono::steady_clock::now();
+                poll_timer_->start();
+            } else {
+                on_error_(QStringLiteral("Looking up the account key failed."));
+            }
+        },
+        [=](QString) { on_error_(QStringLiteral("Looking up the account key failed.")); });
 }
 
 void AttachProjectPage::poll_account_key_() {
-    QString error;
-
-    try {
-#ifndef NDEBUG
-        std::cout << "Poll account info" << std::endl;
-#endif
-        // TODO should we stop the timer before this blocking wait?
-        auto account = controller_.poll_account_lookup(host_).get();
-
-        if (account.error_num == 0) {
-            poll_timer_->stop();
-            progress_animation_->stop();
-            emit project_to_be_attached(QString::fromStdString(account.authenticator));
-        } else if (account.error_num != -204 || --remaining_pollings_ == 0) { // -204 is still loading.. terrible API
-            error = QStringLiteral("Failed to lookup the account");
-        }
-    } catch (const std::exception &err) {
-        error = QString::fromStdString(err.what());
-    } catch (...) {
-        error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
-    }
-
-    if (!error.isEmpty())
-        on_error_(std::move(error));
+    controller_.poll_account_lookup(
+        host_,
+        [=](AccountOut account) {
+            if (account.error_num == 0) {
+                progress_animation_->stop();
+                emit project_to_be_attached(QString::fromStdString(std::move(account.authenticator)));
+            } else if (account.error_num != STILL_LOADING) {
+                on_error_(QStringLiteral("Looking up the account key failed."));
+            } else if (std::chrono::steady_clock::now() - polling_start_ > std::chrono::seconds(POLLING_TIMEOUT_SECS)) {
+                on_error_(QStringLiteral("Timeout while looking up the account key."));
+            } else {
+                poll_timer_->start();
+            }
+        },
+        [=](QString error) {
+            on_error_(error.isEmpty() ? QStringLiteral("Timeout while looking up the account key.")
+                      : QStringLiteral("Looking up the account key failed."));
+        });
 }
 
 void AttachProjectPage::on_error_(QString error) {
@@ -572,29 +552,21 @@ void AttachProjectPage::on_error_(QString error) {
 }
 
 void AttachProjectPage::attach_project_(QString account_key) {
-#ifndef NDEBUG
-    std::cout << "Attach project\n";
-#endif
-    QString error;
-
     progress_animation_->start(QStringLiteral("Attaching project"));
 
-    try {
-        // TODO don't block the event queue
-        if (controller_.attach_project(host_, std::move(project_url_), std::move(account_key)).get())
-            emit project_attached();
-        else
-            error = QStringLiteral("Failed to attach the project");
-    } catch (const std::exception &err) {
-        error = QString::fromStdString(err.what());
-    } catch (...) {
-        error = QStringLiteral("Unhandled error occurred, please inform a dev about it");
-    }
-
-    progress_animation_->stop();
-
-    if (!error.isEmpty())
-        on_error_(std::move(error));
+    controller_.attach_project(
+        host_,
+        project_url_,
+        std::move(account_key),
+        [=](bool result) {
+            if (result) {
+                progress_animation_->stop();
+                emit project_attached();
+            } else {
+                on_error_(QStringLiteral("Faild to attach the project."));
+            }
+        },
+        [=](QString error) { on_error_(error.isEmpty() ? QStringLiteral("Timeout while attaching the project.") : std::move(error)); });
 }
 
 // ----- CompletionPage -----

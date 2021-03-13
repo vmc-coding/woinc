@@ -19,6 +19,7 @@
 #ifndef WOINC_UI_QT_ADD_PROJECT_WIZARD_H_
 #define WOINC_UI_QT_ADD_PROJECT_WIZARD_H_
 
+#include <chrono>
 #include <future>
 #include <memory>
 
@@ -97,7 +98,7 @@ class ProjectAccountPage: public QWizardPage {
         QString host_;
         ProjectConfig config_;
 
-        int remaining_pollings_;
+        std::chrono::steady_clock::time_point polling_start_;
         QTimer *poll_config_timer_;
 
         SimpleProgressAnimation *progress_animation_;
@@ -127,9 +128,8 @@ class AttachProjectPage : public QWizardPage {
     private:
         Controller &controller_;
         QString host_;
-        bool connected_ = false;
 
-        int remaining_pollings_;
+        std::chrono::steady_clock::time_point polling_start_;
         QTimer *poll_timer_;
 
         QString project_url_;
