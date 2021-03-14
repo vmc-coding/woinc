@@ -10,7 +10,7 @@ This project is work in progress, the API may change without any public notices.
 
 ## screenshots? screenshots!
 
-They may not be up to date, but there are some [here](http://83.169.22.26/tmp/woinc/)
+They may not be up to date, but there are some [here](http://83.169.22.26/woinc/)
 
 ## woinc consists of
 
