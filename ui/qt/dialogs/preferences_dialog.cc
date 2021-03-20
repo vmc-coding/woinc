@@ -42,6 +42,8 @@
 #include <QTimeEdit>
 #include <QVBoxLayout>
 
+#include "qt/dialogs/utils.h"
+
 namespace {
 
 const double DEFAULT_TIMES_END_HOUR = 23.983;
@@ -88,65 +90,8 @@ constexpr bool validate__(const QString &input, T min, T max) {
     return parse__(input, value) && value >= min && value <= max;
 }
 
-QString qstring(const char *text) {
-    return QString::fromUtf8(text);
-}
-
 int text_width__(const QFontMetrics &metrics, int num_chars) {
     return metrics.boundingRect(QString(num_chars, 'X')).width();
-}
-
-template<typename Widget>
-void add_widgets__(QLayout *layout, Widget widget) {
-    layout->addWidget(widget);
-}
-
-template<typename Widget, typename... Widgets>
-void add_widgets__(QLayout *layout, Widget widget, Widgets... others) {
-    layout->addWidget(widget);
-    add_widgets__(layout, others...);
-}
-
-template<typename... Widgets>
-QWidget *as_horizontal_widget__(Widgets... widgets) {
-    auto layout = new QHBoxLayout;
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    add_widgets__(layout, widgets...);
-
-    auto widget = new QWidget;
-    widget->setLayout(layout);
-    widget->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    widget->setContentsMargins(0, 0, 0, 0);
-
-    return widget;
-}
-
-template<typename... Widgets>
-QGroupBox *as_group__(const QString &title, Widgets... widgets) {
-    auto layout = new QVBoxLayout;
-
-    add_widgets__(layout, widgets...);
-
-    auto group = new QGroupBox(title);
-    group->setLayout(layout);
-    group->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
-
-    return group;
-}
-
-QLabel *label(const char *text, QWidget *parent = nullptr) {
-    return new QLabel(qstring(text), parent);
-}
-
-QLabel *label(const QString &text, QWidget *parent = nullptr) {
-    return new QLabel(text, parent);
-}
-
-QLabel *italic_label(const QString &text, QWidget *parent = nullptr) {
-    auto lbl = new QLabel(text, parent);
-    lbl->setStyleSheet("font-style: italic;");
-    return lbl;
 }
 
 QLineEdit *integer_input__(int min, int max, int width) {
@@ -192,9 +137,9 @@ QWidget *floating_point_input_widget__(const char *prefix, const char *postfix,
                                        double min, double max, int in_width,
                                        std::function<void(double)> onTextEdited,
                                        const QString &text = QString()) {
-    return as_horizontal_widget__(label(prefix),
+    return as_horizontal_widget__(label__(prefix),
                                   floating_point_input__(min, max, in_width, onTextEdited, text),
-                                  label(postfix));
+                                  label__(postfix));
 }
 
 template<typename T, typename DEFAULT_PROVIDER = std::function<T(T)>, typename CONVERTER = std::function<T(T)>>
@@ -242,7 +187,7 @@ QWidget *time_of_day_widget__(const QString &prefix, const QString &infix,
         to = qtime_to_double(time);
     });
 
-    auto wdgt = as_horizontal_widget__(chk, in_from, label(infix), in_to);
+    auto wdgt = as_horizontal_widget__(chk, in_from, label__(infix), in_to);
     if (expend)
         wdgt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
@@ -302,7 +247,7 @@ QWidget *time_of_weekday_widget__(woinc::DAY_OF_WEEK day,
         spans[day].end = qtime_to_double(time);
     });
 
-    auto wdgt = as_horizontal_widget__(chk, in_from, label("to"), in_to);
+    auto wdgt = as_horizontal_widget__(chk, in_from, label__("to"), in_to);
     wdgt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
     QObject::connect(chk, &QCheckBox::stateChanged, [=, &spans](int state) {
@@ -398,7 +343,7 @@ QWidget *ComputingTab::usage_limits_group_(GlobalPreferences &prefs, GlobalPrefe
                                                            [&](double d) { prefs.cpu_usage_limit = d; },
                                                            QString::number(prefs.cpu_usage_limit));
 
-    return as_group__(qstring("Usage limits"), wdgt_max_cpus, wdgt_max_cpu_time);
+    return as_group__(qstring__("Usage limits"), wdgt_max_cpus, wdgt_max_cpu_time);
 }
 
 QWidget *ComputingTab::when_to_suspend_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
@@ -406,21 +351,21 @@ QWidget *ComputingTab::when_to_suspend_group_(GlobalPreferences &prefs, GlobalPr
 
     // create widgets
 
-    auto chk_suspend_on_battery = checkbox__(qstring("Suspend when computer is on battery"),
+    auto chk_suspend_on_battery = checkbox__(qstring__("Suspend when computer is on battery"),
                                              prefs.run_on_batteries, mask.run_on_batteries,
                                              [](int state) { return state == Qt::Unchecked; });
-    auto chk_suspend_in_use = new QCheckBox(qstring("Suspend when computer is in use"));
-    auto chk_suspend_gpu_in_use = new QCheckBox(qstring("Suspend GPU computing when computer is in use"));
+    auto chk_suspend_in_use = new QCheckBox(qstring__("Suspend when computer is in use"));
+    auto chk_suspend_gpu_in_use = new QCheckBox(qstring__("Suspend GPU computing when computer is in use"));
 
     auto in_in_use_minutes = floating_point_input__(0, 9999.99, text_width__(metrics, 7),
                                                     [&](double d) { prefs.idle_time_to_run = d; });
-    auto wdgt_in_use_minutes = as_horizontal_widget__(label("'In use' means mouse/keyboard input in last"),
-                                                      in_in_use_minutes, label("minutes"));
+    auto wdgt_in_use_minutes = as_horizontal_widget__(label__("'In use' means mouse/keyboard input in last"),
+                                                      in_in_use_minutes, label__("minutes"));
 
-    auto chk_above_usage = new QCheckBox(qstring("Suspend when non-BOINC CPU usage is above"));
+    auto chk_above_usage = new QCheckBox(qstring__("Suspend when non-BOINC CPU usage is above"));
     auto in_above_usage = floating_point_input__(0, 9999.99, text_width__(metrics, 7),
                                                  [&](double d) { prefs.suspend_cpu_usage = d; });
-    auto wdgt_above_usage = as_horizontal_widget__(chk_above_usage, in_above_usage, label("%"));
+    auto wdgt_above_usage = as_horizontal_widget__(chk_above_usage, in_above_usage, label__("%"));
     as_checked_input__(chk_above_usage, in_above_usage, prefs.suspend_cpu_usage, mask.suspend_cpu_usage,
                        [](double t) { return t > 0 ? t : DEFAULT_SUSPEND_CPU_USAGE; });
 
@@ -461,9 +406,9 @@ QWidget *ComputingTab::when_to_suspend_group_(GlobalPreferences &prefs, GlobalPr
 
     // create group
 
-    return as_group__(qstring("When to suspend"), chk_suspend_on_battery, chk_suspend_in_use,
+    return as_group__(qstring__("When to suspend"), chk_suspend_on_battery, chk_suspend_in_use,
                       chk_suspend_gpu_in_use, wdgt_in_use_minutes, wdgt_above_usage,
-                      italic_label(qstring("To suspend by time of day, see the \"Daily Schedules\" section.")));
+                      italic_label__(qstring__("To suspend by time of day, see the \"Daily Schedules\" section.")));
 }
 
 QWidget *ComputingTab::other_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
@@ -493,7 +438,7 @@ QWidget *ComputingTab::other_group_(GlobalPreferences &prefs, GlobalPreferencesM
                                                                   [&](double d) { prefs.disk_interval = d; },
                                                                   QString::number(prefs.disk_interval));
 
-    return as_group__(qstring("Other"), wdgt_store_at_least, wdgt_additional_work, wdgt_switch_tasks, wdgt_request_checkpoints);
+    return as_group__(qstring__("Other"), wdgt_store_at_least, wdgt_additional_work, wdgt_switch_tasks, wdgt_request_checkpoints);
 }
 
 // ----- NetworkTab -----
@@ -505,33 +450,33 @@ NetworkTab::NetworkTab(GlobalPreferences &prefs, GlobalPreferencesMask &mask, QW
 QWidget *NetworkTab::usage_limits_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
     QFontMetrics metrics(font());
 
-    auto chk_limit_download_kb = new QCheckBox(qstring("Limit download rate to"));
+    auto chk_limit_download_kb = new QCheckBox(qstring__("Limit download rate to"));
     auto in_limit_download_kb = floating_point_input__(0, Limits<double>::max() / 1024, text_width__(metrics, 7),
                                                        [&](double d) { prefs.max_bytes_sec_down = d * 1024;} );
-    auto wdgt_limit_download_kb = as_horizontal_widget__(chk_limit_download_kb, in_limit_download_kb, label("KB/second"));
+    auto wdgt_limit_download_kb = as_horizontal_widget__(chk_limit_download_kb, in_limit_download_kb, label__("KB/second"));
 
     as_checked_input__(chk_limit_download_kb, in_limit_download_kb, prefs.max_bytes_sec_down, mask.max_bytes_sec_down,
                        [](auto t) { return t > 0 ? t : DEFAULT_MAX_BYTES_SEC_DOWN; },
                        [](auto t) { return t / 1024; });
 
 
-    auto chk_limit_upload_kb = new QCheckBox(qstring("Limit upload rate to"));
+    auto chk_limit_upload_kb = new QCheckBox(qstring__("Limit upload rate to"));
     auto in_limit_upload_kb = floating_point_input__(0, Limits<double>::max() / 1024, text_width__(metrics, 7),
                                                      [&](double d) { prefs.max_bytes_sec_up = d * 1024;} );
-    auto wdgt_limit_upload_kb = as_horizontal_widget__(chk_limit_upload_kb, in_limit_upload_kb, label("KB/second"));
+    auto wdgt_limit_upload_kb = as_horizontal_widget__(chk_limit_upload_kb, in_limit_upload_kb, label__("KB/second"));
 
     as_checked_input__(chk_limit_upload_kb, in_limit_upload_kb, prefs.max_bytes_sec_up, mask.max_bytes_sec_up,
                        [](auto t) { return t > 0 ? t : DEFAULT_MAX_BYTES_SEC_UP; },
                        [](auto t) { return t / 1024; });
 
 
-    auto chk_limit_usage = new QCheckBox(qstring("Limit usage to"));
+    auto chk_limit_usage = new QCheckBox(qstring__("Limit usage to"));
     auto in_limit_mb = floating_point_input__(0, Limits<double>::max(), text_width__(metrics, 7),
                                               [&](double d) { prefs.daily_xfer_limit_mb = d ;} );
     auto in_limit_days = integer_input__(0, Limits<int>::max(), text_width__(metrics, 7),
                                          [&](int i) { prefs.daily_xfer_period_days = i ;} );
-    auto wdgt_limit_usage = as_horizontal_widget__(chk_limit_usage, in_limit_mb, label("MB every"),
-                                                   in_limit_days, label("days"));
+    auto wdgt_limit_usage = as_horizontal_widget__(chk_limit_usage, in_limit_mb, label__("MB every"),
+                                                   in_limit_days, label__("days"));
 
     as_checked_input__(chk_limit_usage, in_limit_mb, prefs.daily_xfer_limit_mb, mask.daily_xfer_limit_mb,
                        [](auto t) { return t > 0 ? t : DEFAULT_DAILY_XFER_LIMIT_MB; });
@@ -544,23 +489,23 @@ QWidget *NetworkTab::usage_limits_group_(GlobalPreferences &prefs, GlobalPrefere
     chk_limit_usage->setChecked(prefs.daily_xfer_limit_mb > 0 || prefs.daily_xfer_period_days > 0);
 
 
-    return as_group__(qstring("Usage limits"), wdgt_limit_download_kb, wdgt_limit_upload_kb, wdgt_limit_usage,
-                      italic_label(qstring("To limit transfers by time of day, see the \"Daily Schedules\" section.")));
+    return as_group__(qstring__("Usage limits"), wdgt_limit_download_kb, wdgt_limit_upload_kb, wdgt_limit_usage,
+                      italic_label__(qstring__("To limit transfers by time of day, see the \"Daily Schedules\" section.")));
 }
 
 QWidget *NetworkTab::other_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
-    auto chk_skip_image_verification = checkbox__(qstring("Skip data verification for image files"),
+    auto chk_skip_image_verification = checkbox__(qstring__("Skip data verification for image files"),
                                                   prefs.dont_verify_images, mask.dont_verify_images);
-    auto chk_confirm_connecting = checkbox__(qstring("Confirm before connecting to Internet"),
+    auto chk_confirm_connecting = checkbox__(qstring__("Confirm before connecting to Internet"),
                                              prefs.confirm_before_connecting, mask.confirm_before_connecting);
-    auto chk_disconnect_when_done = checkbox__(qstring("Disconnect when done"),
+    auto chk_disconnect_when_done = checkbox__(qstring__("Disconnect when done"),
                                                prefs.hangup_if_dialed, mask.hangup_if_dialed);
 
     chk_skip_image_verification->setChecked(prefs.dont_verify_images);
     chk_confirm_connecting->setChecked(prefs.confirm_before_connecting);
     chk_disconnect_when_done->setChecked(prefs.hangup_if_dialed);
 
-    return as_group__(qstring("Other"), chk_skip_image_verification, chk_confirm_connecting, chk_disconnect_when_done);
+    return as_group__(qstring__("Other"), chk_skip_image_verification, chk_confirm_connecting, chk_disconnect_when_done);
 }
 
 // ----- DiskAndMemoryTab -----
@@ -574,26 +519,26 @@ DiskAndMemoryTab::DiskAndMemoryTab(GlobalPreferences &prefs, GlobalPreferencesMa
 QWidget *DiskAndMemoryTab::disk_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
     QFontMetrics metrics(font());
 
-    auto chk_disk_max_used_gb = new QCheckBox(qstring("Use no more than"));
+    auto chk_disk_max_used_gb = new QCheckBox(qstring__("Use no more than"));
     auto in_disk_max_used_gb = floating_point_input__(0, Limits<double>::max(), text_width__(metrics, 7),
                                                       [&](double d) { prefs.disk_max_used_gb = d; });
-    auto wdgt_disk_max_used_gb = as_horizontal_widget__(chk_disk_max_used_gb, in_disk_max_used_gb, label("GB"));
+    auto wdgt_disk_max_used_gb = as_horizontal_widget__(chk_disk_max_used_gb, in_disk_max_used_gb, label__("GB"));
     as_checked_input__(chk_disk_max_used_gb, in_disk_max_used_gb, prefs.disk_max_used_gb, mask.disk_max_used_gb,
                        [](double d) { return d > 0 ? d : DEFAULT_DISK_MAX_USED_GB; });
 
 
-    auto chk_disk_min_free_gb = new QCheckBox(qstring("Leave at least"));
+    auto chk_disk_min_free_gb = new QCheckBox(qstring__("Leave at least"));
     auto in_disk_min_free_gb = floating_point_input__(0, Limits<double>::max(), text_width__(metrics, 7),
                                                       [&](double d) { prefs.disk_min_free_gb = d ;});
-    auto wdgt_disk_min_free_gb = as_horizontal_widget__(chk_disk_min_free_gb, in_disk_min_free_gb, label("GB free"));
+    auto wdgt_disk_min_free_gb = as_horizontal_widget__(chk_disk_min_free_gb, in_disk_min_free_gb, label__("GB free"));
     as_checked_input__(chk_disk_min_free_gb, in_disk_min_free_gb, prefs.disk_min_free_gb, mask.disk_min_free_gb,
                        [](double d) { return d > 0 ? d : DEFAULT_DISK_MIN_FREE_GB; });
 
 
-    auto chk_disk_max_used_prct = new QCheckBox(qstring("Use no more than"));
+    auto chk_disk_max_used_prct = new QCheckBox(qstring__("Use no more than"));
     auto in_disk_max_used_prct = floating_point_input__(0, 100, text_width__(metrics, 7),
                                                         [&](double d) { prefs.disk_max_used_pct = d; });
-    auto wdgt_disk_max_used_prct = as_horizontal_widget__(chk_disk_max_used_prct, in_disk_max_used_prct, label("% of total"));
+    auto wdgt_disk_max_used_prct = as_horizontal_widget__(chk_disk_max_used_prct, in_disk_max_used_prct, label__("% of total"));
     as_checked_input__(chk_disk_max_used_prct, in_disk_max_used_prct, prefs.disk_max_used_pct, mask.disk_max_used_pct,
                        [](double d) { return d >= 0 && d < 100 ? d : DEFAULT_DISK_MAX_USED_PCT; });
 
@@ -603,8 +548,8 @@ QWidget *DiskAndMemoryTab::disk_group_(GlobalPreferences &prefs, GlobalPreferenc
     chk_disk_max_used_prct->setChecked(prefs.disk_max_used_pct < 100);
 
 
-    return as_group__(qstring("Disk"),
-                      label("BOINC will use the most restrictive of these settings:"),
+    return as_group__(qstring__("Disk"),
+                      label__("BOINC will use the most restrictive of these settings:"),
                       wdgt_disk_max_used_gb, wdgt_disk_min_free_gb, wdgt_disk_max_used_prct);
 }
 
@@ -623,7 +568,7 @@ QWidget *DiskAndMemoryTab::memory_group_(GlobalPreferences &prefs, GlobalPrefere
                                                                   [&](double d) { return prefs.ram_max_used_idle_pct = d; },
                                                                   QString::number(prefs.ram_max_used_idle_pct));
 
-    auto chk_leave_in_mem = checkbox__(qstring("Leave non-GPU tasks in memory while suspended"),
+    auto chk_leave_in_mem = checkbox__(qstring__("Leave non-GPU tasks in memory while suspended"),
                                        prefs.leave_apps_in_memory, mask.leave_apps_in_memory);
     chk_leave_in_mem->setChecked(prefs.leave_apps_in_memory);
 
@@ -633,7 +578,7 @@ QWidget *DiskAndMemoryTab::memory_group_(GlobalPreferences &prefs, GlobalPrefere
                                                             [&](double d) { return prefs.vm_max_used_pct = d; },
                                                             QString::number(prefs.vm_max_used_pct));
 
-    return as_group__(qstring("Memory"), wdgt_mem_in_use_prct, wdgt_mem_not_in_use_prct,
+    return as_group__(qstring__("Memory"), wdgt_mem_in_use_prct, wdgt_mem_not_in_use_prct,
                       chk_leave_in_mem, wdgt_max_swap_prct);
 }
 
@@ -659,8 +604,8 @@ QWidget *DailySchedulesTab::computing_group_(GlobalPreferences &prefs, GlobalPre
     auto grid = new QWidget;
     grid->setLayout(grid_lyt);
 
-    return as_group__(qstring("Computing"),
-                      time_of_day_widget__(qstring("Compute only between"), qstring("and"),
+    return as_group__(qstring__("Computing"),
+                      time_of_day_widget__(qstring__("Compute only between"), qstring__("and"),
                                            prefs.start_hour, mask.start_hour,
                                            prefs.end_hour, mask.end_hour, false),
                       as_group__("Day-of-week override", grid));
@@ -680,8 +625,8 @@ QWidget *DailySchedulesTab::network_group_(GlobalPreferences &prefs, GlobalPrefe
     auto grid = new QWidget;
     grid->setLayout(grid_lyt);
 
-    return as_group__(qstring("Network"),
-                      time_of_day_widget__(qstring("Transfer files only between"), qstring("and"),
+    return as_group__(qstring__("Network"),
+                      time_of_day_widget__(qstring__("Transfer files only between"), qstring__("and"),
                                            prefs.net_start_hour, mask.net_start_hour,
                                            prefs.net_end_hour, mask.net_end_hour, false),
                       as_group__("Day-of-week override", grid));

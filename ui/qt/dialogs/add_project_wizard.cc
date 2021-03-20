@@ -42,6 +42,7 @@
 #endif
 
 #include "qt/controller.h"
+#include "qt/dialogs/utils.h"
 
 namespace {
 
@@ -58,48 +59,6 @@ const char * const FIELD_LOGIN_ACCOUNT_KEY = "account_key";
 
 QString all_category() {
     return QStringLiteral("All");
-}
-
-QLabel *topic__(QString text, QWidget *parent = nullptr) {
-    auto *lbl = new QLabel(std::move(text), parent);
-    lbl->setStyleSheet("font-weight: bold");
-    return lbl;
-}
-
-template<typename Widget>
-QLayout *add_widgets__(QLayout *layout, Widget widget) {
-    layout->addWidget(widget);
-    return layout;
-}
-
-template<typename Widget, typename... Widgets>
-QLayout *add_widgets__(QLayout *layout, Widget widget, Widgets... others) {
-    layout->addWidget(widget);
-    return add_widgets__(layout, others...);
-}
-
-template<typename... Widgets>
-QWidget *as_combined_widget__(QLayout *layout, Widgets... widgets) {
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    add_widgets__(layout, widgets...);
-
-    // TODO don't use a dummy widget, just add the layout to another layout
-    auto widget = new QWidget;
-    widget->setLayout(layout);
-    widget->setContentsMargins(0, 0, 0, 0);
-
-    return widget;
-}
-
-template<typename... Widgets>
-QWidget *as_vertical_widget__(Widgets... widgets) {
-    return as_combined_widget__(new QVBoxLayout, widgets...);
-}
-
-template<typename... Widgets>
-QWidget *as_horizontal_widget__(Widgets... widgets) {
-    return as_combined_widget__(new QHBoxLayout, widgets...);
 }
 
 QStringList extract_categories__(const woinc::AllProjectsList &projects) {
@@ -247,7 +206,7 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
     // setup the layout of the wizard page
 
     layout()->addWidget(as_combined_widget__(new QVBoxLayout,
-                                             topic__(QStringLiteral("Choose a project")),
+                                             bold_label__(QStringLiteral("Choose a project")),
                                              new QLabel(QStringLiteral("To choose a project, click its name or type its URL below.")),
                                              as_horizontal_widget__(
                                                  project_selection_wdgt,
