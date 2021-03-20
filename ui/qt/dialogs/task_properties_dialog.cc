@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/task_properties_dialog.cc --
-   Written and Copyright (C) 2020 by vmc.
+   Written and Copyright (C) 2020, 2021 by vmc.
 
    This file is part of woinc.
 
@@ -55,7 +55,7 @@ TaskPropertiesDialog::TaskPropertiesDialog(Task in_task, QWidget *parent)
     : QDialog(parent, Qt::Dialog)
     , task_(std::move(in_task))
 {
-    setWindowTitle(QStringLiteral("Properties of task %1").arg(task_.task_name));
+    setWindowTitle(QStringLiteral("Properties of task %1").arg(task_.name));
 
     auto *glyt = new QGridLayout;
 
@@ -75,9 +75,9 @@ TaskPropertiesDialog::TaskPropertiesDialog(Task in_task, QWidget *parent)
     if (task_.active_task) {
         add_row__(glyt, QStringLiteral("CPU time"), seconds_as_time_string(task_.current_cpu_time));
         add_row__(glyt, QStringLiteral("CPU time since checkpoint"), seconds_as_time_string(task_.current_cpu_time - task_.checkpoint_cpu_time));
-        if (task_.elapsed > 0)
-            add_row__(glyt, QStringLiteral("Elapsed time"), seconds_as_time_string(task_.elapsed));
-        add_row__(glyt, QStringLiteral("Estimated time remaining"), seconds_as_time_string(task_.remaining));
+        if (task_.elapsed_seconds > 0)
+            add_row__(glyt, QStringLiteral("Elapsed time"), seconds_as_time_string(task_.elapsed_seconds));
+        add_row__(glyt, QStringLiteral("Estimated time remaining"), seconds_as_time_string(task_.remaining_seconds));
         add_row__(glyt, QStringLiteral("Fraction done"), QString::asprintf("%.3f%%", task_.progress * 100));
         add_row__(glyt, QStringLiteral("Virtual memory size"), size_as_string(task_.virtual_mem_size));
         add_row__(glyt, QStringLiteral("Working set size"), size_as_string(task_.working_set_size));

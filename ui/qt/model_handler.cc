@@ -1,5 +1,5 @@
 /* ui/qt/model_handler.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -55,7 +55,7 @@ template<>
 int compare(const woinc::ui::qt::Task &a, const woinc::ui::qt::Task &b) {
     int result = compare(a.project, b.project);
     if (!result)
-        result = compare(a.task_name, b.task_name);
+        result = compare(a.name, b.name);
     return result;
 }
 
@@ -617,9 +617,9 @@ FileTransfers ModelHandler::map_(woinc::FileTransfers wfile_transfers, const Hos
         dest.project_url = QString::fromStdString(source.project_url);
         dest.status = resolve_transfer_status(source, host_model.cc_status);
 
-        dest.elapsed = 0;
+        dest.elapsed_seconds = 0;
         if (source.persistent_file_xfer.get() != nullptr)
-            dest.elapsed = source.persistent_file_xfer->time_so_far;
+            dest.elapsed_seconds = source.persistent_file_xfer->time_so_far;
 
         dest.size = source.nbytes;
 
@@ -842,7 +842,7 @@ QVariant ModelHandler::map_(woinc::Tasks wtasks, const HostModel &host_model) {
         dest.project_url = QString::fromStdString(source.project_url);
         dest.resources   = QString::fromStdString(source.resources);
         dest.status      = resolve_task_status(source, host_model.cc_status, project->non_cpu_intensive);
-        dest.task_name   = QString::fromStdString(source.name);
+        dest.name        = QString::fromStdString(source.name);
         dest.wu_name     = QString::fromStdString(source.wu_name);
 
         dest.active_task = source.active_task != nullptr;
@@ -852,7 +852,7 @@ QVariant ModelHandler::map_(woinc::Tasks wtasks, const HostModel &host_model) {
 
         if (dest.active_task) {
             dest.progress         = source.active_task->fraction_done;
-            dest.elapsed          = static_cast<int>(round(source.active_task->elapsed_time));
+            dest.elapsed_seconds  = static_cast<int>(round(source.active_task->elapsed_time));
             dest.progress_rate    = source.active_task->progress_rate;
             dest.virtual_mem_size = source.active_task->swap_size;
             dest.working_set_size = source.active_task->working_set_size_smoothed;
@@ -864,7 +864,7 @@ QVariant ModelHandler::map_(woinc::Tasks wtasks, const HostModel &host_model) {
         dest.final_cpu_seconds     = static_cast<int>(round(source.final_cpu_time));
         dest.final_elapsed_seconds = static_cast<int>(round(source.final_elapsed_time));
         dest.pid                   = dest.active_task ? source.active_task->pid : 0;
-        dest.remaining             = static_cast<int>(round(source.estimated_cpu_time_remaining));
+        dest.remaining_seconds     = static_cast<int>(round(source.estimated_cpu_time_remaining));
         dest.slot                  = dest.active_task ? source.active_task->slot : -1;
 
         dest.deadline      = source.report_deadline;
@@ -877,9 +877,9 @@ QVariant ModelHandler::map_(woinc::Tasks wtasks, const HostModel &host_model) {
                 source.state == woinc::RESULT_CLIENT_STATE::ABORTED ||
                 source.state == woinc::RESULT_CLIENT_STATE::UPLOAD_FAILED)) {
             dest.progress = 1;
-            dest.elapsed = static_cast<int>(round(source.final_elapsed_time));
-            if (!dest.elapsed)
-                dest.elapsed = static_cast<int>(round(source.final_cpu_time));
+            dest.elapsed_seconds = static_cast<int>(round(source.final_elapsed_time));
+            if (!dest.elapsed_seconds)
+                dest.elapsed_seconds = static_cast<int>(round(source.final_cpu_time));
         }
 
         tasks.push_back(std::move(dest));

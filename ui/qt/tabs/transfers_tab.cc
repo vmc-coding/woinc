@@ -1,5 +1,5 @@
 /* ui/qt/tabs/transfers_tab.cc --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -194,7 +194,7 @@ QVariant TabModel::data(const QModelIndex &index, int role) const {
             case INDEX_FILE:     return file_transfer.file;
             case INDEX_PROGRESS: return file_transfer.size > 0 ? file_transfer.bytes_xferred / file_transfer.size : 0;
             case INDEX_SIZE:     return size_to_string(file_transfer.size, file_transfer.bytes_xferred);
-            case INDEX_ELAPSED:  return seconds_as_time_string(static_cast<long>(file_transfer.elapsed));
+            case INDEX_ELAPSED:  return seconds_as_time_string(static_cast<long>(file_transfer.elapsed_seconds));
             case INDEX_SPEED:    return QString::asprintf("%0.2f KBps", file_transfer.speed / 1024);
             case INDEX_STATUS:   return file_transfer.status;
         }

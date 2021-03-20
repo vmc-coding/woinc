@@ -1,5 +1,5 @@
 /* ui/qt/types.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -37,7 +37,7 @@ bool FileTransfer::operator==(const FileTransfer &that) const {
         && project_url == that.project_url
         && project == that.project
         && status == that.status
-        && elapsed == that.elapsed
+        && elapsed_seconds == that.elapsed_seconds
         && bytes_xferred == that.bytes_xferred
         && size == that.size
         && speed == that.speed;
@@ -84,15 +84,15 @@ bool Project::operator!=(const Project &that) const {
 }
 
 bool Task::operator==(const Task &that) const {
-    return task_name == that.task_name
+    return name == that.name
         && project_url == that.project_url
         && application == that.application
         && project == that.project
         && status == that.status
         && suspended == that.suspended
         && progress == that.progress
-        && elapsed == that.elapsed
-        && remaining == that.remaining
+        && elapsed_seconds == that.elapsed_seconds
+        && remaining_seconds == that.remaining_seconds
         && deadline == that.deadline;
 }
 

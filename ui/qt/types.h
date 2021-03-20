@@ -1,5 +1,5 @@
 /* ui/qt/types.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -56,7 +56,6 @@ struct Notice {
 
 typedef std::vector<Notice> Notices;
 
-// TODO should we really use a new struct here?
 struct Project {
     QString account;
     QString project_url;
@@ -111,11 +110,11 @@ struct Task {
     QString application;
     QString executable;
     QString host;
+    QString name;
     QString project;
     QString project_url;
     QString resources;
     QString status;
-    QString task_name; // TODO why task_name and not just name? It's in the struct Task anyway ..
     QString wu_name;
     bool active_task = false;
     bool suspended = false;
@@ -124,13 +123,13 @@ struct Task {
     double progress_rate = 0;
     double virtual_mem_size = 0;
     double working_set_size = 0;
-    int checkpoint_cpu_time = 0; // TODO rename this (it's the current_cpu_time of the last checkpoint)
-    int current_cpu_time = 0; // TODO rename this (it's something like cpu running seconds)
-    int elapsed = 0; // TODO rename this to elapsed_seconds
+    int checkpoint_cpu_time = 0; // current_cpu_time of the last checkpoint
+    int current_cpu_time = 0; // number of seconds this task is running on the CPU
+    int elapsed_seconds = 0;
     int final_cpu_seconds = 0;
     int final_elapsed_seconds = 0;
     int pid = 0;
-    int remaining = 0; // TODO rename this to remaining_seconds
+    int remaining_seconds = 0;
     int slot = 0;
     time_t deadline = 0;
     time_t received_time = 0;
@@ -177,7 +176,7 @@ struct FileTransfer {
     QString project;
     QString project_url;
     QString status;
-    double elapsed;
+    double elapsed_seconds;
     double bytes_xferred;
     double size;
     double speed;

@@ -1,5 +1,5 @@
 /* ui/qt/tabs/tasks_tab.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -65,7 +65,7 @@ int compare(const QString &a, const QString &b) {
 int compare(const woinc::ui::qt::Task &a, const woinc::ui::qt::Task &b) {
     int result = compare(a.project, b.project);
     if (!result)
-        result = compare(a.task_name, b.task_name);
+        result = compare(a.name, b.name);
     return result;
 }
 
@@ -108,7 +108,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
 #define WOINC_CONNECT_BTN(BTN, OP) connect(cmd_btns_[BTN], &QPushButton::released, this, \
                                            [&]() { \
                                                for (auto &&task : selected_tasks_) \
-                                                   emit task_op_clicked(task.host, task.project_url, task.task_name, OP); \
+                                                   emit task_op_clicked(task.host, task.project_url, task.name, OP); \
                                            })
 
     WOINC_CONNECT_BTN(Command::SUSPEND, TASK_OP::SUSPEND);
@@ -123,7 +123,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
 
                 if (selected_tasks_.size() == 1) {
                     auto &task = selected_tasks_.front();
-                    ts << "this task '" << task.task_name << "'?\n(Progress: "
+                    ts << "this task '" << task.name << "'?\n(Progress: "
                         << task.progress << "%, Status: " << task.status << ")";
                 } else {
                     ts << "these " << selected_tasks_.size() << " tasks?";
@@ -132,7 +132,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                 if (QMessageBox::question(this, QString::fromUtf8("Abort task"), msg,
                                           QMessageBox::No | QMessageBox::Yes) == QMessageBox::Yes)
                     for (auto &&task : selected_tasks_)
-                        emit task_op_clicked(task.host, task.project_url, task.task_name, TASK_OP::ABORT);
+                        emit task_op_clicked(task.host, task.project_url, task.name, TASK_OP::ABORT);
             });
 
     connect(cmd_btns_[Command::PROPERTIES], &QPushButton::released, this,
@@ -323,11 +323,11 @@ QVariant TabModel::data_as_display_role_(const QModelIndex &index) const {
         case INDEX_PROJECT:     return task.project;
         case INDEX_PROGRESS:    return task.progress;
         case INDEX_STATUS:      return task.status;
-        case INDEX_ELAPSED:     return seconds_as_time_string(task.elapsed);
-        case INDEX_REMAINING:   return seconds_as_time_string(task.remaining);
+        case INDEX_ELAPSED:     return seconds_as_time_string(task.elapsed_seconds);
+        case INDEX_REMAINING:   return seconds_as_time_string(task.remaining_seconds);
         case INDEX_DEADLINE:    return time_t_as_string(task.deadline);
         case INDEX_APPLICATION: return task.application;
-        case INDEX_TASK_NAME:   return task.task_name;
+        case INDEX_TASK_NAME:   return task.name;
     }
 
     assert(false);
