@@ -1,7 +1,7 @@
 #!/bin/sh
 
 for i in $*; do
-    tmp=$(tempfile)
+    tmp=$(mktemp)
     cat <<EOF >${tmp}
 /* $i --
    Written and Copyright (C) $(date '+%Y') by ${USER}.
