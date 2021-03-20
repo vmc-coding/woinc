@@ -77,11 +77,14 @@ class Controller : public QObject {
         void register_handler(PeriodicTaskHandler *handler);
         void deregister_handler(PeriodicTaskHandler *handler);
 
-        std::future<GlobalPreferences> load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode);
-        std::future<bool> save_global_prefs(const QString &host,
-                                            const GlobalPreferences &prefs,
-                                            const GlobalPreferencesMask &mask);
-        std::future<bool> read_global_prefs(const QString &host);
+        void load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode,
+                               Receiver<GlobalPreferences> receiver, ErrorHandler error_handler);
+        void save_global_prefs(const QString &host,
+                               const GlobalPreferences &prefs,
+                               const GlobalPreferencesMask &mask,
+                               Receiver<bool> receiver,
+                               ErrorHandler error_handler);
+        void read_global_prefs(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler);
 
         void load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler);
 

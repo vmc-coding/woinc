@@ -133,40 +133,33 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
 
     connect(options_menu, &OptionsMenu::computation_preferences_to_be_shown,
             [=, &controller](QString host) {
-                auto prefs_future = controller.load_global_prefs(host, GET_GLOBAL_PREFS_MODE::WORKING);
-                prefs_future.wait();
-                try {
-                    auto *dlg = new PreferencesDialog(std::move(prefs_future.get()), this);
+                // TODO Load the prefs in the dialog while showing a loading animation
+                controller.load_global_prefs(
+                    host, GET_GLOBAL_PREFS_MODE::WORKING,
+                    [=, &controller](GlobalPreferences loaded_prefs) {
+                        auto *dlg = new PreferencesDialog(std::move(loaded_prefs), this);
 
-                    connect(dlg, &PreferencesDialog::save, [=, &controller](GlobalPreferences prefs, GlobalPreferencesMask mask) {
-                        QString error;
+                        connect(dlg, &PreferencesDialog::save, [=, &controller](GlobalPreferences prefs, GlobalPreferencesMask mask) {
+                            controller.save_global_prefs(
+                                host, std::move(prefs), std::move(mask),
+                                [=, &controller](bool status) {
+                                    if (status)
+                                        controller.read_global_prefs(host, [](bool){}, [](QString) {});
+                                    else
+                                        QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("The client failed to save the preferences."), QMessageBox::Ok);
 
-                        try {
-                            auto future = controller.save_global_prefs(host, prefs, mask);
-                            future.wait();
+                                },
+                                [=](QString error) {
+                                    QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+                                });
+                        });
 
-                            if (future.get()) {
-                                controller.read_global_prefs(host);
-                                return;
-                            } else {
-                                error = QString::fromUtf8("The client could not save the preferences.");
-                            }
-                        } catch (woinc::ui::ShutdownException &) {
-                            error = QString::fromUtf8("Not connected to host");
-                        } catch (woinc::ui::UnknownHostException &e) {
-                            error = QString::fromUtf8("Not connected to host %1").arg(QString::fromStdString(e.host));
-                        } catch (std::exception &e) {
-                            error = QString::fromUtf8(e.what());
-                        }
-
-                        QMessageBox::critical(this, QString::fromUtf8("Error"), error, QMessageBox::Ok);
+                        dlg->setAttribute(Qt::WA_DeleteOnClose);
+                        dlg->open();
+                    },
+                    [=](QString error) {
+                        show_error(QString::fromUtf8("Error"), error);
                     });
-
-                    dlg->setAttribute(Qt::WA_DeleteOnClose);
-                    dlg->open();
-                } catch (std::exception &e) {
-                    show_error(QString::fromUtf8("Error"), QString::fromUtf8(e.what()));
-                }
             });
 
 }

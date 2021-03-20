@@ -60,13 +60,13 @@ class Subscription {
 
         void finish() {
             if (remaining_tries_ == 0)
-                fail(QString());
+                fail_(QString());
             else
                 finish_();
         }
 
     protected:
-        void fail(QString err) {
+        void fail_(QString err) {
             error_handler_(std::move(err));
         }
 
@@ -98,8 +98,12 @@ class SubscriptionImpl : public Subscription {
         void finish_() final {
             try {
                 receiver_(std::move(future_.get()));
+            } catch (woinc::ui::ShutdownException &) {
+                fail_(QString::fromUtf8("Not connected to host"));
+            } catch (woinc::ui::UnknownHostException &e) {
+                fail_(QString::fromUtf8("Not connected to host %1").arg(QString::fromStdString(e.host)));
             } catch (const std::exception &err) {
-                fail(QString::fromStdString(err.what()));
+                fail_(QString::fromStdString(err.what()));
             }
         };
 
@@ -185,24 +189,33 @@ void Controller::deregister_handler(PeriodicTaskHandler *handler){
     ctrl_->deregister_handler(handler);
 }
 
-std::future<GlobalPreferences> Controller::load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode) {
-    return ctrl_->load_global_preferences(host.toStdString(), mode);
+void Controller::load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode,
+                                   Receiver<GlobalPreferences> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<GlobalPreferences>(std::move(receiver),
+                                                         std::move(error_handler),
+                                                         ctrl_->load_global_preferences(host.toStdString(), mode)));
 }
 
-std::future<bool> Controller::save_global_prefs(const QString &host,
-                                                const GlobalPreferences &prefs,
-                                                const GlobalPreferencesMask &mask) {
-    return ctrl_->save_global_preferences(host.toStdString(), prefs, mask);
+void Controller::save_global_prefs(const QString &host,
+                                   const GlobalPreferences &prefs,
+                                   const GlobalPreferencesMask &mask,
+                                   Receiver<bool> receiver,
+                                   ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            ctrl_->save_global_preferences(host.toStdString(), prefs, mask)));
 }
 
-std::future<bool> Controller::read_global_prefs(const QString &host) {
-    return ctrl_->read_global_prefs_override(host.toStdString());
+void Controller::read_global_prefs(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            ctrl_->read_global_prefs_override(host.toStdString())));
 }
 
 void Controller::load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<AllProjectsList>(std::move(receiver),
-                                                              std::move(error_handler),
-                                                              std::move(ctrl_->all_projects_list(host.toStdString()))));
+                                                       std::move(error_handler),
+                                                       std::move(ctrl_->all_projects_list(host.toStdString()))));
 }
 
 void Controller::start_loading_project_config(const QString &host, const QString &master_url, Receiver<bool> receiver, ErrorHandler error_handler) {
@@ -228,12 +241,12 @@ void Controller::start_account_lookup(const QString &host, const QString &master
 
 void Controller::poll_account_lookup(const QString &host, Receiver<AccountOut> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<AccountOut>(std::move(receiver),
-                                                     std::move(error_handler),
-                                                     std::move(ctrl_->poll_account_lookup(host.toStdString()))));
+                                                  std::move(error_handler),
+                                                  std::move(ctrl_->poll_account_lookup(host.toStdString()))));
 }
 
 void Controller::attach_project(const QString &host, const QString &master_url, const QString &account_key,
-                                             Receiver<bool> receiver, ErrorHandler error_handler) {
+                                Receiver<bool> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
                                             std::move(error_handler),
                                             std::move(ctrl_->attach_project(host.toStdString(), master_url.toStdString(), account_key.toStdString()))));
