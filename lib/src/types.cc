@@ -32,20 +32,12 @@ FileTransfer::FileTransfer(const FileTransfer &ft)
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     , WOINC_COPY(ft, max_nbytes)
 #endif
-    , persistent_file_xfer(nullptr)
-    , file_xfer(nullptr)
 {
-    if (ft.persistent_file_xfer) {
-        auto pfx = new PersistentFileXfer;
-        *pfx = *ft.persistent_file_xfer;
-        persistent_file_xfer.reset(pfx);
-    }
+    if (ft.persistent_file_xfer)
+        persistent_file_xfer = std::make_unique<PersistentFileXfer>(*ft.persistent_file_xfer);
 
-    if (ft.file_xfer) {
-        auto fx = new FileXfer;
-        *fx = *ft.file_xfer;
-        file_xfer.reset(fx);
-    }
+    if (ft.file_xfer)
+        file_xfer = std::make_unique<FileXfer>(*ft.file_xfer);
 }
 
 FileTransfer &FileTransfer::operator=(FileTransfer ft) {
@@ -73,7 +65,6 @@ Task::Task(const Task &task)
     , WOINC_COPY(task, resources)
     , WOINC_COPY(task, scheduler_wait_reason)
     , WOINC_COPY(task, wu_name)
-    , active_task(nullptr)
     , WOINC_COPY(task, received_time)
     , WOINC_COPY(task, report_deadline)
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
@@ -84,11 +75,8 @@ Task::Task(const Task &task)
     , WOINC_COPY(task, platform)
 #endif
 {
-    if (task.active_task) {
-        auto at = new ActiveTask;
-        *at = *task.active_task;
-        active_task.reset(at);
-    }
+    if (task.active_task)
+        active_task = std::make_unique<ActiveTask>(*task.active_task);
 }
 
 Task &Task::operator=(Task task) {
@@ -112,15 +100,11 @@ ClientState::ClientState(const ClientState &cs)
     , WOINC_COPY(cs, have_ati)
     , WOINC_COPY(cs, have_cuda)
     , WOINC_COPY(cs, platform_name)
-    , net_stats(nullptr)
 #endif
 {
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
-    if (cs.net_stats) {
-        auto ns = new NetStats;
-        *ns = *cs.net_stats;
-        net_stats.reset(ns);
-    }
+    if (cs.net_stats)
+        net_stats = std::make_unique<NetStats>(*cs.net_stats);
 #endif
 }
 

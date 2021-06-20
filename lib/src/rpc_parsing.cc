@@ -1,5 +1,5 @@
 /* lib/rpc_parsing.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -398,7 +398,7 @@ void parse_(const wxml::Node &node, woinc::ClientState &client_state) {
             parse_(child, platform);
             client_state.platforms.push_back(std::move(platform));
         } else if (child.tag == "net_stats") {
-            client_state.net_stats = std::unique_ptr<woinc::NetStats>(new woinc::NetStats);
+            client_state.net_stats = std::make_unique<woinc::NetStats>();
             parse_(child, *client_state.net_stats);
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
         }
@@ -439,13 +439,13 @@ void parse_(const woinc::xml::Node &node, woinc::FileTransfer &file_transfer) {
 
     auto persistent_file_xfer_node = node.find_child("persistent_file_xfer");
     if (node.found_child(persistent_file_xfer_node)) {
-        file_transfer.persistent_file_xfer.reset(new woinc::PersistentFileXfer());
+        file_transfer.persistent_file_xfer = std::make_unique<woinc::PersistentFileXfer>();
         parse_(*persistent_file_xfer_node, *file_transfer.persistent_file_xfer);
     }
 
     auto file_xfer_node = node.find_child("file_xfer");
     if (node.found_child(file_xfer_node)) {
-        file_transfer.file_xfer.reset(new woinc::FileXfer());
+        file_transfer.file_xfer = std::make_unique<woinc::FileXfer>();
         parse_(*file_xfer_node, *file_transfer.file_xfer);
     }
 }
@@ -798,7 +798,7 @@ void parse_(const wxml::Node &node, woinc::Task &task) {
 
     auto active_task_node = node.find_child("active_task");
     if (node.found_child(active_task_node)) {
-        task.active_task.reset(new woinc::ActiveTask());
+        task.active_task = std::make_unique<woinc::ActiveTask>();
         parse_(*active_task_node, *task.active_task);
     }
 }
