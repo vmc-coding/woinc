@@ -16,8 +16,8 @@ They may not be up to date, but there are some [here](http://83.169.22.26/woinc/
 
 - **libwoinc**: the core library, implementing the communication with the BOINC clients by abstracting it through [commands](https://en.wikipedia.org/wiki/Command_pattern)
 - **libwoincui**: periodic queries and async communication with the clients; supports multiple clients
-- **woinccmd**: reimplementation of boinccmd using woinc but not woincui; it's the CLI to the clients
-- **woincqt**: reimplementation of boincmgr using woincui and Qt5; not supporting multiple clients yet
+- **woinccmd**: reimplementation of boinccmd using libwoinc but not libwoincui; it's the CLI to the clients
+- **woincqt**: reimplementation of boincmgr using libwoincui and Qt5; not supporting multiple clients yet
 
 ## dependencies
 
@@ -55,6 +55,12 @@ They may not be up to date, but there are some [here](http://83.169.22.26/woinc/
     ```shell script
       $ cmake ..
       $ make
+    ```
+    for a parallel build add the -j parameter for the last step, e.g.
+    ```
+      $ make -j4
+      # or if nproc is installed:
+      $ make -j $(nproc)
     ```
     of course there are a lot of options to set:
     ```
