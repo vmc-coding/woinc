@@ -1,5 +1,5 @@
 /* lib/socket.h --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -19,6 +19,7 @@
 #ifndef WOINC_SOCKET_H_
 #define WOINC_SOCKET_H_
 
+#include <memory>
 #include <string>
 
 #include "visibility.h"
@@ -69,7 +70,7 @@ struct WOINC_LOCAL Socket {
         bool is_localhost() const;
 
     public:
-        static Socket *create(VERSION v);
+        static std::unique_ptr<Socket> create(VERSION v);
 
 #ifdef WOINC_USE_POSIX_SOCKETS
     private:

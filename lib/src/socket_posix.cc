@@ -1,5 +1,5 @@
 /* lib/socket_posix.cc --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -150,18 +150,18 @@ bool Socket::is_localhost() const {
     return is_localhost_;
 }
 
-Socket *Socket::create(Socket::VERSION v) {
+std::unique_ptr<Socket> Socket::create(Socket::VERSION v) {
     switch (v) {
         case VERSION::ALL:
-            return new Socket(AF_UNSPEC);
+            return std::unique_ptr<Socket>(new Socket(AF_UNSPEC));
         case VERSION::IPv4:
-            return new Socket(AF_INET);
+            return std::unique_ptr<Socket>(new Socket(AF_INET));
         case VERSION::IPv6:
-            return new Socket(AF_INET6);
+            return std::unique_ptr<Socket>(new Socket(AF_INET6));
         /* no default to get warnings on compile time when VERSION has been changed */
     }
     assert(false);
-    return nullptr;
+    return std::unique_ptr<Socket>();
 }
 
 }

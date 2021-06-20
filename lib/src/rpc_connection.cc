@@ -1,5 +1,5 @@
 /* lib/rpc_connection.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -58,14 +58,14 @@ Connection::Result Connection::Impl::open(const std::string &hostname, std::uint
 
     // let the network stack decide which version to use
 
-    socket_.reset(Socket::create(Socket::VERSION::ALL));
+    socket_ = Socket::create(Socket::VERSION::ALL);
 
-    if (socket_.get() != nullptr && socket_->connect(hostname, port))
+    if (socket_ && socket_->connect(hostname, port))
         return Result();
 
     // network stack doesn't support VERSION::ALL, so let't try which one to use
 
-    socket_.reset(Socket::create(Socket::VERSION::IPv6));
+    socket_ = Socket::create(Socket::VERSION::IPv6);
 
     std::string error_msg;
 
@@ -76,7 +76,7 @@ Connection::Result Connection::Impl::open(const std::string &hostname, std::uint
         error_msg = std::move(result_connect.error);
     }
 
-    socket_.reset(Socket::create(Socket::VERSION::IPv4));
+    socket_ = Socket::create(Socket::VERSION::IPv4);
 
     if (socket_.get() != nullptr) {
         Socket::Result result_connect = socket_->connect(hostname, port);
@@ -160,7 +160,7 @@ bool Connection::Impl::is_localhost() const {
 // ---- Connection ----
 
 Connection::Connection()
-    : impl_(new Impl)
+    : impl_(std::make_unique<Impl>())
 {}
 
 Connection::~Connection() {
