@@ -1,5 +1,5 @@
 /* ui/controller/controller.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -142,7 +142,7 @@ class WOINCUI_LOCAL Controller::Impl {
             auto future = promise.get_future();
 
             auto *job = new woinc::ui::AsyncJob<RESULT>(
-                new CMD{request},
+                new CMD{std::move(request)},
                 std::move(promise),
                 [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::COMMAND_STATUS status) {
                     if (status == woinc::rpc::COMMAND_STATUS::OK)

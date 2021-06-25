@@ -1,5 +1,5 @@
 /* woinc/rpc_command.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -58,7 +58,7 @@ struct Command {
 template<typename REQUEST_TYPE, typename RESPONSE_TYPE, bool REQUIRE_LOCAL_AUTH>
 struct BOINCCommand : public Command {
     BOINCCommand() = default;
-    explicit BOINCCommand(REQUEST_TYPE rq) : request_(std::move(rq)) {}
+    explicit BOINCCommand(REQUEST_TYPE &&rq) : request_(std::move(rq)) {}
     virtual ~BOINCCommand() = default;
 
     COMMAND_STATUS execute(Connection &connection) override;
