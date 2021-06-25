@@ -1,5 +1,5 @@
 /* lib/src/types.cc --
-   Written and Copyright (C) 2019-2020 by vmc.
+   Written and Copyright (C) 2019-2021 by vmc.
 
    This file is part of woinc.
 
@@ -40,11 +40,6 @@ FileTransfer::FileTransfer(const FileTransfer &ft)
         file_xfer = std::make_unique<FileXfer>(*ft.file_xfer);
 }
 
-FileTransfer &FileTransfer::operator=(FileTransfer ft) {
-    *this = std::move(ft);
-    return *this;
-}
-
 Task::Task(const Task &task)
     : WOINC_COPY(task, state)
     , WOINC_COPY(task, coproc_missing)
@@ -79,11 +74,6 @@ Task::Task(const Task &task)
         active_task = std::make_unique<ActiveTask>(*task.active_task);
 }
 
-Task &Task::operator=(Task task) {
-    *this = std::move(task);
-    return *this;
-}
-
 ClientState::ClientState(const ClientState &cs)
     : WOINC_COPY(cs, app_versions)
     , WOINC_COPY(cs, apps)
@@ -106,11 +96,6 @@ ClientState::ClientState(const ClientState &cs)
     if (cs.net_stats)
         net_stats = std::make_unique<NetStats>(*cs.net_stats);
 #endif
-}
-
-ClientState &ClientState::operator=(ClientState cs) {
-    *this = std::move(cs);
-    return *this;
 }
 
 }

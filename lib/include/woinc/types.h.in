@@ -177,8 +177,6 @@ struct FileTransfer {
     FileTransfer(const FileTransfer &ft);
     FileTransfer(FileTransfer &&ft) = default;
 
-    FileTransfer &operator=(FileTransfer ft);
-
     double nbytes = 0;
     int status = 0;
     std::string name;
@@ -509,8 +507,6 @@ struct Task {
     Task(const Task &task);
     Task(Task &&task) = default;
 
-    Task &operator=(Task task);
-
     RESULT_CLIENT_STATE state = RESULT_CLIENT_STATE::NEW;
 
     bool coproc_missing = false;
@@ -604,8 +600,6 @@ struct ClientState {
     ClientState() = default;
     ClientState(const ClientState &cs);
     ClientState(ClientState &&cs) = default;
-
-    ClientState &operator=(ClientState cs);
 
     AppVersions app_versions;
     Apps apps;
