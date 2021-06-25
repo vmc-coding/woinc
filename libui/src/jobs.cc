@@ -1,5 +1,5 @@
 /* libui/src/jobs.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -43,7 +43,7 @@ Error as_error__(wrpc::COMMAND_STATUS status) {
 
 
 template<typename CMD, typename GETTER>
-void execute__(Client &client, const HandlerRegistry &handler_registry, CMD cmd, GETTER getter) {
+void execute__(Client &client, const HandlerRegistry &handler_registry, CMD &&cmd, GETTER getter) {
     auto status = client.execute(cmd);
     if (status == wrpc::COMMAND_STATUS::OK) {
         handler_registry.for_periodic_task_handler([&](auto &handler) {
