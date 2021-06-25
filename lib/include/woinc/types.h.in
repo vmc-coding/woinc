@@ -1,5 +1,5 @@
 /* woinc/types.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -189,8 +189,9 @@ struct FileTransfer {
     double max_nbytes = 0;
 #endif
 
-    std::unique_ptr<PersistentFileXfer> persistent_file_xfer = nullptr;
-    std::unique_ptr<FileXfer> file_xfer = nullptr;
+    // TODO c++17: Use std::optional instead of pointer here and remove the custom copy-c'tor and -operator
+    std::unique_ptr<PersistentFileXfer> persistent_file_xfer;
+    std::unique_ptr<FileXfer> file_xfer;
 };
 
 typedef std::vector<FileTransfer> FileTransfers;
@@ -534,7 +535,8 @@ struct Task {
     std::string scheduler_wait_reason;
     std::string wu_name;
 
-    std::unique_ptr<ActiveTask> active_task = nullptr;
+    // TODO c++17: Use std::optional instead of pointer here and remove the custom copy-c'tor and -operator
+    std::unique_ptr<ActiveTask> active_task;
 
     time_t received_time = 0;
     time_t report_deadline = 0;
@@ -625,7 +627,8 @@ struct ClientState {
 
     // according to the comments in BOINC's CLIENT_STATE::write_state_gui
     // the net stats should not be sent, so it may be removed in the future;
-    std::unique_ptr<NetStats> net_stats = nullptr;
+    // TODO c++17: Use std::optional instead of pointer here and remove the custom copy-c'tor and -operator
+    std::unique_ptr<NetStats> net_stats;
 #endif
 };
 
