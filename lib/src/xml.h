@@ -1,5 +1,5 @@
 /* lib/xml.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -46,9 +46,6 @@ namespace woinc { namespace xml WOINC_LOCAL {
 
         explicit Node(Tag t) : tag(std::move(t)) {}
 
-        Node(Node &&) = default;
-        Node &operator=(Node &&) = default;
-
         /*
          * Syntactic sugar to access a child node by a tag.
          * If it doesn't exist a node with this tag yet, it will be created.
@@ -93,9 +90,6 @@ namespace woinc { namespace xml WOINC_LOCAL {
         Node root;
 
         explicit Tree(Tag tag = Tag()) : root(std::move(tag)) {}
-
-        Tree(Tree &&) = default;
-        Tree &operator=(Tree &&) = default;
 
         std::ostream &print(std::ostream &out) const {
             return root.print(out);
