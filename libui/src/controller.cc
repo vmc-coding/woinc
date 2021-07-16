@@ -128,25 +128,25 @@ class WOINCUI_LOCAL Controller::Impl {
         void verify_not_shutdown_() const;
         void verify_known_host_(const std::string &host, const char *func) const;
 
-        template<typename CMD,
-                 typename RESULT,
-                 typename GETTER = RESULT (*)(decltype(std::declval<CMD>().response()) &),
-                 typename REQUEST = decltype(std::declval<CMD>().request())>
-        std::future<RESULT> create_and_schedule_async_job_(const char *func,
+        template<typename Command,
+                 typename Result,
+                 typename Getter = Result (*)(decltype(std::declval<Command>().response()) &),
+                 typename Request = decltype(std::declval<Command>().request())>
+        std::future<Result> create_and_schedule_async_job_(const char *func,
                                                            const std::string &host,
-                                                           GETTER getter,
+                                                           Getter getter,
                                                            std::string error_msg,
-                                                           std::remove_reference_t<REQUEST> request = {}) {
-            typedef std::promise<RESULT> Promise;
+                                                           std::remove_reference_t<Request> request = {}) {
+            typedef std::promise<Result> Promise;
             Promise promise;
             auto future = promise.get_future();
 
-            auto *job = new woinc::ui::AsyncJob<RESULT>(
-                new CMD{std::move(request)},
+            auto *job = new woinc::ui::AsyncJob<Result>(
+                new Command{std::move(request)},
                 std::move(promise),
                 [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::CommandStatus status) {
                     if (status == woinc::rpc::CommandStatus::Ok)
-                        p.set_value(getter(static_cast<CMD *>(cmd)->response()));
+                        p.set_value(getter(static_cast<Command *>(cmd)->response()));
                     else
                         p.set_exception(std::make_exception_ptr(std::runtime_error{error_msg}));
                 });

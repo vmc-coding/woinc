@@ -81,9 +81,9 @@ struct WOINCUI_LOCAL AuthorizationJob : public Job {
 };
 
 // wrap async commands that request data from the client; errors should be propagated through the future by the handler
-template<typename RESULT>
+template<typename Result>
 struct WOINCUI_LOCAL AsyncJob : public Job {
-    typedef std::promise<RESULT> Promise;
+    typedef std::promise<Result> Promise;
     typedef std::function<void(woinc::rpc::Command *cmd,
                                Promise &promise,
                                woinc::rpc::CommandStatus status)> ResultHandler;

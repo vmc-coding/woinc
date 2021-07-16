@@ -42,8 +42,8 @@ Error as_error__(wrpc::CommandStatus status) {
 }
 
 
-template<typename CMD, typename GETTER>
-void execute__(Client &client, const HandlerRegistry &handler_registry, CMD &&cmd, GETTER getter) {
+template<typename Command, typename Getter>
+void execute__(Client &client, const HandlerRegistry &handler_registry, Command &&cmd, Getter getter) {
     auto status = client.execute(cmd);
     if (status == wrpc::CommandStatus::Ok) {
         handler_registry.for_periodic_task_handler([&](auto &handler) {
