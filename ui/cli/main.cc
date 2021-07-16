@@ -42,9 +42,9 @@ namespace wrpc = woinc::rpc;
 namespace {
 
 #if defined(WIN32) || defined(_WIN32)
-static const char *EXEC_NAME = "woinccmd.exe";
+constexpr const char *EXEC_NAME__ = "woinccmd.exe";
 #else
-static const char *EXEC_NAME = "woinccmd";
+constexpr const char *EXEC_NAME__ = "woinccmd";
 #endif
 
 typedef std::queue<std::string> Arguments;
@@ -180,9 +180,9 @@ namespace {
 
 void usage(std::ostream &out, int exit_code) {
     out << "\n"
-        << "Usage: " << EXEC_NAME << " [ --host <host[:port]> ] [ --passwd <password> ] <command>\n"
-        << "       " << EXEC_NAME << " -v|--version -- Show the version of woinccmd\n"
-        << "       " << EXEC_NAME << " -?|-h|--help -- Show this help\n"
+        << "Usage: " << EXEC_NAME__ << " [ --host <host[:port]> ] [ --passwd <password> ] <command>\n"
+        << "       " << EXEC_NAME__ << " -v|--version -- Show the version of woinccmd\n"
+        << "       " << EXEC_NAME__ << " -?|-h|--help -- Show this help\n"
         << R"(
   host:     The host to connect to, defaults to localhost
   password: The password to be used to connect to the host
@@ -245,13 +245,13 @@ void usage_die() {
 
 void die_unknown_command(const std::string &cmd) {
     std::cerr << "Unknown command: " << cmd << "\n"
-        << "See '" << EXEC_NAME << " --help' for a list of available commands.\n";
+        << "See '" << EXEC_NAME__ << " --help' for a list of available commands.\n";
     exit(EXIT_FAILURE);
 }
 
 void error_die(const std::string &msg) {
     std::cerr << "Error: " << msg << "\n"
-        << "See '" << EXEC_NAME << " --help' for more information.\n";
+        << "See '" << EXEC_NAME__ << " --help' for more information.\n";
     exit(EXIT_FAILURE);
 }
 
@@ -350,28 +350,28 @@ void Client::execute_cmd_or_die_(wrpc::Command &cmd) {
 
 namespace {
 
-const char NL = '\n';
+constexpr const char NL__ = '\n';
 
-const char *INDENT2 = "  ";
-const char *INDENT3 = "   ";
-const char *INDENT4 = "    ";
+constexpr const char *INDENT2__ = "  ";
+constexpr const char *INDENT3__ = "   ";
+constexpr const char *INDENT4__ = "    ";
 
 template<typename T>
-constexpr T mibi(const T &t) {
+constexpr T mibi(const T &t) noexcept {
     static_assert(std::is_arithmetic<T>::value, "Number needed.");
     return t / (1024 * 1024);
 }
 
-constexpr long long to_rounded_mibi(double d) {
+constexpr long long to_rounded_mibi(double d) noexcept {
     return static_cast<long long>(std::round(mibi(d)));
 }
 
 template<typename T, typename = std::enable_if_t<std::is_enum<T>::value>>
-std::ostream &operator<<(std::ostream &out, T &t) {
+std::ostream &operator<<(std::ostream &out, T &t) noexcept {
     return out << woinc::ui::common::to_string(t);
 }
 
-constexpr const char *bool_to_string(bool b) {
+constexpr const char *bool_to_string(bool b) noexcept {
     return b ? "yes" : "no";
 }
 
@@ -398,16 +398,16 @@ std::string resolve_project_name(const woinc::Projects &projects, const std::str
 }
 
 void print(std::ostream &out, const woinc::AccountOut &account_out) {
-    out << "account key: " << account_out.authenticator << NL;
+    out << "account key: " << account_out.authenticator << NL__;
 }
 
 void print(std::ostream &out, const wrpc::ExchangeVersionsResponse &response) {
     out << "Client version: " << response.version.major << "."
-        << response.version.minor << "." << response.version.release << NL;
+        << response.version.minor << "." << response.version.release << NL__;
 }
 
 void print(std::ostream &out, const std::string &which, const woinc::CCStatus::State &state) {
-    auto indent = INDENT4;
+    auto indent = INDENT4__;
 
     out << which << " status\n";
 
@@ -416,21 +416,21 @@ void print(std::ostream &out, const std::string &which, const woinc::CCStatus::S
     else
         out << indent << "suspended: " << state.suspend_reason;
 
-    out << NL
-        << indent << "current mode: " << state.mode << NL
-        << indent << "perm mode: " << state.perm_mode << NL
+    out << NL__
+        << indent << "current mode: " << state.mode << NL__
+        << indent << "perm mode: " << state.perm_mode << NL__
         << indent << "perm becomes current in " << static_cast<long long>(state.delay) << " sec\n";
 }
 
 void print(std::ostream &out, const wrpc::GetCCStatusResponse &response) {
-    out << "network connection status: " << response.cc_status.network_status << NL;
+    out << "network connection status: " << response.cc_status.network_status << NL__;
     print(out, "CPU", response.cc_status.cpu);
     print(out, "GPU", response.cc_status.gpu);
     print(out, "Network", response.cc_status.network);
 }
 
 void print(std::ostream &out, const woinc::Tasks &tasks) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     out << std::fixed;
@@ -447,43 +447,43 @@ void print(std::ostream &out, const woinc::Tasks &tasks) {
             active_task_state = active_task.active_task_state;
         }
 
-        out << ++counter << ") -----------" << NL
-            << indent << "name: " << task.name << NL
-            << indent << "WU name: " << task.wu_name << NL
-            << indent << "project URL: " << task.project_url << NL
-            << indent << "received: " << time_to_string(task.received_time) << NL
-            << indent << "report deadline: " << time_to_string(task.report_deadline) << NL
-            << indent << "ready to report: " << bool_to_string(task.ready_to_report) << NL
-            << indent << "state: " << task.state << NL
-            << indent << "scheduler state: " << scheduler_state << NL
-            << indent << "active_task_state: " << active_task_state << NL
-            << indent << "app version num: " << task.version_num << NL
-            << indent << "resources: " << (task.resources.empty() ? "1 CPU" : task.resources) << NL;
+        out << ++counter << ") -----------" << NL__
+            << indent << "name: " << task.name << NL__
+            << indent << "WU name: " << task.wu_name << NL__
+            << indent << "project URL: " << task.project_url << NL__
+            << indent << "received: " << time_to_string(task.received_time) << NL__
+            << indent << "report deadline: " << time_to_string(task.report_deadline) << NL__
+            << indent << "ready to report: " << bool_to_string(task.ready_to_report) << NL__
+            << indent << "state: " << task.state << NL__
+            << indent << "scheduler state: " << scheduler_state << NL__
+            << indent << "active_task_state: " << active_task_state << NL__
+            << indent << "app version num: " << task.version_num << NL__
+            << indent << "resources: " << (task.resources.empty() ? "1 CPU" : task.resources) << NL__;
 
         if (task.state <= woinc::ResultClientState::FilesDownloaded) {
             if (task.suspended_via_gui)
-                out << indent << "suspended via GUI: yes" << NL;
-            out << indent << "estimated CPU time remaining: " << task.estimated_cpu_time_remaining << NL;
+                out << indent << "suspended via GUI: yes" << NL__;
+            out << indent << "estimated CPU time remaining: " << task.estimated_cpu_time_remaining << NL__;
         }
 
         if (scheduler_state > woinc::SchedulerState::Uninitialized && task.active_task != nullptr) {
             auto &active_task = *task.active_task;
 
-            out << indent << "CPU time at last checkpoint: " << active_task.checkpoint_cpu_time << NL
-                << indent << "current CPU time: " << active_task.current_cpu_time << NL
-                << indent << "fraction done: " << active_task.fraction_done << NL
-                << indent << "swap size: " << to_rounded_mibi(active_task.swap_size) << " MB" << NL
-                << indent << "working set size: " << to_rounded_mibi(active_task.working_set_size_smoothed) << " MB" << NL;
+            out << indent << "CPU time at last checkpoint: " << active_task.checkpoint_cpu_time << NL__
+                << indent << "current CPU time: " << active_task.current_cpu_time << NL__
+                << indent << "fraction done: " << active_task.fraction_done << NL__
+                << indent << "swap size: " << to_rounded_mibi(active_task.swap_size) << " MB" << NL__
+                << indent << "working set size: " << to_rounded_mibi(active_task.working_set_size_smoothed) << " MB" << NL__;
             if (active_task.bytes_sent || active_task.bytes_received)
                 out << indent << "bytes sent: " << round(active_task.bytes_sent)
-                    << " received: " << round(active_task.bytes_received) << NL;
+                    << " received: " << round(active_task.bytes_received) << NL__;
         }
 
         if (task.state > woinc::ResultClientState::FilesDownloaded) {
-            out << indent << "final CPU time: " << task.final_cpu_time << NL
-                << indent << "final elapsed time: " << task.final_elapsed_time << NL
-                << indent << "exit_status: " << task.exit_status << NL
-                << indent << "signal: " << task.signal << NL;
+            out << indent << "final CPU time: " << task.final_cpu_time << NL__
+                << indent << "final elapsed time: " << task.final_elapsed_time << NL__
+                << indent << "exit_status: " << task.exit_status << NL__
+                << indent << "signal: " << task.signal << NL__;
         }
     }
 }
@@ -493,7 +493,7 @@ void print(std::ostream &out, const wrpc::GetResultsResponse &response) {
 }
 
 void print(std::ostream &out, const woinc::Projects &projects) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     out << std::fixed;
@@ -501,38 +501,38 @@ void print(std::ostream &out, const woinc::Projects &projects) {
 
     for (const auto &project : projects) {
         out << ++counter << ") -----------\n"
-            << indent << "name: " << project.project_name << NL
-            << indent << "master URL: " << project.master_url << NL
-            << indent << "user_name: " << project.user_name << NL
-            << indent << "team_name: " << project.team_name << NL
-            << indent << "resource share: " << project.resource_share << NL
-            << indent << "user_total_credit: " << project.user_total_credit << NL
-            << indent << "user_expavg_credit: " << project.user_expavg_credit << NL
-            << indent << "host_total_credit: " << project.host_total_credit << NL
-            << indent << "host_expavg_credit: " << project.host_expavg_credit << NL
-            << indent << "nrpc_failures: " << project.nrpc_failures << NL
-            << indent << "master_fetch_failures: " << project.master_fetch_failures << NL
-            << indent << "master fetch pending: " << bool_to_string(project.master_url_fetch_pending) << NL
-            << indent << "scheduler RPC pending: " << bool_to_string(project.sched_rpc_pending != woinc::RpcReason::None) << NL
-            << indent << "trickle upload pending: " << bool_to_string(project.trickle_up_pending) << NL
-            << indent << "attached via Account Manager: " << bool_to_string(project.attached_via_acct_mgr) << NL
-            << indent << "ended: " << bool_to_string(project.ended) << NL
-            << indent << "suspended via GUI: " << bool_to_string(project.suspended_via_gui) << NL
-            << indent << "don't request more work: " << bool_to_string(project.dont_request_more_work) << NL
-            << indent << "disk usage: " << project.desired_disk_usage << NL
-            << indent << "last RPC: " << time_to_string(project.last_rpc_time) << NL
-            << NL
-            << indent << "project files downloaded: " << project.project_files_downloaded_time << NL;
+            << indent << "name: " << project.project_name << NL__
+            << indent << "master URL: " << project.master_url << NL__
+            << indent << "user_name: " << project.user_name << NL__
+            << indent << "team_name: " << project.team_name << NL__
+            << indent << "resource share: " << project.resource_share << NL__
+            << indent << "user_total_credit: " << project.user_total_credit << NL__
+            << indent << "user_expavg_credit: " << project.user_expavg_credit << NL__
+            << indent << "host_total_credit: " << project.host_total_credit << NL__
+            << indent << "host_expavg_credit: " << project.host_expavg_credit << NL__
+            << indent << "nrpc_failures: " << project.nrpc_failures << NL__
+            << indent << "master_fetch_failures: " << project.master_fetch_failures << NL__
+            << indent << "master fetch pending: " << bool_to_string(project.master_url_fetch_pending) << NL__
+            << indent << "scheduler RPC pending: " << bool_to_string(project.sched_rpc_pending != woinc::RpcReason::None) << NL__
+            << indent << "trickle upload pending: " << bool_to_string(project.trickle_up_pending) << NL__
+            << indent << "attached via Account Manager: " << bool_to_string(project.attached_via_acct_mgr) << NL__
+            << indent << "ended: " << bool_to_string(project.ended) << NL__
+            << indent << "suspended via GUI: " << bool_to_string(project.suspended_via_gui) << NL__
+            << indent << "don't request more work: " << bool_to_string(project.dont_request_more_work) << NL__
+            << indent << "disk usage: " << project.desired_disk_usage << NL__
+            << indent << "last RPC: " << time_to_string(project.last_rpc_time) << NL__
+            << NL__
+            << indent << "project files downloaded: " << project.project_files_downloaded_time << NL__;
         for (const auto &gui_url : project.gui_urls) {
-            out << "GUI URL:" << NL
-                << indent << "name: " << gui_url.name << NL
-                << indent << "description: " << gui_url.description << NL
-                << indent << "URL: " << gui_url.url << NL;
+            out << "GUI URL:" << NL__
+                << indent << "name: " << gui_url.name << NL__
+                << indent << "description: " << gui_url.description << NL__
+                << indent << "URL: " << gui_url.url << NL__;
         }
-        out << indent << "jobs succeeded: " << project.njobs_success << NL
-            << indent << "jobs failed: " << project.njobs_error << NL
-            << indent << "elapsed time: " << project.elapsed_time << NL
-            << indent << "cross-project ID: " << project.external_cpid << NL;
+        out << indent << "jobs succeeded: " << project.njobs_success << NL__
+            << indent << "jobs failed: " << project.njobs_error << NL__
+            << indent << "elapsed time: " << project.elapsed_time << NL__
+            << indent << "cross-project ID: " << project.external_cpid << NL__;
     }
 }
 
@@ -546,40 +546,40 @@ void print(std::ostream &out, const wrpc::GetMessagesResponse &response) {
             << time_to_string(msg.timestamp, "%d-%b-%Y %H:%M:%S")
             << " (" << msg.priority << ") "
             << "[" << msg.project << "] "
-            << trimed(msg.body) << NL;
+            << trimed(msg.body) << NL__;
 }
 
 void print(std::ostream &out, const wrpc::GetNoticesResponse &response) {
     for (auto i = response.notices.crbegin(); i != response.notices.crend(); i++)
         out << i->seqno << ": ("
             << time_to_string(i->create_time, "%d-%b-%Y %H:%M:%S")
-            << ") " << trimed(i->description) << NL;
+            << ") " << trimed(i->description) << NL__;
 
 }
 
 void print(std::ostream &out, const wrpc::GetHostInfoResponse &response) {
-    auto indent = INDENT2;
+    auto indent = INDENT2__;
     out << std::fixed
-        << indent << "timezone: "    << response.host_info.timezone << NL
-        << indent << "domain name: " << response.host_info.domain_name << NL
-        << indent << "IP addr: "     << response.host_info.ip_addr << NL
-        << indent << "#CPUS: "       << response.host_info.p_ncpus << NL
-        << indent << "CPU vendor: "  << response.host_info.p_vendor << NL
-        << indent << "CPU model: "   << response.host_info.p_model << NL
-        << indent << "CPU FP OPS: "  << response.host_info.p_fpops << NL
-        << indent << "CPU int OPS: " << response.host_info.p_iops << NL
-        << indent << "CPU mem BW: "  << response.host_info.p_membw << NL
-        << indent << "OS name: "     << response.host_info.os_name << NL
-        << indent << "OS version: "  << response.host_info.os_version << NL
-        << indent << "mem size: "    << response.host_info.m_nbytes << NL
-        << indent << "cache size: "  << response.host_info.m_cache << NL
-        << indent << "swap size: "   << response.host_info.m_swap << NL
-        << indent << "disk size: "   << response.host_info.d_total << NL
-        << indent << "disk free: "   << response.host_info.d_free << NL;
+        << indent << "timezone: "    << response.host_info.timezone << NL__
+        << indent << "domain name: " << response.host_info.domain_name << NL__
+        << indent << "IP addr: "     << response.host_info.ip_addr << NL__
+        << indent << "#CPUS: "       << response.host_info.p_ncpus << NL__
+        << indent << "CPU vendor: "  << response.host_info.p_vendor << NL__
+        << indent << "CPU model: "   << response.host_info.p_model << NL__
+        << indent << "CPU FP OPS: "  << response.host_info.p_fpops << NL__
+        << indent << "CPU int OPS: " << response.host_info.p_iops << NL__
+        << indent << "CPU mem BW: "  << response.host_info.p_membw << NL__
+        << indent << "OS name: "     << response.host_info.os_name << NL__
+        << indent << "OS version: "  << response.host_info.os_version << NL__
+        << indent << "mem size: "    << response.host_info.m_nbytes << NL__
+        << indent << "cache size: "  << response.host_info.m_cache << NL__
+        << indent << "swap size: "   << response.host_info.m_swap << NL__
+        << indent << "disk size: "   << response.host_info.d_total << NL__
+        << indent << "disk free: "   << response.host_info.d_free << NL__;
 }
 
 void print(std::ostream &out, const woinc::Apps &apps, const woinc::Projects &projects) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     out << std::fixed;
@@ -587,15 +587,15 @@ void print(std::ostream &out, const woinc::Apps &apps, const woinc::Projects &pr
 
     for (const auto &app : apps) {
         out << ++counter << ") -----------\n"
-            << indent << "name: " << app.name << NL
-            << indent << "Project: " << resolve_project_name(projects, app.project_url) << NL;
+            << indent << "name: " << app.name << NL__
+            << indent << "Project: " << resolve_project_name(projects, app.project_url) << NL__;
     }
 
     out << std::scientific;
 }
 
 void print(std::ostream &out, const woinc::AppVersions &app_versions, const woinc::Projects &projects) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     const auto org_precision = out.precision();
@@ -605,17 +605,17 @@ void print(std::ostream &out, const woinc::AppVersions &app_versions, const woin
 
     for (const auto &app_version : app_versions) {
         out << ++counter << ") -----------\n"
-            << indent << "project: " << resolve_project_name(projects, app_version.project_url) << NL
-            << indent << "application: " <<  app_version.app_name << NL
-            << indent << "platform: " << app_version.platform << NL;
+            << indent << "project: " << resolve_project_name(projects, app_version.project_url) << NL__
+            << indent << "application: " <<  app_version.app_name << NL__
+            << indent << "platform: " << app_version.platform << NL__;
 
         if (!app_version.plan_class.empty())
-            out << indent << "plan class: " << app_version.plan_class << NL;
+            out << indent << "plan class: " << app_version.plan_class << NL__;
 
-        out << indent << "version: " << std::setprecision(2) << app_version.version_num/100.0 << NL;
+        out << indent << "version: " << std::setprecision(2) << app_version.version_num/100.0 << NL__;
         if (app_version.avg_ncpus != 1)
-            out << indent << "avg #CPUS: " << std::setprecision(3) << app_version.avg_ncpus << NL;
-        out << indent << "estimated GFLOPS: " << std::setprecision(2) << app_version.flops/1e9 << NL;
+            out << indent << "avg #CPUS: " << std::setprecision(3) << app_version.avg_ncpus << NL__;
+        out << indent << "estimated GFLOPS: " << std::setprecision(2) << app_version.flops/1e9 << NL__;
 
         auto file_ref = std::find_if(app_version.file_refs.cbegin(), app_version.file_refs.cend(),
                                      [](const woinc::FileRef &f) { return f.main_program; });
@@ -623,14 +623,14 @@ void print(std::ostream &out, const woinc::AppVersions &app_versions, const woin
         out << indent << "filename: ";
         if (file_ref != app_version.file_refs.cend())
             out << file_ref->file_name;
-        out << NL;
+        out << NL__;
     }
 
     out.precision(org_precision);
 }
 
 void print(std::ostream &out, const woinc::Workunits &workunits) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     const auto org_precision = out.precision();
@@ -640,54 +640,54 @@ void print(std::ostream &out, const woinc::Workunits &workunits) {
     for (const auto &wu : workunits) {
         out << std::scientific
             << ++counter << ") -----------\n"
-            << indent << "name: " << wu.name << NL
-            << indent << "FP estimate: " << wu.rsc_fpops_est << NL
-            << indent << "FP bound: " << wu.rsc_fpops_bound << NL
+            << indent << "name: " << wu.name << NL__
+            << indent << "FP estimate: " << wu.rsc_fpops_est << NL__
+            << indent << "FP bound: " << wu.rsc_fpops_bound << NL__
             << std::fixed << std::setprecision(2)
-            << indent << "memory bound: " << mibi(wu.rsc_memory_bound) << " MB" << NL
-            << indent << "disk bound: " << mibi(wu.rsc_disk_bound) << " MB" << NL;
+            << indent << "memory bound: " << mibi(wu.rsc_memory_bound) << " MB" << NL__
+            << indent << "disk bound: " << mibi(wu.rsc_disk_bound) << " MB" << NL__;
         out.precision(org_precision);
     }
 }
 
 void print(std::ostream &out, const woinc::TimeStats &time_stats) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
 
     out << std::fixed
         << "======== Time stats ========\n"
-        << indent << "now: " << time_stats.now << NL
-        << indent << "on_frac: " << time_stats.on_frac << NL
-        << indent << "connected_frac: " << time_stats.connected_frac << NL
-        << indent << "cpu_and_network_available_frac: " << time_stats.cpu_and_network_available_frac << NL
-        << indent << "active_frac: " << time_stats.active_frac << NL
-        << indent << "gpu_active_frac: " << time_stats.gpu_active_frac << NL
-        << indent << "client_start_time: " << time_to_string(time_stats.client_start_time) << NL
-        << NL
-        << indent << "previous_uptime: " << time_stats.previous_uptime << NL
-        << indent << "session_active_duration: " << time_stats.session_active_duration << NL
-        << indent << "session_gpu_active_duration: " << time_stats.session_gpu_active_duration << NL
-        << indent << "total_start_time: " << time_to_string(time_stats.total_start_time) << NL
-        << NL
-        << indent << "total_duration: " << time_stats.total_duration << NL
-        << indent << "total_active_duration: " << time_stats.total_active_duration << NL
-        << indent << "total_gpu_active_duration: " << time_stats.total_gpu_active_duration << NL;
+        << indent << "now: " << time_stats.now << NL__
+        << indent << "on_frac: " << time_stats.on_frac << NL__
+        << indent << "connected_frac: " << time_stats.connected_frac << NL__
+        << indent << "cpu_and_network_available_frac: " << time_stats.cpu_and_network_available_frac << NL__
+        << indent << "active_frac: " << time_stats.active_frac << NL__
+        << indent << "gpu_active_frac: " << time_stats.gpu_active_frac << NL__
+        << indent << "client_start_time: " << time_to_string(time_stats.client_start_time) << NL__
+        << NL__
+        << indent << "previous_uptime: " << time_stats.previous_uptime << NL__
+        << indent << "session_active_duration: " << time_stats.session_active_duration << NL__
+        << indent << "session_gpu_active_duration: " << time_stats.session_gpu_active_duration << NL__
+        << indent << "total_start_time: " << time_to_string(time_stats.total_start_time) << NL__
+        << NL__
+        << indent << "total_duration: " << time_stats.total_duration << NL__
+        << indent << "total_active_duration: " << time_stats.total_active_duration << NL__
+        << indent << "total_gpu_active_duration: " << time_stats.total_gpu_active_duration << NL__;
 }
 
 void print(std::ostream &out, const wrpc::GetClientStateResponse &response) {
     print(out, response.client_state.projects);
-    out << NL;
+    out << NL__;
     print(out, response.client_state.apps, response.client_state.projects);
-    out << NL;
+    out << NL__;
     print(out, response.client_state.app_versions, response.client_state.projects);
-    out << NL;
+    out << NL__;
     print(out, response.client_state.workunits);
     print(out, response.client_state.tasks);
-    out << NL;
+    out << NL__;
     print(out, response.client_state.time_stats);
 }
 
 void print(std::ostream &out, const wrpc::GetFileTransfersResponse &response) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     out << "\n======== File transfers ========\n";
@@ -712,18 +712,18 @@ void print(std::ostream &out, const wrpc::GetFileTransfersResponse &response) {
 
         out << std::scientific
             << ++counter << ") -----------\n"
-            << indent << "name: " << file_transfer.name << NL
-            << indent << "direction: " << direction << NL
+            << indent << "name: " << file_transfer.name << NL__
+            << indent << "direction: " << direction << NL__
             << indent << "sticky: no\n" // this isn't sent by the client at all ..
-            << indent << "xfer active: " << bool_to_string(is_active) << NL
-            << indent << "time_so_far: " << time_so_far << NL
-            << indent << "bytes_xferred: " << bytes_xferred << NL
-            << indent << "xfer_speed: " << xfer_speed << NL;
+            << indent << "xfer active: " << bool_to_string(is_active) << NL__
+            << indent << "time_so_far: " << time_so_far << NL__
+            << indent << "bytes_xferred: " << bytes_xferred << NL__
+            << indent << "xfer_speed: " << xfer_speed << NL__;
     }
 }
 
 void print(std::ostream &out, const wrpc::GetDiskUsageResponse &response) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     const auto org_precision = out.precision();
@@ -769,14 +769,14 @@ void print(std::ostream &out, const wrpc::GetDiskUsageResponse &response) {
 
     out << "======== Disk usage ========\n"
         << std::fixed
-        << "total: " << response.disk_usage.total << NL
-        << "free: " << response.disk_usage.free << NL;
+        << "total: " << response.disk_usage.total << NL__
+        << "free: " << response.disk_usage.free << NL__;
 
     for (const auto &project : response.disk_usage.projects) {
         out << ++counter << ") -----------\n"
             << std::setprecision(2)
-            << indent << "master URL: " << project.master_url << NL
-            << indent << "disk usage: " << usage_formatter(project.disk_usage) << NL;
+            << indent << "master URL: " << project.master_url << NL__
+            << indent << "disk usage: " << usage_formatter(project.disk_usage) << NL__;
     }
 
     out.precision(org_precision);
@@ -788,9 +788,9 @@ void print(std::ostream &out, const wrpc::SuccessResponse &response) {
 }
 
 void print(std::ostream &out, const woinc::ProjectConfig &config) {
-    out << "uses_username: " << config.uses_username << NL
-        << "name: " << config.name << NL
-        << "min_passwd_length: " << config.min_passwd_length << NL;
+    out << "uses_username: " << config.uses_username << NL__
+        << "name: " << config.name << NL__
+        << "min_passwd_length: " << config.min_passwd_length << NL__;
 }
 
 } // printing helpers
@@ -1130,7 +1130,7 @@ void do_estimate_times(Client &client) {
     };
 
     auto print_right_col = [](std::ostream &out, int width, const std::string &what) {
-        out << std::right << std::setw(width) << what << NL;
+        out << std::right << std::setw(width) << what << NL__;
     };
 
     wrpc::GetResultsCommand cmd;
@@ -1152,7 +1152,7 @@ void do_estimate_times(Client &client) {
         int lw = 16;
         int rw = static_cast<int>(finished_at_str.length());
 
-        std::cout << NL << task.name << NL << std::string(task.name.length(), '-') << NL << NL;
+        std::cout << NL__ << task.name << NL__ << std::string(task.name.length(), '-') << NL__ << NL__;
         print_left_col (std::cout, lw, "Estimated time");
         print_right_col(std::cout, rw, duration_to_string(estimated_time));
         print_left_col (std::cout, lw, "Already done");
@@ -1165,7 +1165,7 @@ void do_estimate_times(Client &client) {
 }
 
 void print(const woinc::Statistics &statistics, const woinc::Projects &projects, bool user_mode) {
-    auto indent = INDENT3;
+    auto indent = INDENT3__;
     int counter = 0;
 
     auto print_stats_line = [&](std::ostream &out, double max, time_t day, double value) {
@@ -1174,7 +1174,7 @@ void print(const woinc::Statistics &statistics, const woinc::Projects &projects,
         int width = static_cast<int>(ss.str().length());
         out << indent << indent
             << time_to_string(day, "%0d. %b")
-            << " " << std::right << std::setprecision(2) << std::setw(width) << value << NL;
+            << " " << std::right << std::setprecision(2) << std::setw(width) << value << NL__;
     };
 
     std::cout
@@ -1202,23 +1202,23 @@ void print(const woinc::Statistics &statistics, const woinc::Projects &projects,
                                           });
 
         std::cout << ++counter << ") -----------\n"
-            << indent << "Project: " << project->project_name << NL
-            << indent << "Account: " << project->user_name << NL;
+            << indent << "Project: " << project->project_name << NL__
+            << indent << "Account: " << project->user_name << NL__;
         if (!project->team_name.empty())
-            std::cout << indent << "Team: " << project->team_name << NL;
+            std::cout << indent << "Team: " << project->team_name << NL__;
         std::cout << indent << "Last updated: "
             << std::setprecision(0)
             << std::floor(std::chrono::duration_cast<std::chrono::seconds>(last_updated).count() / (24*3600))
-            << " days ago" << NL;
+            << " days ago" << NL__;
 
-        std::cout << indent << "Average statistics: " << NL;
+        std::cout << indent << "Average statistics: " << NL__;
         for (const auto &stats : project_stats.daily_statistics)
             print_stats_line(std::cout,
                              user_mode ? max_avg->user_expavg_credit : max_avg->host_expavg_credit,
                              stats.day,
                              user_mode ? stats.user_expavg_credit : stats.host_expavg_credit);
 
-        std::cout << indent << "Total statistics: " << NL;
+        std::cout << indent << "Total statistics: " << NL__;
         for (const auto &stats : project_stats.daily_statistics)
             print_stats_line(std::cout,
                              user_mode ? max_total->user_total_credit : max_total->user_expavg_credit,
@@ -1242,18 +1242,18 @@ void do_get_statistics(Client &client, bool user_mode) {
 
 namespace {
 
-#define NOPARSE(CMD) [](Arguments &) -> CommandContext { return new CMD(); }
-#define EXECUTE(CMD) [](Client &client, CommandContext ctx) { \
+#define WOINC_NOPARSE(CMD) [](Arguments &) -> CommandContext { return new CMD(); }
+#define WOINC_EXECUTE(CMD) [](Client &client, CommandContext ctx) { \
     assert(ctx != nullptr); \
     client.do_cmd(*static_cast<CMD *>(ctx)); \
     print(std::cout, static_cast<CMD *>(ctx)->response()); \
     delete static_cast<CMD *>(ctx); \
 }
-#define CMD_WITHOUT_REQUEST_DATA(PARAM, CMD) { PARAM, { NOPARSE(CMD), EXECUTE(CMD) } }
+#define WOINC_CMD_WITHOUT_REQUEST_DATA(PARAM, CMD) { PARAM, { WOINC_NOPARSE(CMD), WOINC_EXECUTE(CMD) } }
 
 CommandMap command_map() {
     return {
-        CMD_WITHOUT_REQUEST_DATA("--client_version", wrpc::ExchangeVersionsCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--client_version", wrpc::ExchangeVersionsCommand),
         { "--file_transfer", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --file_transfer");
@@ -1262,24 +1262,24 @@ CommandMap command_map() {
                 return new wrpc::FileTransferOpCommand({
                     parse_file_transfer_op(std::move(op)), std::move(url), std::move(filename)});
             },
-            EXECUTE(wrpc::FileTransferOpCommand)
+            WOINC_EXECUTE(wrpc::FileTransferOpCommand)
         }},
-        CMD_WITHOUT_REQUEST_DATA("--get_cc_status", wrpc::GetCCStatusCommand),
-        CMD_WITHOUT_REQUEST_DATA("--get_disk_usage", wrpc::GetDiskUsageCommand),
-        CMD_WITHOUT_REQUEST_DATA("--get_file_transfers", wrpc::GetFileTransfersCommand),
-        CMD_WITHOUT_REQUEST_DATA("--get_host_info", wrpc::GetHostInfoCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_cc_status", wrpc::GetCCStatusCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_disk_usage", wrpc::GetDiskUsageCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_file_transfers", wrpc::GetFileTransfersCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_host_info", wrpc::GetHostInfoCommand),
         { "--get_messages", {
             [](Arguments &args) -> CommandContext {
                 int seqno = args.empty() ? 0 : parse_next_as_int(args);
                 return new wrpc::GetMessagesCommand({seqno});
             },
-            EXECUTE(wrpc::GetMessagesCommand)
+            WOINC_EXECUTE(wrpc::GetMessagesCommand)
         }}, { "--get_notices", {
             [](Arguments &args) -> CommandContext {
                 int seqno = args.empty() ? 0 : parse_next_as_int(args);
                 return new wrpc::GetNoticesCommand({seqno});
             },
-            EXECUTE(wrpc::GetNoticesCommand)
+            WOINC_EXECUTE(wrpc::GetNoticesCommand)
         }}, { "--get_project_config", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --get_project_config");
@@ -1287,9 +1287,9 @@ CommandMap command_map() {
             },
             &do_get_project_config_cmd
         }},
-        CMD_WITHOUT_REQUEST_DATA("--get_project_status", wrpc::GetProjectStatusCommand),
-        CMD_WITHOUT_REQUEST_DATA("--get_tasks", wrpc::GetResultsCommand),
-        CMD_WITHOUT_REQUEST_DATA("--get_state", wrpc::GetClientStateCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_project_status", wrpc::GetProjectStatusCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_tasks", wrpc::GetResultsCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_state", wrpc::GetClientStateCommand),
         { "--lookup_account", {
             [](Arguments &args) -> CommandContext {
                 wrpc::LookupAccountRequest req;
@@ -1300,21 +1300,21 @@ CommandMap command_map() {
             },
             &do_lookup_account_cmd
         }},
-        CMD_WITHOUT_REQUEST_DATA("--network_available", wrpc::NetworkAvailableCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--network_available", wrpc::NetworkAvailableCommand),
         { "--project", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --project");
                 auto op = need_next_as_string(args, "Missing parameter op for command --project");
                 return new wrpc::ProjectOpCommand({parse_project_op(std::move(op)), std::move(url)});
             },
-            EXECUTE(wrpc::ProjectOpCommand)
+            WOINC_EXECUTE(wrpc::ProjectOpCommand)
         }}, { "--project_attach", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --project_attach");
                 auto auth = need_next_as_string(args, "Missing parameter auth for command --project_attach");
                 return new wrpc::ProjectAttachCommand({std::move(url), std::move(auth)});
             },
-            EXECUTE(wrpc::ProjectAttachCommand)
+            WOINC_EXECUTE(wrpc::ProjectAttachCommand)
         }}, { "--task", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter url for command --task");
@@ -1322,33 +1322,33 @@ CommandMap command_map() {
                 auto op = need_next_as_string(args, "Missing parameter op for command --task");
                 return new wrpc::TaskOpCommand({parse_task_op(std::move(op)), std::move(url), std::move(name)});
             },
-            EXECUTE(wrpc::TaskOpCommand)
+            WOINC_EXECUTE(wrpc::TaskOpCommand)
         }},
-        CMD_WITHOUT_REQUEST_DATA("--quit", wrpc::QuitCommand),
-        CMD_WITHOUT_REQUEST_DATA("--read_cc_config", wrpc::ReadCCConfigCommand),
-        CMD_WITHOUT_REQUEST_DATA("--read_global_prefs_override", wrpc::ReadGlobalPreferencesOverrideCommand),
-        CMD_WITHOUT_REQUEST_DATA("--run_benchmarks", wrpc::RunBenchmarksCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--quit", wrpc::QuitCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--read_cc_config", wrpc::ReadCCConfigCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--read_global_prefs_override", wrpc::ReadGlobalPreferencesOverrideCommand),
+        WOINC_CMD_WITHOUT_REQUEST_DATA("--run_benchmarks", wrpc::RunBenchmarksCommand),
         { "--set_gpu_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_gpu_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetGpuModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            EXECUTE(wrpc::SetGpuModeCommand)
+            WOINC_EXECUTE(wrpc::SetGpuModeCommand)
         }}, { "--set_network_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_network_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetNetworkModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            EXECUTE(wrpc::SetNetworkModeCommand)
+            WOINC_EXECUTE(wrpc::SetNetworkModeCommand)
         }}, { "--set_run_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_run_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetRunModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            EXECUTE(wrpc::SetRunModeCommand)
+            WOINC_EXECUTE(wrpc::SetRunModeCommand)
 #ifdef WOINC_CLI_COMMANDS
         }}, { "--sum_remaining_cpu_time", {
             [](Arguments &) -> CommandContext { return nullptr; },
