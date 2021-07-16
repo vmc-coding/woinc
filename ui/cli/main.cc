@@ -1242,18 +1242,27 @@ void do_get_statistics(Client &client, bool user_mode) {
 
 namespace {
 
-#define WOINC_NOPARSE(CMD) [](Arguments &) -> CommandContext { return new CMD(); }
-#define WOINC_EXECUTE(CMD) [](Client &client, CommandContext ctx) { \
-    assert(ctx != nullptr); \
-    client.do_cmd(*static_cast<CMD *>(ctx)); \
-    print(std::cout, static_cast<CMD *>(ctx)->response()); \
-    delete static_cast<CMD *>(ctx); \
+template<typename CMD>
+constexpr auto create_cmd_executor() {
+    return [](Client &client, CommandContext ctx) {
+        assert(ctx != nullptr);
+        client.do_cmd(*static_cast<CMD *>(ctx));
+        print(std::cout, static_cast<CMD *>(ctx)->response());
+        delete static_cast<CMD *>(ctx);
+    };
 }
-#define WOINC_CMD_WITHOUT_REQUEST_DATA(PARAM, CMD) { PARAM, { WOINC_NOPARSE(CMD), WOINC_EXECUTE(CMD) } }
+
+template<typename CMD>
+constexpr Command create_cmd_without_request_data() {
+    return {
+        [](Arguments &) -> CommandContext { return new CMD(); },
+        create_cmd_executor<CMD>()
+    };
+}
 
 CommandMap command_map() {
     return {
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--client_version", wrpc::ExchangeVersionsCommand),
+        { "--client_version", create_cmd_without_request_data<wrpc::ExchangeVersionsCommand>() },
         { "--file_transfer", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --file_transfer");
@@ -1262,34 +1271,36 @@ CommandMap command_map() {
                 return new wrpc::FileTransferOpCommand({
                     parse_file_transfer_op(std::move(op)), std::move(url), std::move(filename)});
             },
-            WOINC_EXECUTE(wrpc::FileTransferOpCommand)
+            create_cmd_executor<wrpc::FileTransferOpCommand>()
         }},
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_cc_status", wrpc::GetCCStatusCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_disk_usage", wrpc::GetDiskUsageCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_file_transfers", wrpc::GetFileTransfersCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_host_info", wrpc::GetHostInfoCommand),
+        { "--get_cc_status", create_cmd_without_request_data<wrpc::GetCCStatusCommand>() },
+        { "--get_disk_usage", create_cmd_without_request_data<wrpc::GetDiskUsageCommand>() },
+        { "--get_file_transfers", create_cmd_without_request_data<wrpc::GetFileTransfersCommand>() },
+        { "--get_host_info", create_cmd_without_request_data<wrpc::GetHostInfoCommand>() },
         { "--get_messages", {
             [](Arguments &args) -> CommandContext {
                 int seqno = args.empty() ? 0 : parse_next_as_int(args);
                 return new wrpc::GetMessagesCommand({seqno});
             },
-            WOINC_EXECUTE(wrpc::GetMessagesCommand)
-        }}, { "--get_notices", {
+            create_cmd_executor<wrpc::GetMessagesCommand>()
+        }},
+        { "--get_notices", {
             [](Arguments &args) -> CommandContext {
                 int seqno = args.empty() ? 0 : parse_next_as_int(args);
                 return new wrpc::GetNoticesCommand({seqno});
             },
-            WOINC_EXECUTE(wrpc::GetNoticesCommand)
-        }}, { "--get_project_config", {
+            create_cmd_executor<wrpc::GetNoticesCommand>()
+        }},
+        { "--get_project_config", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --get_project_config");
                 return new wrpc::GetProjectConfigCommand({url});
             },
             &do_get_project_config_cmd
         }},
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_project_status", wrpc::GetProjectStatusCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_tasks", wrpc::GetResultsCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--get_state", wrpc::GetClientStateCommand),
+        { "--get_project_status", create_cmd_without_request_data<wrpc::GetProjectStatusCommand>() },
+        { "--get_tasks", create_cmd_without_request_data<wrpc::GetResultsCommand>() },
+        { "--get_state", create_cmd_without_request_data<wrpc::GetClientStateCommand>() },
         { "--lookup_account", {
             [](Arguments &args) -> CommandContext {
                 wrpc::LookupAccountRequest req;
@@ -1300,63 +1311,70 @@ CommandMap command_map() {
             },
             &do_lookup_account_cmd
         }},
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--network_available", wrpc::NetworkAvailableCommand),
+        { "--network_available", create_cmd_without_request_data<wrpc::NetworkAvailableCommand>() },
         { "--project", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --project");
                 auto op = need_next_as_string(args, "Missing parameter op for command --project");
                 return new wrpc::ProjectOpCommand({parse_project_op(std::move(op)), std::move(url)});
             },
-            WOINC_EXECUTE(wrpc::ProjectOpCommand)
-        }}, { "--project_attach", {
+            create_cmd_executor<wrpc::ProjectOpCommand>()
+        }},
+        { "--project_attach", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter URL for command --project_attach");
                 auto auth = need_next_as_string(args, "Missing parameter auth for command --project_attach");
                 return new wrpc::ProjectAttachCommand({std::move(url), std::move(auth)});
             },
-            WOINC_EXECUTE(wrpc::ProjectAttachCommand)
-        }}, { "--task", {
+            create_cmd_executor<wrpc::ProjectAttachCommand>()
+        }},
+        { "--task", {
             [](Arguments &args) -> CommandContext {
                 auto url = need_next_as_string(args, "Missing parameter url for command --task");
                 auto name = need_next_as_string(args, "Missing parameter name for command --task");
                 auto op = need_next_as_string(args, "Missing parameter op for command --task");
                 return new wrpc::TaskOpCommand({parse_task_op(std::move(op)), std::move(url), std::move(name)});
             },
-            WOINC_EXECUTE(wrpc::TaskOpCommand)
+            create_cmd_executor<wrpc::TaskOpCommand>()
         }},
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--quit", wrpc::QuitCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--read_cc_config", wrpc::ReadCCConfigCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--read_global_prefs_override", wrpc::ReadGlobalPreferencesOverrideCommand),
-        WOINC_CMD_WITHOUT_REQUEST_DATA("--run_benchmarks", wrpc::RunBenchmarksCommand),
+        { "--quit", create_cmd_without_request_data<wrpc::QuitCommand>() },
+        { "--read_cc_config", create_cmd_without_request_data<wrpc::ReadCCConfigCommand>() },
+        { "--read_global_prefs_override", create_cmd_without_request_data<wrpc::ReadGlobalPreferencesOverrideCommand>() },
+        { "--run_benchmarks", create_cmd_without_request_data<wrpc::RunBenchmarksCommand>() },
         { "--set_gpu_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_gpu_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetGpuModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            WOINC_EXECUTE(wrpc::SetGpuModeCommand)
-        }}, { "--set_network_mode", {
+            create_cmd_executor<wrpc::SetGpuModeCommand>()
+        }},
+        { "--set_network_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_network_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetNetworkModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            WOINC_EXECUTE(wrpc::SetNetworkModeCommand)
-        }}, { "--set_run_mode", {
+            create_cmd_executor<wrpc::SetNetworkModeCommand>()
+        }},
+        { "--set_run_mode", {
             [](Arguments &args) -> CommandContext {
                 auto mode = need_next_as_string(args, "Missing parameter mode for command --set_run_mode");
                 auto duration = args.empty() ? 0 : parse_next_as_double(args);
                 return new wrpc::SetRunModeCommand({parse_run_mode(std::move(mode)), duration});
             },
-            WOINC_EXECUTE(wrpc::SetRunModeCommand)
+            create_cmd_executor<wrpc::SetRunModeCommand>()
 #ifdef WOINC_CLI_COMMANDS
-        }}, { "--sum_remaining_cpu_time", {
+        }},
+        { "--sum_remaining_cpu_time", {
             [](Arguments &) -> CommandContext { return nullptr; },
             [](Client &client, CommandContext) { do_sum_remaining_cpu_time(client); }
-        }}, { "--estimate_times", {
+        }},
+        { "--estimate_times", {
             [](Arguments &) -> CommandContext { return nullptr; },
             [](Client &client, CommandContext) { do_estimate_times(client); }
-        }}, { "--get_statistics", {
+        }},
+        { "--get_statistics", {
             [](Arguments &args) -> CommandContext {
                 auto *user_mode = new bool;
                 *user_mode = true;
