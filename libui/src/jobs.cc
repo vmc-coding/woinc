@@ -27,25 +27,25 @@ namespace {
 
 using namespace woinc::ui;
 
-Error as_error__(wrpc::COMMAND_STATUS status) {
+Error as_error__(wrpc::CommandStatus status) {
     switch (status) {
-        case wrpc::COMMAND_STATUS::OK:               assert(false); return Error::LOGIC_ERROR;
-        case wrpc::COMMAND_STATUS::DISCONNECTED:     return Error::DISCONNECTED;
-        case wrpc::COMMAND_STATUS::UNAUTHORIZED:     return Error::UNAUTHORIZED;
-        case wrpc::COMMAND_STATUS::CONNECTION_ERROR: return Error::CONNECTION_ERROR;
-        case wrpc::COMMAND_STATUS::CLIENT_ERROR:     return Error::CLIENT_ERROR;
-        case wrpc::COMMAND_STATUS::PARSING_ERROR:    return Error::PARSING_ERROR;
-        case wrpc::COMMAND_STATUS::LOGIC_ERROR:      return Error::LOGIC_ERROR;
+        case wrpc::CommandStatus::Ok:              assert(false); return Error::LogicError;
+        case wrpc::CommandStatus::Disconnected:    return Error::Disconnected;
+        case wrpc::CommandStatus::Unauthorized:    return Error::Unauthorized;
+        case wrpc::CommandStatus::ConnectionError: return Error::ConnectionError;
+        case wrpc::CommandStatus::ClientError:     return Error::ClientError;
+        case wrpc::CommandStatus::ParsingError:    return Error::ParsingError;
+        case wrpc::CommandStatus::LogicError:      return Error::LogicError;
     }
     assert(false);
-    return Error::LOGIC_ERROR;
+    return Error::LogicError;
 }
 
 
 template<typename CMD, typename GETTER>
 void execute__(Client &client, const HandlerRegistry &handler_registry, CMD &&cmd, GETTER getter) {
     auto status = client.execute(cmd);
-    if (status == wrpc::COMMAND_STATUS::OK) {
+    if (status == wrpc::CommandStatus::Ok) {
         handler_registry.for_periodic_task_handler([&](auto &handler) {
             handler.on_update(client.host(), getter(cmd.response()));
         });
@@ -81,32 +81,32 @@ PeriodicJob::PeriodicJob(PeriodicTask t, const HandlerRegistry &hr, const Payloa
 
 void PeriodicJob::execute(Client &client) {
     switch (task) {
-        case PeriodicTask::GET_CCSTATUS:
+        case PeriodicTask::GetCCStatus:
             execute__(client, handler_registry,
                       wrpc::GetCCStatusCommand(),
                       std::mem_fn(&wrpc::GetCCStatusResponse::cc_status));
             break;
-        case PeriodicTask::GET_CLIENT_STATE:
+        case PeriodicTask::GetClientState:
             execute__(client, handler_registry,
                       wrpc::GetClientStateCommand(),
                       std::mem_fn(&wrpc::GetClientStateResponse::client_state));
             break;
-        case PeriodicTask::GET_DISK_USAGE:
+        case PeriodicTask::GetDiskUsage:
             execute__(client, handler_registry,
                       wrpc::GetDiskUsageCommand(),
                       std::mem_fn(&wrpc::GetDiskUsageResponse::disk_usage));
             break;
-        case PeriodicTask::GET_FILE_TRANSFERS:
+        case PeriodicTask::GetFileTransfers:
             execute__(client, handler_registry,
                       wrpc::GetFileTransfersCommand(),
                       std::mem_fn(&wrpc::GetFileTransfersResponse::file_transfers));
             break;
-        case PeriodicTask::GET_MESSAGES:
+        case PeriodicTask::GetMessages:
             {
                 wrpc::GetMessagesCommand cmd;
                 cmd.request().seqno = payload.seqno;
                 auto status = client.execute(cmd);
-                if (status == wrpc::COMMAND_STATUS::OK) {
+                if (status == wrpc::CommandStatus::Ok) {
                     if (!cmd.response().messages.empty()) {
                         payload.seqno = cmd.response().messages.back().seqno;
                         handler_registry.for_periodic_task_handler([&](auto &handler) {
@@ -120,12 +120,12 @@ void PeriodicJob::execute(Client &client) {
                 }
             }
             break;
-        case PeriodicTask::GET_NOTICES:
+        case PeriodicTask::GetNotices:
             {
                 wrpc::GetNoticesCommand cmd;
                 cmd.request().seqno = payload.seqno;
                 auto status = client.execute(cmd);
-                if (status == wrpc::COMMAND_STATUS::OK) {
+                if (status == wrpc::CommandStatus::Ok) {
                     if (!cmd.response().notices.empty()) {
                         payload.seqno = cmd.response().notices.back().seqno;
                         handler_registry.for_periodic_task_handler([&](auto &handler) {
@@ -139,17 +139,17 @@ void PeriodicJob::execute(Client &client) {
                 }
             }
             break;
-        case PeriodicTask::GET_PROJECT_STATUS:
+        case PeriodicTask::GetProjectStatus:
             execute__(client, handler_registry,
                       wrpc::GetProjectStatusCommand(),
                       std::mem_fn(&wrpc::GetProjectStatusResponse::projects));
             break;
-        case PeriodicTask::GET_STATISTICS:
+        case PeriodicTask::GetStatistics:
             execute__(client, handler_registry,
                       wrpc::GetStatisticsCommand(),
                       std::mem_fn(&wrpc::GetStatisticsResponse::statistics));
             break;
-        case PeriodicTask::GET_TASKS:
+        case PeriodicTask::GetTasks:
             {
 #if 0
                 static int foo = 0;
@@ -181,9 +181,9 @@ void AuthorizationJob::execute(Client &client) {
 
     auto status = client.execute(cmd);
     handler_registry_.for_host_handler([&](auto &handler) {
-        if (status == wrpc::COMMAND_STATUS::OK)
+        if (status == wrpc::CommandStatus::Ok)
             handler.on_host_authorized(client.host());
-        else if (status == wrpc::COMMAND_STATUS::UNAUTHORIZED)
+        else if (status == wrpc::CommandStatus::Unauthorized)
             handler.on_host_authorization_failed(client.host());
         else
             handler.on_host_error(client.host(), as_error__(status));

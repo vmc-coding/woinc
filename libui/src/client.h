@@ -1,5 +1,5 @@
 /* libui/src/client.h --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -39,7 +39,7 @@ class WOINCUI_LOCAL Client {
         bool authorize(const std::string &password);
         void disconnect();
 
-        woinc::rpc::COMMAND_STATUS execute(woinc::rpc::Command &cmd);
+        woinc::rpc::CommandStatus execute(woinc::rpc::Command &cmd);
 
         const std::string &host() const;
 

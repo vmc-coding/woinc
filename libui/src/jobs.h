@@ -1,5 +1,5 @@
 /* libui/src/jobs.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -86,7 +86,7 @@ struct WOINCUI_LOCAL AsyncJob : public Job {
     typedef std::promise<RESULT> Promise;
     typedef std::function<void(woinc::rpc::Command *cmd,
                                Promise &promise,
-                               woinc::rpc::COMMAND_STATUS status)> ResultHandler;
+                               woinc::rpc::CommandStatus status)> ResultHandler;
 
     // the job takes the ownership of the command
     AsyncJob(woinc::rpc::Command *cmd, Promise promise, ResultHandler handler)

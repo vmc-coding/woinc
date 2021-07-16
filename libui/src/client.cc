@@ -1,5 +1,5 @@
 /* libui/src/client.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -40,11 +40,11 @@ void Client::disconnect() {
     }
 }
 
-woinc::rpc::COMMAND_STATUS Client::execute(woinc::rpc::Command &cmd) {
+woinc::rpc::CommandStatus Client::execute(woinc::rpc::Command &cmd) {
     if (connected_)
         return cmd.execute(rpc_connection_);
     else
-        return woinc::rpc::COMMAND_STATUS::DISCONNECTED;
+        return woinc::rpc::CommandStatus::Disconnected;
 }
 
 const std::string &Client::host() const {

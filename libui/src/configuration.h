@@ -1,5 +1,5 @@
 /* libui/src/configuration.h --
-   Written and Copyright (C) 2018 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -56,15 +56,15 @@ class WOINCUI_LOCAL Configuration {
         mutable std::mutex lock_;
 
         Intervals intervals_ = {
-            /* GET_CCSTATUS */          std::chrono::seconds(1),
-            /* GET_CLIENT_STATE */      std::chrono::seconds(3600),
-            /* GET_DISK_USAGE */        std::chrono::seconds(60),
-            /* GET_FILE_TRANSFERS */    std::chrono::seconds(1),
-            /* GET_MESSAGES */          std::chrono::seconds(1),
-            /* GET_NOTICES */           std::chrono::seconds(60),
-            /* GET_PROJECT_STATUS */    std::chrono::seconds(1),
-            /* GET_STATISTICS */        std::chrono::seconds(60),
-            /* GET_TASKS */             std::chrono::seconds(1)
+            std::chrono::seconds(1),    // GetCCStatus
+            std::chrono::seconds(3600), // GetClientState
+            std::chrono::seconds(60),   // GetDiskUsage
+            std::chrono::seconds(1),    // GetFileTransfers
+            std::chrono::seconds(1),    // GetMessages
+            std::chrono::seconds(60),   // GetNotices
+            std::chrono::seconds(1),    // GetProjectStatus
+            std::chrono::seconds(60),   // GetStatistics
+            std::chrono::seconds(1)     // GetTasks
         };
 
         struct HostConfiguration {

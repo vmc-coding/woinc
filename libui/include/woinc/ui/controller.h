@@ -1,5 +1,5 @@
 /* woinc/ui/controller.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -81,22 +81,22 @@ class Controller {
 
     public: // commands to the client; all of those commands are async
 
-        virtual std::future<bool> file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
+        virtual std::future<bool> file_transfer_op(const std::string &host, FileTransferOp op,
                                                    const std::string &master_url, const std::string &filename);
-        virtual std::future<bool> project_op(const std::string &host, PROJECT_OP op, const std::string &master_url);
-        virtual std::future<bool> task_op(const std::string &host, TASK_OP op, const std::string &master_url, const std::string &task_name);
+        virtual std::future<bool> project_op(const std::string &host, ProjectOp op, const std::string &master_url);
+        virtual std::future<bool> task_op(const std::string &host, TaskOp op, const std::string &master_url, const std::string &task_name);
 
         virtual std::future<GlobalPreferences> load_global_preferences(const std::string &host,
-                                                                       GET_GLOBAL_PREFS_MODE mode);
+                                                                       GetGlobalPrefsMode mode);
         virtual std::future<bool> save_global_preferences(const std::string &host,
                                                           const GlobalPreferences &prefs,
                                                           const GlobalPreferencesMask &mask);
 
         virtual std::future<bool> read_global_prefs_override(const std::string &host);
 
-        virtual std::future<bool> run_mode(const std::string &host, RUN_MODE mode);
-        virtual std::future<bool> gpu_mode(const std::string &host, RUN_MODE mode);
-        virtual std::future<bool> network_mode(const std::string &host, RUN_MODE mode);
+        virtual std::future<bool> run_mode(const std::string &host, RunMode mode);
+        virtual std::future<bool> gpu_mode(const std::string &host, RunMode mode);
+        virtual std::future<bool> network_mode(const std::string &host, RunMode mode);
 
         virtual std::future<AllProjectsList> all_projects_list(const std::string &host);
 

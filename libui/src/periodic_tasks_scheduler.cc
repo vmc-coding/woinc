@@ -1,5 +1,5 @@
 /* libui/src/periodic_tasks_scheduler.cc --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -39,15 +39,15 @@ PeriodicTasksSchedulerContext::PeriodicTasksSchedulerContext(const Configuration
 void PeriodicTasksSchedulerContext::add_host(const std::string &host, HostController &controller) {
     std::lock_guard<decltype(lock_)> guard(lock_);
     tasks_.emplace(host, std::array<Task, 9> {
-        Task(PeriodicTask::GET_CCSTATUS),
-        Task(PeriodicTask::GET_CLIENT_STATE),
-        Task(PeriodicTask::GET_DISK_USAGE),
-        Task(PeriodicTask::GET_FILE_TRANSFERS),
-        Task(PeriodicTask::GET_MESSAGES),
-        Task(PeriodicTask::GET_NOTICES),
-        Task(PeriodicTask::GET_PROJECT_STATUS),
-        Task(PeriodicTask::GET_STATISTICS),
-        Task(PeriodicTask::GET_TASKS)
+        Task(PeriodicTask::GetCCStatus),
+        Task(PeriodicTask::GetClientState),
+        Task(PeriodicTask::GetDiskUsage),
+        Task(PeriodicTask::GetFileTransfers),
+        Task(PeriodicTask::GetMessages),
+        Task(PeriodicTask::GetNotices),
+        Task(PeriodicTask::GetProjectStatus),
+        Task(PeriodicTask::GetStatistics),
+        Task(PeriodicTask::GetTasks)
     });
     host_controllers_.emplace(host, controller);
     states_.emplace(host, State());
@@ -128,9 +128,9 @@ void PeriodicTasksScheduler::handle_post_execution(const std::string &host, Job 
         task->last_execution = std::chrono::steady_clock::now();
         task->pending = false;
 
-        if (job->task == PeriodicTask::GET_MESSAGES)
+        if (job->task == PeriodicTask::GetMessages)
             context_.states_.at(host).messages_seqno = job->payload.seqno;
-        else if (job->task == PeriodicTask::GET_NOTICES)
+        else if (job->task == PeriodicTask::GetNotices)
             context_.states_.at(host).notices_seqno = job->payload.seqno;
     }
 }
@@ -146,11 +146,11 @@ void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSch
 
     PeriodicJob::Payload payload;
 
-    if (task.type == PeriodicTask::GET_MESSAGES)
+    if (task.type == PeriodicTask::GetMessages)
         payload.seqno = context_.states_.at(host).messages_seqno;
-    else if (task.type == PeriodicTask::GET_NOTICES)
+    else if (task.type == PeriodicTask::GetNotices)
         payload.seqno = context_.states_.at(host).notices_seqno;
-    else if (task.type == PeriodicTask::GET_TASKS)
+    else if (task.type == PeriodicTask::GetTasks)
         payload.active_only = context_.configuration_.active_only_tasks(host);
 
     auto job = new PeriodicJob(task.type, context_.handler_registry_, payload);

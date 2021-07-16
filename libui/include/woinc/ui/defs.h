@@ -1,5 +1,5 @@
 /* woinc/ui/defs.h --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -22,24 +22,24 @@
 namespace woinc { namespace ui {
 
 enum class Error {
-    DISCONNECTED,
-    UNAUTHORIZED,
-    CONNECTION_ERROR,
-    CLIENT_ERROR,
-    PARSING_ERROR,
-    LOGIC_ERROR
+    Disconnected,
+    Unauthorized,
+    ConnectionError,
+    ClientError,
+    ParsingError,
+    LogicError
 };
 
 enum class PeriodicTask {
-    GET_CCSTATUS,
-    GET_CLIENT_STATE,
-    GET_DISK_USAGE,
-    GET_FILE_TRANSFERS,
-    GET_MESSAGES,
-    GET_NOTICES,
-    GET_PROJECT_STATUS,
-    GET_STATISTICS,
-    GET_TASKS
+    GetCCStatus,
+    GetClientState,
+    GetDiskUsage,
+    GetFileTransfers,
+    GetMessages,
+    GetNotices,
+    GetProjectStatus,
+    GetStatistics,
+    GetTasks
 };
 
 }}

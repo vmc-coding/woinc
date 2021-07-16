@@ -91,18 +91,18 @@ class WOINCUI_LOCAL Controller::Impl {
 
         void active_only_tasks(const std::string &host, bool value);
 
-        std::future<bool> file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
+        std::future<bool> file_transfer_op(const std::string &host, FileTransferOp op,
                                            const std::string &master_url, const std::string &filename);
-        std::future<bool> project_op(const std::string &host, PROJECT_OP op, const std::string &master_url);
-        std::future<bool> task_op(const std::string &host, TASK_OP op, const std::string &master_url, const std::string &task_name);
+        std::future<bool> project_op(const std::string &host, ProjectOp op, const std::string &master_url);
+        std::future<bool> task_op(const std::string &host, TaskOp op, const std::string &master_url, const std::string &task_name);
 
-        std::future<GlobalPreferences> load_global_preferences(const std::string &host, GET_GLOBAL_PREFS_MODE mode);
+        std::future<GlobalPreferences> load_global_preferences(const std::string &host, GetGlobalPrefsMode mode);
         std::future<bool> save_global_preferences(const std::string &host, const GlobalPreferences &prefs, const GlobalPreferencesMask &mask);
         std::future<bool> read_global_prefs_override(const std::string &host);
 
-        std::future<bool> run_mode(const std::string &host, RUN_MODE mode);
-        std::future<bool> gpu_mode(const std::string &host, RUN_MODE mode);
-        std::future<bool> network_mode(const std::string &host, RUN_MODE mode);
+        std::future<bool> run_mode(const std::string &host, RunMode mode);
+        std::future<bool> gpu_mode(const std::string &host, RunMode mode);
+        std::future<bool> network_mode(const std::string &host, RunMode mode);
 
         std::future<AllProjectsList> all_projects_list(const std::string &host);
 
@@ -144,8 +144,8 @@ class WOINCUI_LOCAL Controller::Impl {
             auto *job = new woinc::ui::AsyncJob<RESULT>(
                 new CMD{std::move(request)},
                 std::move(promise),
-                [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::COMMAND_STATUS status) {
-                    if (status == woinc::rpc::COMMAND_STATUS::OK)
+                [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::CommandStatus status) {
+                    if (status == woinc::rpc::CommandStatus::Ok)
                         p.set_value(getter(static_cast<CMD *>(cmd)->response()));
                     else
                         p.set_exception(std::make_exception_ptr(std::runtime_error{error_msg}));
@@ -252,7 +252,7 @@ void Controller::Impl::add_host(std::string host,
             if (connected)
                 handler.on_host_connected(host);
             else
-                handler.on_host_error(host, Error::CONNECTION_ERROR);
+                handler.on_host_error(host, Error::ConnectionError);
         });
     }).detach();
 }
@@ -326,10 +326,10 @@ void Controller::Impl::active_only_tasks(const std::string &host, bool value) {
     verify_known_host_(host, __func__);
 
     configuration_.active_only_tasks(host, value);
-    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_TASKS);
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GetTasks);
 }
 
-std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
+std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, FileTransferOp op,
                                                      const std::string &master_url, const std::string &filename) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
@@ -344,12 +344,12 @@ std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, FI
         "Error while executing file transfer operation",
         {op, master_url, filename});
 
-    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_FILE_TRANSFERS);
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GetFileTransfers);
 
     return future;
 }
 
-std::future<bool> Controller::Impl::project_op(const std::string &host, PROJECT_OP op, const std::string &master_url) {
+std::future<bool> Controller::Impl::project_op(const std::string &host, ProjectOp op, const std::string &master_url) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
 
@@ -362,12 +362,12 @@ std::future<bool> Controller::Impl::project_op(const std::string &host, PROJECT_
         "Error while executing project operation",
         {op, master_url});
 
-    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_PROJECT_STATUS);
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GetProjectStatus);
 
     return future;
 }
 
-std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
+std::future<bool> Controller::Impl::task_op(const std::string &host, TaskOp op,
                                             const std::string &master_url, const std::string &task_name) {
     check_not_empty_host_name__(host);
     check_not_empty__(master_url, "Missing master url");
@@ -382,12 +382,12 @@ std::future<bool> Controller::Impl::task_op(const std::string &host, TASK_OP op,
         "Error while executing task operation",
         {op, master_url, task_name});
 
-    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GET_TASKS);
+    periodic_tasks_scheduler_context_.reschedule_now(host, PeriodicTask::GetTasks);
 
     return future;
 }
 
-std::future<GlobalPreferences> Controller::Impl::load_global_preferences(const std::string &host, GET_GLOBAL_PREFS_MODE mode) {
+std::future<GlobalPreferences> Controller::Impl::load_global_preferences(const std::string &host, GetGlobalPrefsMode mode) {
     check_not_empty_host_name__(host);
 
     WOINC_LOCK_GUARD;
@@ -425,7 +425,7 @@ std::future<bool> Controller::Impl::read_global_prefs_override(const std::string
         "Error reading the preferences");
 }
 
-std::future<bool> Controller::Impl::run_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::Impl::run_mode(const std::string &host, RunMode mode) {
     check_not_empty_host_name__(host);
 
     WOINC_LOCK_GUARD;
@@ -438,7 +438,7 @@ std::future<bool> Controller::Impl::run_mode(const std::string &host, RUN_MODE m
         mode);
 }
 
-std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RunMode mode) {
     check_not_empty_host_name__(host);
 
     WOINC_LOCK_GUARD;
@@ -451,7 +451,7 @@ std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RUN_MODE m
         mode);
 }
 
-std::future<bool> Controller::Impl::network_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::Impl::network_mode(const std::string &host, RunMode mode) {
     check_not_empty_host_name__(host);
 
     WOINC_LOCK_GUARD;
@@ -684,22 +684,22 @@ void Controller::active_only_tasks(const std::string &host, bool value) {
     impl_->active_only_tasks(host, value);
 }
 
-std::future<bool> Controller::file_transfer_op(const std::string &host, FILE_TRANSFER_OP op,
+std::future<bool> Controller::file_transfer_op(const std::string &host, FileTransferOp op,
                                                const std::string &master_url, const std::string &filename) {
     return impl_->file_transfer_op(host, op, master_url, filename);
 }
 
-std::future<bool> Controller::project_op(const std::string &host, PROJECT_OP op, const std::string &master_url) {
+std::future<bool> Controller::project_op(const std::string &host, ProjectOp op, const std::string &master_url) {
     return impl_->project_op(host, op, master_url);
 }
 
-std::future<bool> Controller::task_op(const std::string &host, TASK_OP op,
+std::future<bool> Controller::task_op(const std::string &host, TaskOp op,
                          const std::string &master_url, const std::string &task_name) {
     return impl_->task_op(host, op, master_url, task_name);
 }
 
 std::future<GlobalPreferences> Controller::load_global_preferences(const std::string &host,
-                                                                   GET_GLOBAL_PREFS_MODE mode) {
+                                                                   GetGlobalPrefsMode mode) {
     return impl_->load_global_preferences(host, mode);
 }
 
@@ -713,15 +713,15 @@ std::future<bool> Controller::read_global_prefs_override(const std::string &host
     return impl_->read_global_prefs_override(host);
 }
 
-std::future<bool> Controller::gpu_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::gpu_mode(const std::string &host, RunMode mode) {
     return impl_->gpu_mode(host, mode);
 }
 
-std::future<bool> Controller::network_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::network_mode(const std::string &host, RunMode mode) {
     return impl_->network_mode(host, mode);
 }
 
-std::future<bool> Controller::run_mode(const std::string &host, RUN_MODE mode) {
+std::future<bool> Controller::run_mode(const std::string &host, RunMode mode) {
     return impl_->run_mode(host, mode);
 }
 
