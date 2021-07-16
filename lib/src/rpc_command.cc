@@ -1,5 +1,5 @@
 /* lib/rpc_command.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -38,30 +38,30 @@ namespace {
 
 using namespace woinc::rpc;
 
-constexpr COMMAND_STATUS map__(CONNECTION_STATUS status) {
+constexpr CommandStatus map__(ConnectionStatus status) {
     switch (status) {
-        case CONNECTION_STATUS::OK:
-            return COMMAND_STATUS::OK;
-        case CONNECTION_STATUS::DISCONNECTED:
-            return COMMAND_STATUS::DISCONNECTED;
-        case CONNECTION_STATUS::ERROR:
-            return COMMAND_STATUS::CONNECTION_ERROR;
+        case ConnectionStatus::Ok:
+            return CommandStatus::Ok;
+        case ConnectionStatus::Disconnected:
+            return CommandStatus::Disconnected;
+        case ConnectionStatus::Error:
+            return CommandStatus::ConnectionError;
     }
     // workaround for GCC bug 86678
 #if defined(__GNUC__) && __GNUC__ >= 9
     assert(false);
 #endif
-    return COMMAND_STATUS::LOGIC_ERROR;
+    return CommandStatus::LogicError;
 }
 
-constexpr COMMAND_STATUS as_status__(bool b) {
-    return b ? COMMAND_STATUS::OK : COMMAND_STATUS::PARSING_ERROR;
+constexpr CommandStatus as_status__(bool b) {
+    return b ? CommandStatus::Ok : CommandStatus::ParsingError;
 }
 
-COMMAND_STATUS do_rpc__(Connection &connection,
-                        const wxml::Tree &request_tree,
-                        wxml::Tree &response_tree,
-                        std::string &error_holder) {
+CommandStatus do_rpc__(Connection &connection,
+                       const wxml::Tree &request_tree,
+                       wxml::Tree &response_tree,
+                       std::string &error_holder) {
     std::stringstream response;
 
     auto rpc_result = connection.do_rpc(request_tree.str(), response);
@@ -72,19 +72,19 @@ COMMAND_STATUS do_rpc__(Connection &connection,
     }
 
     if (!wxml::parse_boinc_response(response_tree, response, error_holder))
-        return COMMAND_STATUS::PARSING_ERROR;
+        return CommandStatus::ParsingError;
 
     if (response_tree.root.children.size() == 1
             && response_tree.root.children.front().tag == "unauthorized")
-        return COMMAND_STATUS::UNAUTHORIZED;
+        return CommandStatus::Unauthorized;
 
     if (response_tree.root.children.size() == 1
             && response_tree.root.children.front().tag == "error") {
         error_holder = response_tree.root.children.front().content;
-        return COMMAND_STATUS::CLIENT_ERROR;
+        return CommandStatus::ClientError;
     }
 
-    return COMMAND_STATUS::OK;
+    return CommandStatus::Ok;
 }
 
 bool parse__(const wxml::Tree &response_tree, SuccessResponse &response) {
@@ -225,37 +225,37 @@ bool parse__(const wxml::Tree &response_tree, LookupAccountPollResponse &respons
 }
 
 template<typename RESPONSE>
-COMMAND_STATUS do_cmd__(Connection &connection,
-                        const wxml::Tree &request_tree,
-                        std::string &error_holder,
-                        RESPONSE &response) {
+CommandStatus do_cmd__(Connection &connection,
+                       const wxml::Tree &request_tree,
+                       std::string &error_holder,
+                       RESPONSE &response) {
     wxml::Tree response_tree;
 
     auto status = do_rpc__(connection, request_tree, response_tree, error_holder);
-    if (status != COMMAND_STATUS::OK)
+    if (status != CommandStatus::Ok)
         return status;
 
-    return parse__(response_tree, response) ? COMMAND_STATUS::OK : COMMAND_STATUS::PARSING_ERROR;
+    return parse__(response_tree, response) ? CommandStatus::Ok : CommandStatus::ParsingError;
 }
 
 template<typename RESPONSE>
-COMMAND_STATUS do_cmd__(Connection &connection,
-                        const char *cmd,
-                        std::string &error_holder,
-                        RESPONSE &response) {
+CommandStatus do_cmd__(Connection &connection,
+                       const char *cmd,
+                       std::string &error_holder,
+                       RESPONSE &response) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     request_tree.root[cmd];
     return do_cmd__(connection, request_tree, error_holder, response);
 }
 
-wxml::Tree set_mode_request__(const char *cmd, woinc::RUN_MODE m, double duration) {
+wxml::Tree set_mode_request__(const char *cmd, woinc::RunMode m, double duration) {
     const char *mode = nullptr;
 
     switch (m) {
-        case woinc::RUN_MODE::ALWAYS: mode = "always"; break;
-        case woinc::RUN_MODE::AUTO: mode = "auto"; break;
-        case woinc::RUN_MODE::NEVER: mode = "never"; break;
-        case woinc::RUN_MODE::RESTORE: mode = "restore"; break;
+        case woinc::RunMode::Always: mode = "always"; break;
+        case woinc::RunMode::Auto: mode = "auto"; break;
+        case woinc::RunMode::Never: mode = "never"; break;
+        case woinc::RunMode::Restore: mode = "restore"; break;
         default: throw std::invalid_argument("Unknown run mode: " + std::to_string(static_cast<int>(m)));
     }
 
@@ -272,13 +272,13 @@ wxml::Tree set_mode_request__(const char *cmd, woinc::RUN_MODE m, double duratio
 namespace woinc { namespace rpc {
 
 template<>
-COMMAND_STATUS AuthorizeCommand::execute(Connection &connection) {
+CommandStatus AuthorizeCommand::execute(Connection &connection) {
     response_.authorized = false;
     std::string nonce;
 
     if (request_.password.empty()) {
         error_ = "The password is missing";
-        return COMMAND_STATUS::LOGIC_ERROR;
+        return CommandStatus::LogicError;
     }
 
     { // send auth1 request and parse the nonce response
@@ -288,12 +288,12 @@ COMMAND_STATUS AuthorizeCommand::execute(Connection &connection) {
         wxml::Tree response_tree;
 
         auto status = do_rpc__(connection, request_tree, response_tree, error_);
-        if (status != COMMAND_STATUS::OK)
+        if (status != CommandStatus::Ok)
             return status;
 
         auto nonce_node = response_tree.root.find_child("nonce");
         if (!response_tree.root.found_child(nonce_node))
-            return COMMAND_STATUS::PARSING_ERROR;
+            return CommandStatus::ParsingError;
 
         nonce = nonce_node->content;
     }
@@ -305,17 +305,17 @@ COMMAND_STATUS AuthorizeCommand::execute(Connection &connection) {
         wxml::Tree response_tree;
 
         auto status = do_rpc__(connection, request_tree, response_tree, error_);
-        if (status != COMMAND_STATUS::OK)
+        if (status != CommandStatus::Ok)
             return status;
 
         response_.authorized = response_tree.root.has_child("authorized");
     }
 
-    return COMMAND_STATUS::OK;
+    return CommandStatus::Ok;
 }
 
 template<>
-COMMAND_STATUS ExchangeVersionsCommand::execute(Connection &connection) {
+CommandStatus ExchangeVersionsCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     auto &request_node = request_tree.root["exchange_versions"];
     request_node["major"]   = request_.version.major;
@@ -326,43 +326,43 @@ COMMAND_STATUS ExchangeVersionsCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetAllProjectsListCommand::execute(Connection &connection) {
+CommandStatus GetAllProjectsListCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_all_projects_list", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetCCStatusCommand::execute(Connection &connection) {
+CommandStatus GetCCStatusCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_cc_status", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetClientStateCommand::execute(Connection &connection) {
+CommandStatus GetClientStateCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_state", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetDiskUsageCommand::execute(Connection &connection) {
+CommandStatus GetDiskUsageCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_disk_usage", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetFileTransfersCommand::execute(Connection &connection) {
+CommandStatus GetFileTransfersCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_file_transfers", error_, response());
 }
 
-GetGlobalPreferencesRequest::GetGlobalPreferencesRequest(GET_GLOBAL_PREFS_MODE m)
+GetGlobalPreferencesRequest::GetGlobalPreferencesRequest(GetGlobalPrefsMode m)
     : mode(m) {}
 
 template<>
-COMMAND_STATUS GetGlobalPreferencesCommand::execute(Connection &connection) {
+CommandStatus GetGlobalPreferencesCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
 
     const char *mode = nullptr;
 
     switch (request().mode) {
-        case GET_GLOBAL_PREFS_MODE::FILE: mode = "file"; break;
-        case GET_GLOBAL_PREFS_MODE::OVERRIDE: mode = "override"; break;
-        case GET_GLOBAL_PREFS_MODE::WORKING: mode = "working"; break;
+        case GetGlobalPrefsMode::File: mode = "file"; break;
+        case GetGlobalPrefsMode::Override: mode = "override"; break;
+        case GetGlobalPrefsMode::Working: mode = "working"; break;
     }
 
     assert(mode);
@@ -372,12 +372,12 @@ COMMAND_STATUS GetGlobalPreferencesCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetHostInfoCommand::execute(Connection &connection) {
+CommandStatus GetHostInfoCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_host_info", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetMessagesCommand::execute(Connection &connection) {
+CommandStatus GetMessagesCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     auto &request_node = request_tree.root["get_messages"];
     request_node["seqno"] = request_.seqno;
@@ -388,7 +388,7 @@ COMMAND_STATUS GetMessagesCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetNoticesCommand::execute(Connection &connection) {
+CommandStatus GetNoticesCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     auto &request_node = request_tree.root["get_notices"];
     request_node["seqno"] = request_.seqno;
@@ -397,7 +397,7 @@ COMMAND_STATUS GetNoticesCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetProjectConfigCommand::execute(Connection &connection) {
+CommandStatus GetProjectConfigCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     request_tree.root["get_project_config"]["url"] = request().url;
 
@@ -405,17 +405,17 @@ COMMAND_STATUS GetProjectConfigCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetProjectConfigPollCommand::execute(Connection &connection) {
+CommandStatus GetProjectConfigPollCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_project_config_poll", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetProjectStatusCommand::execute(Connection &connection) {
+CommandStatus GetProjectStatusCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_project_status", error_, response());
 }
 
 template<>
-COMMAND_STATUS GetResultsCommand::execute(Connection &connection) {
+CommandStatus GetResultsCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     request_tree.root["get_results"]["active_only"] = request_.active_only ? 1 : 0;
 
@@ -423,7 +423,7 @@ COMMAND_STATUS GetResultsCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS GetStatisticsCommand::execute(Connection &connection) {
+CommandStatus GetStatisticsCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_statistics", error_, response());
 }
 
@@ -431,7 +431,7 @@ LookupAccountRequest::LookupAccountRequest(std::string url, std::string mail, st
     : email(std::move(mail)), master_url(std::move(url)), passwd(std::move(password)) {}
 
 template<>
-COMMAND_STATUS LookupAccountCommand::execute(Connection &connection) {
+CommandStatus LookupAccountCommand::execute(Connection &connection) {
     assert(!request().master_url.empty());
     assert(!request().email.empty());
     assert(!request().passwd.empty());
@@ -450,12 +450,12 @@ COMMAND_STATUS LookupAccountCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS LookupAccountPollCommand::execute(Connection &connection) {
+CommandStatus LookupAccountPollCommand::execute(Connection &connection) {
     return do_cmd__(connection, "lookup_account_poll", error_, response());
 }
 
 template<>
-COMMAND_STATUS NetworkAvailableCommand::execute(Connection &connection) {
+CommandStatus NetworkAvailableCommand::execute(Connection &connection) {
     return do_cmd__(connection, "network_available", error_, response());
 }
 
@@ -463,7 +463,7 @@ ProjectAttachRequest::ProjectAttachRequest(std::string url, std::string auth, st
     : master_url(std::move(url)), authenticator(std::move(auth)), project_name(std::move(project)) {}
 
 template<>
-COMMAND_STATUS ProjectAttachCommand::execute(Connection &connection) {
+CommandStatus ProjectAttachCommand::execute(Connection &connection) {
     assert(!request().master_url.empty());
     assert(!request().authenticator.empty());
 
@@ -477,25 +477,25 @@ COMMAND_STATUS ProjectAttachCommand::execute(Connection &connection) {
     return do_cmd__(connection, request_tree, error_, response());
 }
 
-ProjectOpRequest::ProjectOpRequest(PROJECT_OP o, std::string url)
+ProjectOpRequest::ProjectOpRequest(ProjectOp o, std::string url)
     : op(o), master_url(std::move(url)) {}
 
 template<>
-COMMAND_STATUS ProjectOpCommand::execute(Connection &connection) {
+CommandStatus ProjectOpCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
 
     const char *op = nullptr;
 
     switch (request().op) {
-        case PROJECT_OP::ALLOWMOREWORK: op = "allowmorework"; break;
-        case PROJECT_OP::DETACH: op = "detach"; break;
-        case PROJECT_OP::DETACH_WHEN_DONE: op = "detach_when_done"; break;
-        case PROJECT_OP::DONT_DETACH_WHEN_DONE: op = "dont_detach_when_done"; break;
-        case PROJECT_OP::NOMOREWORK: op = "nomorework"; break;
-        case PROJECT_OP::RESET: op = "reset"; break;
-        case PROJECT_OP::RESUME: op = "resume"; break;
-        case PROJECT_OP::SUSPEND: op = "suspend"; break;
-        case PROJECT_OP::UPDATE: op = "update"; break;
+        case ProjectOp::Allowmorework: op = "allowmorework"; break;
+        case ProjectOp::Detach: op = "detach"; break;
+        case ProjectOp::DetachWhenDone: op = "detach_when_done"; break;
+        case ProjectOp::DontDetachWhenDone: op = "dont_detach_when_done"; break;
+        case ProjectOp::Nomorework: op = "nomorework"; break;
+        case ProjectOp::Reset: op = "reset"; break;
+        case ProjectOp::Resume: op = "resume"; break;
+        case ProjectOp::Suspend: op = "suspend"; break;
+        case ProjectOp::Update: op = "update"; break;
     }
 
     assert(op);
@@ -507,71 +507,71 @@ COMMAND_STATUS ProjectOpCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS QuitCommand::execute(Connection &connection) {
+CommandStatus QuitCommand::execute(Connection &connection) {
     return do_cmd__(connection, "quit", error_, response());
 }
 
 template<>
-COMMAND_STATUS ReadCCConfigCommand::execute(Connection &connection) {
+CommandStatus ReadCCConfigCommand::execute(Connection &connection) {
     return do_cmd__(connection, "read_cc_config", error_, response());
 }
 
 template<>
-COMMAND_STATUS ReadGlobalPreferencesOverrideCommand::execute(Connection &connection) {
+CommandStatus ReadGlobalPreferencesOverrideCommand::execute(Connection &connection) {
     return do_cmd__(connection, "read_global_prefs_override", error_, response());
 }
 
 template<>
-COMMAND_STATUS RunBenchmarksCommand::execute(Connection &connection) {
+CommandStatus RunBenchmarksCommand::execute(Connection &connection) {
     return do_cmd__(connection, "run_benchmarks", error_, response());
 }
 
-SetGpuModeRequest::SetGpuModeRequest(RUN_MODE m, double d)
+SetGpuModeRequest::SetGpuModeRequest(RunMode m, double d)
     : mode(m), duration(d) {}
 
 template<>
-COMMAND_STATUS SetGpuModeCommand::execute(Connection &connection) {
+CommandStatus SetGpuModeCommand::execute(Connection &connection) {
     return do_cmd__(connection,
                     set_mode_request__("set_gpu_mode", request().mode, request().duration),
                     error_,
                     response());
 }
 
-SetNetworkModeRequest::SetNetworkModeRequest(RUN_MODE m, double d)
+SetNetworkModeRequest::SetNetworkModeRequest(RunMode m, double d)
     : mode(m), duration(d) {}
 
 template<>
-COMMAND_STATUS SetNetworkModeCommand::execute(Connection &connection) {
+CommandStatus SetNetworkModeCommand::execute(Connection &connection) {
     return do_cmd__(connection,
                     set_mode_request__("set_network_mode", request().mode, request().duration),
                     error_,
                     response());
 }
 
-SetRunModeRequest::SetRunModeRequest(RUN_MODE m, double d)
+SetRunModeRequest::SetRunModeRequest(RunMode m, double d)
     : mode(m), duration(d) {}
 
 template<>
-COMMAND_STATUS SetRunModeCommand::execute(Connection &connection) {
+CommandStatus SetRunModeCommand::execute(Connection &connection) {
     return do_cmd__(connection,
                     set_mode_request__("set_run_mode", request().mode, request().duration),
                     error_,
                     response());
 }
 
-TaskOpRequest::TaskOpRequest(TASK_OP o, std::string url, std::string n)
+TaskOpRequest::TaskOpRequest(TaskOp o, std::string url, std::string n)
     : op(o), master_url(std::move(url)), name(std::move(n)) {}
 
 template<>
-COMMAND_STATUS TaskOpCommand::execute(Connection &connection) {
+CommandStatus TaskOpCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
 
     const char *op = nullptr;
 
     switch (request().op) {
-        case TASK_OP::ABORT: op = "abort"; break;
-        case TASK_OP::RESUME: op = "resume"; break;
-        case TASK_OP::SUSPEND: op = "suspend"; break;
+        case TaskOp::Abort: op = "abort"; break;
+        case TaskOp::Resume: op = "resume"; break;
+        case TaskOp::Suspend: op = "suspend"; break;
     }
 
     assert(op);
@@ -585,18 +585,18 @@ COMMAND_STATUS TaskOpCommand::execute(Connection &connection) {
     return do_cmd__(connection, request_tree, error_, response());
 }
 
-FileTransferOpRequest::FileTransferOpRequest(FILE_TRANSFER_OP o, std::string url, std::string n)
+FileTransferOpRequest::FileTransferOpRequest(FileTransferOp o, std::string url, std::string n)
     : op(o), master_url(std::move(url)), filename(std::move(n)) {}
 
 template<>
-COMMAND_STATUS FileTransferOpCommand::execute(Connection &connection) {
+CommandStatus FileTransferOpCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
 
     const char *op = nullptr;
 
     switch (request().op) {
-        case FILE_TRANSFER_OP::RETRY: op = "retry"; break;
-        case FILE_TRANSFER_OP::ABORT: op = "abort"; break;
+        case FileTransferOp::Retry: op = "retry"; break;
+        case FileTransferOp::Abort: op = "abort"; break;
     }
 
     assert(op);
@@ -611,7 +611,7 @@ COMMAND_STATUS FileTransferOpCommand::execute(Connection &connection) {
 }
 
 template<>
-COMMAND_STATUS SetGlobalPreferencesCommand::execute(Connection &connection) {
+CommandStatus SetGlobalPreferencesCommand::execute(Connection &connection) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
 
     const auto &prefs = request().preferences;
@@ -668,7 +668,7 @@ COMMAND_STATUS SetGlobalPreferencesCommand::execute(Connection &connection) {
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
 
     { // write day prefs
-        std::set<woinc::DAY_OF_WEEK> days;
+        std::set<woinc::DayOfWeek> days;
 
         std::transform(prefs.cpu_times.begin(), prefs.cpu_times.end(),
                        std::inserter(days, days.end()),

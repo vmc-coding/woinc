@@ -40,65 +40,65 @@ namespace {
 
 template<typename T, std::enable_if_t<std::is_enum<T>::value, int> = 0>
 void convert_to_enum__(std::underlying_type_t<T> value, T &dest) {
-    if (value < 0 || value >= static_cast<std::underlying_type_t<T>>(T::UNKNOWN_TO_WOINC))
-        dest = T::UNKNOWN_TO_WOINC;
+    if (value < 0 || value >= static_cast<std::underlying_type_t<T>>(T::UnknownToWoinc))
+        dest = T::UnknownToWoinc;
     else
         dest = static_cast<T>(value);
 }
 
-void parse__(std::underlying_type_t<woinc::NETWORK_STATUS> value, woinc::NETWORK_STATUS &dest) {
+void parse__(std::underlying_type_t<woinc::NetworkStatus> value, woinc::NetworkStatus &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::RUN_MODE> value, woinc::RUN_MODE &dest) {
+void parse__(std::underlying_type_t<woinc::RunMode> value, woinc::RunMode &dest) {
     convert_to_enum__(value - 1, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::SUSPEND_REASON> value, woinc::SUSPEND_REASON &dest) {
+void parse__(std::underlying_type_t<woinc::SuspendReason> value, woinc::SuspendReason &dest) {
     switch (value) {
-        case    0: dest = woinc::SUSPEND_REASON::NOT_SUSPENDED; break;
-        case    1: dest = woinc::SUSPEND_REASON::BATTERIES; break;
-        case    2: dest = woinc::SUSPEND_REASON::USER_ACTIVE; break;
-        case    4: dest = woinc::SUSPEND_REASON::USER_REQ; break;
-        case    8: dest = woinc::SUSPEND_REASON::TIME_OF_DAY; break;
-        case   16: dest = woinc::SUSPEND_REASON::BENCHMARKS; break;
-        case   32: dest = woinc::SUSPEND_REASON::DISK_SIZE; break;
-        case   64: dest = woinc::SUSPEND_REASON::CPU_THROTTLE; break;
-        case  128: dest = woinc::SUSPEND_REASON::NO_RECENT_INPUT; break;
-        case  256: dest = woinc::SUSPEND_REASON::INITIAL_DELAY; break;
-        case  512: dest = woinc::SUSPEND_REASON::EXCLUSIVE_APP_RUNNING; break;
-        case 1024: dest = woinc::SUSPEND_REASON::CPU_USAGE; break;
-        case 2048: dest = woinc::SUSPEND_REASON::NETWORK_QUOTA_EXCEEDED; break;
-        case 4096: dest = woinc::SUSPEND_REASON::OS; break;
-        case 4097: dest = woinc::SUSPEND_REASON::WIFI_STATE; break;
-        case 4098: dest = woinc::SUSPEND_REASON::BATTERY_CHARGING; break;
-        case 4099: dest = woinc::SUSPEND_REASON::BATTERY_OVERHEATED; break;
-        case 4100: dest = woinc::SUSPEND_REASON::NO_GUI_KEEPALIVE; break;
-        default: dest = woinc::SUSPEND_REASON::UNKNOWN_TO_WOINC;
+        case    0: dest = woinc::SuspendReason::NotSuspended; break;
+        case    1: dest = woinc::SuspendReason::Batteries; break;
+        case    2: dest = woinc::SuspendReason::UserActive; break;
+        case    4: dest = woinc::SuspendReason::UserReq; break;
+        case    8: dest = woinc::SuspendReason::TimeOfDay; break;
+        case   16: dest = woinc::SuspendReason::Benchmarks; break;
+        case   32: dest = woinc::SuspendReason::DiskSize; break;
+        case   64: dest = woinc::SuspendReason::CpuThrottle; break;
+        case  128: dest = woinc::SuspendReason::NoRecentInput; break;
+        case  256: dest = woinc::SuspendReason::InitialDelay; break;
+        case  512: dest = woinc::SuspendReason::ExclusiveAppRunning; break;
+        case 1024: dest = woinc::SuspendReason::CpuUsage; break;
+        case 2048: dest = woinc::SuspendReason::NetworkQuotaExceeded; break;
+        case 4096: dest = woinc::SuspendReason::Os; break;
+        case 4097: dest = woinc::SuspendReason::WifiState; break;
+        case 4098: dest = woinc::SuspendReason::BatteryCharging; break;
+        case 4099: dest = woinc::SuspendReason::BatteryOverheated; break;
+        case 4100: dest = woinc::SuspendReason::NoGuiKeepalive; break;
+        default: dest = woinc::SuspendReason::UnknownToWoinc;
     }
 }
 
-void parse__(std::underlying_type_t<woinc::SCHEDULER_STATE> value, woinc::SCHEDULER_STATE &dest) {
+void parse__(std::underlying_type_t<woinc::SchedulerState> value, woinc::SchedulerState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::RESULT_CLIENT_STATE> value, woinc::RESULT_CLIENT_STATE &dest) {
+void parse__(std::underlying_type_t<woinc::ResultClientState> value, woinc::ResultClientState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::ACTIVE_TASK_STATE> value, woinc::ACTIVE_TASK_STATE &dest) {
+void parse__(std::underlying_type_t<woinc::ActiveTaskState> value, woinc::ActiveTaskState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::MSG_INFO> value, woinc::MSG_INFO &dest) {
+void parse__(std::underlying_type_t<woinc::MsgInfo> value, woinc::MsgInfo &dest) {
     convert_to_enum__(value - 1, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::RPC_REASON> value, woinc::RPC_REASON &dest) {
+void parse__(std::underlying_type_t<woinc::RpcReason> value, woinc::RpcReason &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::DAY_OF_WEEK> value, woinc::DAY_OF_WEEK &dest) {
+void parse__(std::underlying_type_t<woinc::DayOfWeek> value, woinc::DayOfWeek &dest) {
     convert_to_enum__(value, dest);
 }
 
@@ -166,10 +166,10 @@ void parse_child_content_(const wxml::Node &node, const wxml::Tag &child_tag, T 
         parse__(child_iter->content, value);
         parse__(value, dest);
 #ifndef NDEBUG
-        if (dest == T::UNKNOWN_TO_WOINC)
+        if (dest == T::UnknownToWoinc)
             std::cerr << "Value of node with tag " << child_tag << " out of range\n";
         // we should adopt the unknown values, so let's fail out in dev mode
-        assert(dest != T::UNKNOWN_TO_WOINC);
+        assert(dest != T::UnknownToWoinc);
     } catch (...) {
         std::cerr << "Value of node with tag " << child_tag << " does have wrong format\n";
         throw;
@@ -492,7 +492,7 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
 
     auto prefs_node = node.find_child("day_prefs");
     while (node.found_child(prefs_node)) {
-        woinc::DAY_OF_WEEK day;
+        woinc::DayOfWeek day;
         parse_child_content_(*prefs_node, "day_of_week", day);
 
         if (prefs_node->has_child("start_hour")) {

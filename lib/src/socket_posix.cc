@@ -46,7 +46,7 @@ Socket::~Socket() {
 
 Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
     if (connected_)
-        return Result(STATUS::ALREADY_CONNECTED);
+        return Result(Status::AlreadyConnected);
 
     addrinfo hints;
     addrinfo *result;
@@ -60,7 +60,7 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
 
     if (resolving_status != 0)
         return Result (
-            STATUS::RESOLVING_ERROR,
+            Status::ResolvingError,
             resolving_status == EAI_SYSTEM ? strerror(errno) : gai_strerror(resolving_status)
         );
 
@@ -96,7 +96,7 @@ Socket::Result Socket::connect(const std::string &host, std::uint16_t port) {
     ::freeaddrinfo(result);
 
     if (!connected_) {
-        return Result(STATUS::SOCKET_ERROR, "Could not connect to " + host);
+        return Result(Status::SocketError, "Could not connect to " + host);
     } else {
         // set 10s timeouts for reads and writes
         timeval timeout;
@@ -120,27 +120,27 @@ void Socket::close() {
 
 Socket::Result Socket::send(const void *data, std::size_t length) {
     if (!connected_)
-        return Result(STATUS::NOT_CONNECTED);
+        return Result(Status::NotConnected);
 
     ssize_t bytes_sent = ::send(socket_, data, length, MSG_NOSIGNAL);
 
     if (bytes_sent < 0)
-        return Result(STATUS::SOCKET_ERROR, strerror(errno));
+        return Result(Status::SocketError, strerror(errno));
 
     if (static_cast<size_t>(bytes_sent) != length)
-        return Result(STATUS::SOCKET_ERROR);
+        return Result(Status::SocketError);
 
     return Result();
 }
 
 Socket::Result Socket::receive(void *buffer, std::size_t max_length, std::size_t &bytes_read) {
     if (!connected_)
-        return Result(STATUS::NOT_CONNECTED);
+        return Result(Status::NotConnected);
 
     ssize_t read = ::recv(socket_, buffer, max_length, 0);
 
     if (read < 0)
-        return Result(STATUS::SOCKET_ERROR, strerror(errno));
+        return Result(Status::SocketError, strerror(errno));
 
     bytes_read = static_cast<size_t>(read);
     return Result();
@@ -150,15 +150,15 @@ bool Socket::is_localhost() const {
     return is_localhost_;
 }
 
-std::unique_ptr<Socket> Socket::create(Socket::VERSION v) {
+std::unique_ptr<Socket> Socket::create(Socket::Version v) {
     switch (v) {
-        case VERSION::ALL:
+        case Version::All:
             return std::unique_ptr<Socket>(new Socket(AF_UNSPEC));
-        case VERSION::IPv4:
+        case Version::IPv4:
             return std::unique_ptr<Socket>(new Socket(AF_INET));
-        case VERSION::IPv6:
+        case Version::IPv6:
             return std::unique_ptr<Socket>(new Socket(AF_INET6));
-        /* no default to get warnings on compile time when VERSION has been changed */
+        /* no default to get warnings on compile time when Version has been changed */
     }
     assert(false);
     return std::unique_ptr<Socket>();

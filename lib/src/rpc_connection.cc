@@ -30,8 +30,8 @@
 #include "visibility.h"
 
 namespace {
-    const char EOM = 0x03;
-    enum { BUFFER_SIZE = 32*1024 };
+    constexpr char EOM__ = 0x03;
+    constexpr std::size_t BUFFER_SIZE__ = 32 * 1024;
 }
 
 namespace woinc { namespace rpc {
@@ -58,14 +58,14 @@ Connection::Result Connection::Impl::open(const std::string &hostname, std::uint
 
     // let the network stack decide which version to use
 
-    socket_ = Socket::create(Socket::VERSION::ALL);
+    socket_ = Socket::create(Socket::Version::All);
 
     if (socket_ && socket_->connect(hostname, port))
         return Result();
 
-    // network stack doesn't support VERSION::ALL, so let't try which one to use
+    // network stack doesn't support Version::ALL, so let't try which one to use
 
-    socket_ = Socket::create(Socket::VERSION::IPv6);
+    socket_ = Socket::create(Socket::Version::IPv6);
 
     std::string error_msg;
 
@@ -76,7 +76,7 @@ Connection::Result Connection::Impl::open(const std::string &hostname, std::uint
         error_msg = std::move(result_connect.error);
     }
 
-    socket_ = Socket::create(Socket::VERSION::IPv4);
+    socket_ = Socket::create(Socket::Version::IPv4);
 
     if (socket_.get() != nullptr) {
         Socket::Result result_connect = socket_->connect(hostname, port);
@@ -85,7 +85,7 @@ Connection::Result Connection::Impl::open(const std::string &hostname, std::uint
         error_msg = std::move(result_connect.error);
     }
 
-    return Result(CONNECTION_STATUS::ERROR, std::move(error_msg));
+    return Result(ConnectionStatus::Error, std::move(error_msg));
 }
 
 void Connection::Impl::close() {
@@ -95,7 +95,7 @@ void Connection::Impl::close() {
 }
 
 Connection::Result Connection::Impl::do_rpc(const std::string &request, std::ostream &response) {
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE__];
 
 #ifdef WOINC_LOG_RPC_CONNECTION
     std::cerr << "------------- REQUEST ------------\n"
@@ -106,11 +106,11 @@ Connection::Result Connection::Impl::do_rpc(const std::string &request, std::ost
     {
         Socket::Result result = socket_->send(request.c_str(), request.size());
         if (!result)
-            return Result(CONNECTION_STATUS::ERROR, std::move(result.error));
+            return Result(ConnectionStatus::Error, std::move(result.error));
 
-        result = socket_->send(&EOM, sizeof(EOM));
+        result = socket_->send(&EOM__, sizeof(EOM__));
         if (!result)
-            return Result(CONNECTION_STATUS::ERROR, std::move(result.error));
+            return Result(ConnectionStatus::Error, std::move(result.error));
     }
 
 #ifdef WOINC_LOG_RPC_CONNECTION
@@ -122,28 +122,28 @@ Connection::Result Connection::Impl::do_rpc(const std::string &request, std::ost
         size_t bytes_read = 0;
 
         {
-            Socket::Result result = socket_->receive(buffer, BUFFER_SIZE, bytes_read);
+            Socket::Result result = socket_->receive(buffer, BUFFER_SIZE__, bytes_read);
             if (!result)
-                return Result(CONNECTION_STATUS::ERROR, std::move(result.error));
+                return Result(ConnectionStatus::Error, std::move(result.error));
         }
 
         if (bytes_read == 0)
-            return Result(CONNECTION_STATUS::DISCONNECTED);
+            return Result(ConnectionStatus::Disconnected);
 
 #ifdef WOINC_LOG_RPC_CONNECTION
         std::cerr.write(buffer, bytes_read);
 #endif
 
         if (bytes_read > static_cast<size_t>(std::numeric_limits<std::streamsize>::max()))
-            return Result(CONNECTION_STATUS::ERROR, "Ouch");
+            return Result(ConnectionStatus::Error, "Ouch");
         auto to_write = static_cast<std::streamsize>(bytes_read);
         assert(to_write > 0);
 
-        if ((eom = (buffer[to_write - 1] == EOM)))
+        if ((eom = (buffer[to_write - 1] == EOM__)))
             to_write --;
 
         if (!response.write(buffer, to_write))
-            return Result(CONNECTION_STATUS::ERROR);
+            return Result(ConnectionStatus::Error);
     }
 
 #ifdef WOINC_LOG_RPC_CONNECTION

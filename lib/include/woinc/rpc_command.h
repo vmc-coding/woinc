@@ -27,23 +27,24 @@ namespace woinc { namespace rpc {
 
 struct Connection;
 
-enum class COMMAND_STATUS {
-    OK,
-    DISCONNECTED,
-    UNAUTHORIZED,
-    CONNECTION_ERROR,
-    CLIENT_ERROR,
-    PARSING_ERROR,
-    LOGIC_ERROR
+// TODO move this into defs.h
+enum class CommandStatus {
+    Ok,
+    Disconnected,
+    Unauthorized,
+    ConnectionError,
+    ClientError,
+    ParsingError,
+    LogicError
 };
 
 struct Command {
     virtual ~Command() = default;
 
-    virtual COMMAND_STATUS execute(Connection &) = 0;
+    virtual CommandStatus execute(Connection &) = 0;
 
     bool operator()(Connection &connection) {
-        return execute(connection) == COMMAND_STATUS::OK;
+        return execute(connection) == CommandStatus::Ok;
     }
 
     const std::string &error() const { return error_; }
@@ -61,7 +62,7 @@ struct BOINCCommand : public Command {
     explicit BOINCCommand(REQUEST_TYPE &&rq) noexcept : request_(std::move(rq)) {}
     virtual ~BOINCCommand() = default;
 
-    COMMAND_STATUS execute(Connection &connection) override;
+    CommandStatus execute(Connection &connection) override;
 
     bool requires_local_authorization() const final { return REQUIRE_LOCAL_AUTH; }
 
@@ -151,8 +152,8 @@ typedef BOINCCommand<GetDiskUsageRequest, GetDiskUsageResponse, false> GetDiskUs
 // --- GetGlobalPreferences ---
 
 struct GetGlobalPreferencesRequest {
-    GetGlobalPreferencesRequest(GET_GLOBAL_PREFS_MODE mode);
-    const GET_GLOBAL_PREFS_MODE mode;
+    GetGlobalPreferencesRequest(GetGlobalPrefsMode mode);
+    const GetGlobalPrefsMode mode;
 };
 
 struct GetGlobalPreferencesResponse {
@@ -263,8 +264,8 @@ typedef BOINCCommand<GetStatisticsRequest, GetStatisticsResponse, false> GetStat
 // --- FileTransferOp ---
 
 struct FileTransferOpRequest {
-    FileTransferOpRequest(FILE_TRANSFER_OP op, std::string url = "", std::string name = "");
-    const FILE_TRANSFER_OP op;
+    FileTransferOpRequest(FileTransferOp op, std::string url = "", std::string name = "");
+    const FileTransferOp op;
     std::string master_url;
     std::string filename;
 };
@@ -325,8 +326,8 @@ typedef BOINCCommand<ProjectAttachRequest, ProjectAttachResponse, true> ProjectA
 // --- ProjectOp ---
 
 struct ProjectOpRequest {
-    ProjectOpRequest(PROJECT_OP o, std::string url = "");
-    const PROJECT_OP op;
+    ProjectOpRequest(ProjectOp o, std::string url = "");
+    const ProjectOp op;
     std::string master_url;
 };
 
@@ -380,8 +381,8 @@ typedef BOINCCommand<SetGlobalPreferencesRequest, SetGlobalPreferencesResponse, 
 // --- SetGpuModeCommand ---
 
 struct SetGpuModeRequest {
-    SetGpuModeRequest(RUN_MODE mode, double duration = 0);
-    const RUN_MODE mode;
+    SetGpuModeRequest(RunMode mode, double duration = 0);
+    const RunMode mode;
     double duration;
 };
 
@@ -392,8 +393,8 @@ typedef BOINCCommand<SetGpuModeRequest, SetGpuModeResponse, true> SetGpuModeComm
 // --- SetNetworkModeCommand ---
 
 struct SetNetworkModeRequest {
-    SetNetworkModeRequest(RUN_MODE mode, double duration = 0);
-    const RUN_MODE mode;
+    SetNetworkModeRequest(RunMode mode, double duration = 0);
+    const RunMode mode;
     double duration;
 };
 
@@ -404,8 +405,8 @@ typedef BOINCCommand<SetNetworkModeRequest, SetNetworkModeResponse, true> SetNet
 // --- SetRunModeCommand ---
 
 struct SetRunModeRequest {
-    SetRunModeRequest(RUN_MODE mode, double duration = 0);
-    const RUN_MODE mode;
+    SetRunModeRequest(RunMode mode, double duration = 0);
+    const RunMode mode;
     double duration;
 };
 
@@ -416,8 +417,8 @@ typedef BOINCCommand<SetRunModeRequest, SetRunModeResponse, true> SetRunModeComm
 // --- TaskOp ---
 
 struct TaskOpRequest {
-    TaskOpRequest(TASK_OP o, std::string url = "", std::string name = "");
-    const TASK_OP op;
+    TaskOpRequest(TaskOp o, std::string url = "", std::string name = "");
+    const TaskOp op;
     std::string master_url;
     std::string name;
 };

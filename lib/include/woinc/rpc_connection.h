@@ -1,5 +1,5 @@
 /* woinc/rpc_connection.h --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -28,25 +28,25 @@
 
 namespace woinc { namespace rpc {
 
-enum class CONNECTION_STATUS {
-    OK,
-    DISCONNECTED,
-    ERROR
+enum class ConnectionStatus {
+    Ok,
+    Disconnected,
+    Error
 };
 
 class Connection {
     public:
-        enum { DEFAULT_PORT = 31416 };
+        enum { DefaultBOINCPort = 31416 };
 
         struct Result {
-            CONNECTION_STATUS status;
+            ConnectionStatus status;
             std::string error;
 
-            explicit Result(CONNECTION_STATUS s = CONNECTION_STATUS::OK, std::string err = "")
+            explicit Result(ConnectionStatus s = ConnectionStatus::Ok, std::string err = "")
                 : status(s), error(std::move(err)) {}
 
             operator bool() const {
-                return status == CONNECTION_STATUS::OK;
+                return status == ConnectionStatus::Ok;
             }
         };
 
@@ -54,7 +54,7 @@ class Connection {
         Connection();
         virtual ~Connection();
 
-        virtual Result open(const std::string &hostname, std::uint16_t port = DEFAULT_PORT);
+        virtual Result open(const std::string &hostname, std::uint16_t port = DefaultBOINCPort);
         virtual void close();
 
         virtual Result do_rpc(const std::string &request, std::ostream &response);

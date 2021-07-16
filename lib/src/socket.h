@@ -34,18 +34,18 @@ namespace woinc {
 // We only provide TCP sockets by this interface
 struct WOINC_LOCAL Socket {
     public:
-        enum class VERSION { ALL, IPv4, IPv6 };
-        enum class STATUS { OK, NOT_CONNECTED, ALREADY_CONNECTED, RESOLVING_ERROR, SOCKET_ERROR };
+        enum class Version { All, IPv4, IPv6 };
+        enum class Status { Ok, NotConnected, AlreadyConnected, ResolvingError, SocketError };
 
         struct Result {
-            STATUS status;
+            Status status;
             std::string error;
 
-            explicit Result(STATUS s = STATUS::OK, std::string err = "")
+            explicit Result(Status s = Status::Ok, std::string err = "")
                 : status(s), error(std::move(err)) {}
 
             operator bool() const {
-                return status == STATUS::OK;
+                return status == Status::Ok;
             }
         };
 
@@ -70,7 +70,7 @@ struct WOINC_LOCAL Socket {
         bool is_localhost() const;
 
     public:
-        static std::unique_ptr<Socket> create(VERSION v);
+        static std::unique_ptr<Socket> create(Version v);
 
 #ifdef WOINC_USE_POSIX_SOCKETS
     private:

@@ -48,8 +48,8 @@ struct AccountOut {
 };
 
 struct ActiveTask {
-    ACTIVE_TASK_STATE active_task_state = ACTIVE_TASK_STATE::UNINITIALIZED;
-    SCHEDULER_STATE scheduler_state = SCHEDULER_STATE::UNINITIALIZED;
+    ActiveTaskState active_task_state = ActiveTaskState::Uninitialized;
+    SchedulerState scheduler_state = SchedulerState::Uninitialized;
 
     bool needs_shmem = false;
     bool too_large = false;
@@ -116,9 +116,9 @@ typedef std::vector<AppVersion> AppVersions;
 
 struct CCStatus {
     struct State {
-        SUSPEND_REASON suspend_reason = SUSPEND_REASON::UNKNOWN_TO_WOINC;
-        RUN_MODE mode = RUN_MODE::UNKNOWN_TO_WOINC;
-        RUN_MODE perm_mode = RUN_MODE::UNKNOWN_TO_WOINC;
+        SuspendReason suspend_reason = SuspendReason::UnknownToWoinc;
+        RunMode mode = RunMode::UnknownToWoinc;
+        RunMode perm_mode = RunMode::UnknownToWoinc;
         double delay = 0; // seconds until mode gets perm_mode
     };
 
@@ -126,7 +126,7 @@ struct CCStatus {
     State gpu;
     State network;
 
-    NETWORK_STATUS network_status = NETWORK_STATUS::UNKNOWN_TO_WOINC;
+    NetworkStatus network_status = NetworkStatus::UnknownToWoinc;
 };
 
 struct DailyStatistic {
@@ -242,7 +242,7 @@ struct GlobalPreferences {
         double start, end;
     };
 
-    typedef std::map<DAY_OF_WEEK, TimeSpan> TimeSpans;
+    typedef std::map<DayOfWeek, TimeSpan> TimeSpans;
 
     TimeSpans cpu_times;
     TimeSpans net_times;
@@ -332,7 +332,7 @@ struct HostInfo {
 };
 
 struct Message {
-    MSG_INFO priority = MSG_INFO::UNKNOWN_TO_WOINC;
+    MsgInfo priority = MsgInfo::UnknownToWoinc;
     int seqno = 0;
     std::string body;
     std::string project;
@@ -403,7 +403,7 @@ struct Project {
     int njobs_success = 0;
     int nrpc_failures = 0;
 
-    RPC_REASON sched_rpc_pending = RPC_REASON::NONE;
+    RpcReason sched_rpc_pending = RpcReason::None;
 
     std::string external_cpid;
     std::string master_url;
@@ -507,7 +507,7 @@ struct Task {
     Task(const Task &task);
     Task(Task &&task) = default;
 
-    RESULT_CLIENT_STATE state = RESULT_CLIENT_STATE::NEW;
+    ResultClientState state = ResultClientState::New;
 
     bool coproc_missing = false;
     bool got_server_ack = false;
