@@ -1,5 +1,5 @@
 /* ui/cli/main.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
     // parse hostname
 
     std::string hostname("localhost");
-    std::uint16_t port = wrpc::Connection::DEFAULT_PORT;
+    std::uint16_t port = wrpc::Connection::DefaultBOINCPort;
 
     if (matches(args, "--host")) {
         if (args.empty()) {
@@ -312,27 +312,27 @@ void Client::authorize_() {
 
 void Client::execute_cmd_or_die_(wrpc::Command &cmd) {
     switch (cmd.execute(connection_)) {
-        case wrpc::COMMAND_STATUS::OK:
+        case wrpc::CommandStatus::Ok:
             return;
-        case wrpc::COMMAND_STATUS::DISCONNECTED:
+        case wrpc::CommandStatus::Disconnected:
             std::cerr << "Error: not connected to BOINC-client\n";
             break;
-        case wrpc::COMMAND_STATUS::UNAUTHORIZED:
+        case wrpc::CommandStatus::Unauthorized:
             std::cerr << "Operation failed: authentication error\n";
             break;
-        case wrpc::COMMAND_STATUS::CONNECTION_ERROR:
+        case wrpc::CommandStatus::ConnectionError:
             std::cerr << "Error: could not communicate with BOINC-client: " << cmd.error() << "\n";
             break;
-        case wrpc::COMMAND_STATUS::CLIENT_ERROR:
+        case wrpc::CommandStatus::ClientError:
             std::cerr << "Error: " << cmd.error() << "\n";
             break;
-        case wrpc::COMMAND_STATUS::PARSING_ERROR:
+        case wrpc::CommandStatus::ParsingError:
             if (cmd.error().empty())
                 std::cerr << "Error: could not interpret the response from the BOINC-client: " << cmd.error() << "\n";
             else
                 std::cerr << "Error: " << cmd.error() << "\n";
             break;
-        case wrpc::COMMAND_STATUS::LOGIC_ERROR:
+        case wrpc::CommandStatus::LogicError:
             std::cerr << "Logical error: " << cmd.error() << "\n";
             break;
     }
@@ -411,7 +411,7 @@ void print(std::ostream &out, const std::string &which, const woinc::CCStatus::S
 
     out << which << " status\n";
 
-    if (state.suspend_reason == woinc::SUSPEND_REASON::NOT_SUSPENDED)
+    if (state.suspend_reason == woinc::SuspendReason::NotSuspended)
         out << indent << "not suspended";
     else
         out << indent << "suspended: " << state.suspend_reason;
@@ -437,8 +437,8 @@ void print(std::ostream &out, const woinc::Tasks &tasks) {
     out << "\n======== Tasks ========\n";
 
     for (const auto &task : tasks) {
-        auto scheduler_state = woinc::SCHEDULER_STATE::UNINITIALIZED;
-        auto active_task_state = woinc::ACTIVE_TASK_STATE::UNINITIALIZED;
+        auto scheduler_state = woinc::SchedulerState::Uninitialized;
+        auto active_task_state = woinc::ActiveTaskState::Uninitialized;
 
         if (task.active_task != nullptr) {
             auto &active_task = *task.active_task;
@@ -460,13 +460,13 @@ void print(std::ostream &out, const woinc::Tasks &tasks) {
             << indent << "app version num: " << task.version_num << NL
             << indent << "resources: " << (task.resources.empty() ? "1 CPU" : task.resources) << NL;
 
-        if (task.state <= woinc::RESULT_CLIENT_STATE::FILES_DOWNLOADED) {
+        if (task.state <= woinc::ResultClientState::FilesDownloaded) {
             if (task.suspended_via_gui)
                 out << indent << "suspended via GUI: yes" << NL;
             out << indent << "estimated CPU time remaining: " << task.estimated_cpu_time_remaining << NL;
         }
 
-        if (scheduler_state > woinc::SCHEDULER_STATE::UNINITIALIZED && task.active_task != nullptr) {
+        if (scheduler_state > woinc::SchedulerState::Uninitialized && task.active_task != nullptr) {
             auto &active_task = *task.active_task;
 
             out << indent << "CPU time at last checkpoint: " << active_task.checkpoint_cpu_time << NL
@@ -479,7 +479,7 @@ void print(std::ostream &out, const woinc::Tasks &tasks) {
                     << " received: " << round(active_task.bytes_received) << NL;
         }
 
-        if (task.state > woinc::RESULT_CLIENT_STATE::FILES_DOWNLOADED) {
+        if (task.state > woinc::ResultClientState::FilesDownloaded) {
             out << indent << "final CPU time: " << task.final_cpu_time << NL
                 << indent << "final elapsed time: " << task.final_elapsed_time << NL
                 << indent << "exit_status: " << task.exit_status << NL
@@ -513,7 +513,7 @@ void print(std::ostream &out, const woinc::Projects &projects) {
             << indent << "nrpc_failures: " << project.nrpc_failures << NL
             << indent << "master_fetch_failures: " << project.master_fetch_failures << NL
             << indent << "master fetch pending: " << bool_to_string(project.master_url_fetch_pending) << NL
-            << indent << "scheduler RPC pending: " << bool_to_string(project.sched_rpc_pending != woinc::RPC_REASON::NONE) << NL
+            << indent << "scheduler RPC pending: " << bool_to_string(project.sched_rpc_pending != woinc::RpcReason::None) << NL
             << indent << "trickle upload pending: " << bool_to_string(project.trickle_up_pending) << NL
             << indent << "attached via Account Manager: " << bool_to_string(project.attached_via_acct_mgr) << NL
             << indent << "ended: " << bool_to_string(project.ended) << NL
@@ -803,7 +803,7 @@ void print(std::ostream &out, const woinc::ProjectConfig &config) {
 namespace {
 
 std::uint16_t parse_port(const std::string &strp) {
-    std::uint16_t port = wrpc::Connection::DEFAULT_PORT;
+    std::uint16_t port = wrpc::Connection::DefaultBOINCPort;
     try {
         auto p = std::stoul(strp);
         if (p > std::numeric_limits<decltype(port)>::max())
@@ -889,39 +889,39 @@ double parse_next_as_double(Arguments &args) {
     }
 }
 
-woinc::PROJECT_OP parse_project_op(const std::string &op) {
-    if (op == "allowmorework") return woinc::PROJECT_OP::ALLOWMOREWORK;
-    if (op == "detach") return woinc::PROJECT_OP::DETACH;
-    if (op == "detach_when_done") return woinc::PROJECT_OP::DETACH_WHEN_DONE;
-    if (op == "dont_detach_when_done") return woinc::PROJECT_OP::DONT_DETACH_WHEN_DONE;
-    if (op == "nomorework") return woinc::PROJECT_OP::NOMOREWORK;
-    if (op == "reset") return woinc::PROJECT_OP::RESET;
-    if (op == "resume") return woinc::PROJECT_OP::RESUME;
-    if (op == "suspend") return woinc::PROJECT_OP::SUSPEND;
-    if (op == "update") return woinc::PROJECT_OP::UPDATE;
+woinc::ProjectOp parse_project_op(const std::string &op) {
+    if (op == "allowmorework") return woinc::ProjectOp::Allowmorework;
+    if (op == "detach") return woinc::ProjectOp::Detach;
+    if (op == "detach_when_done") return woinc::ProjectOp::DetachWhenDone;
+    if (op == "dont_detach_when_done") return woinc::ProjectOp::DontDetachWhenDone;
+    if (op == "nomorework") return woinc::ProjectOp::Nomorework;
+    if (op == "reset") return woinc::ProjectOp::Reset;
+    if (op == "resume") return woinc::ProjectOp::Resume;
+    if (op == "suspend") return woinc::ProjectOp::Suspend;
+    if (op == "update") return woinc::ProjectOp::Update;
     std::cerr << "Error: Unkown op \"" + op + "\" for command --project\n";
     exit(EXIT_FAILURE);
 }
 
-woinc::TASK_OP parse_task_op(const std::string &op) {
-    if (op == "abort") return woinc::TASK_OP::ABORT;
-    if (op == "resume") return woinc::TASK_OP::RESUME;
-    if (op == "suspend") return woinc::TASK_OP::SUSPEND;
+woinc::TaskOp parse_task_op(const std::string &op) {
+    if (op == "abort") return woinc::TaskOp::Abort;
+    if (op == "resume") return woinc::TaskOp::Resume;
+    if (op == "suspend") return woinc::TaskOp::Suspend;
     std::cerr << "Error: Unkown op \"" + op + "\" for command --task\n";
     exit(EXIT_FAILURE);
 }
 
-woinc::RUN_MODE parse_run_mode(const std::string &mode) {
-    if (mode == "always") return woinc::RUN_MODE::ALWAYS;
-    if (mode == "auto") return woinc::RUN_MODE::AUTO;
-    if (mode == "never") return woinc::RUN_MODE::NEVER;
+woinc::RunMode parse_run_mode(const std::string &mode) {
+    if (mode == "always") return woinc::RunMode::Always;
+    if (mode == "auto") return woinc::RunMode::Auto;
+    if (mode == "never") return woinc::RunMode::Never;
     std::cerr << "Error: Unkown mode \"" + mode + "\" for command --set_run_mode\n";
     exit(EXIT_FAILURE);
 }
 
-woinc::FILE_TRANSFER_OP parse_file_transfer_op(const std::string &op) {
-    if (op == "retry") return woinc::FILE_TRANSFER_OP::RETRY;
-    else if (op == "abort") return woinc::FILE_TRANSFER_OP::ABORT;
+woinc::FileTransferOp parse_file_transfer_op(const std::string &op) {
+    if (op == "retry") return woinc::FileTransferOp::Retry;
+    else if (op == "abort") return woinc::FileTransferOp::Abort;
     std::cerr << "Error: Unkown op \"" + op + "\" for command --file_transfer\n";
     exit(EXIT_FAILURE);
 }

@@ -1,5 +1,5 @@
 /* ui/common/types_to_string.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -23,14 +23,14 @@
 
 namespace woinc { namespace ui { namespace common {
 
-const char *to_string(const woinc::ACTIVE_TASK_STATE);
-const char *to_string(const woinc::MSG_INFO);
-const char *to_string(const woinc::NETWORK_STATUS);
-const char *to_string(const woinc::RESULT_CLIENT_STATE);
-const char *to_string(const woinc::RPC_REASON);
-const char *to_string(const woinc::RUN_MODE);
-const char *to_string(const woinc::SCHEDULER_STATE);
-const char *to_string(const woinc::SUSPEND_REASON);
+const char *to_string(const woinc::ActiveTaskState);
+const char *to_string(const woinc::MsgInfo);
+const char *to_string(const woinc::NetworkStatus);
+const char *to_string(const woinc::ResultClientState);
+const char *to_string(const woinc::RpcReason);
+const char *to_string(const woinc::RunMode);
+const char *to_string(const woinc::SchedulerState);
+const char *to_string(const woinc::SuspendReason);
 const char *exit_code_to_string(int);
 
 }}}
