@@ -1,5 +1,5 @@
 /* lib/xml.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -28,8 +28,8 @@
 
 namespace {
 
-const std::string REQUEST_TAG("boinc_gui_rpc_request");
-const std::string RESPONSE_TAG("boinc_gui_rpc_reply");
+const std::string REQUEST_TAG__("boinc_gui_rpc_request");
+const std::string RESPONSE_TAG__("boinc_gui_rpc_reply");
 
 }
 
@@ -40,7 +40,7 @@ namespace woinc { namespace xml {
 Node &Node::operator[](Tag t) {
     assert(!this->tag.empty());
 
-    auto n = std::find_if(children.begin(), children.end(), [&](const Node &node){
+    auto n = std::find_if(children.begin(), children.end(), [&](const Node &node) {
         return node.tag == t;
     });
 
@@ -150,11 +150,11 @@ std::ostream &operator<<(std::ostream &out, const Tree &tree) {
 }
 
 Tree create_boinc_request_tree() {
-    return Tree(std::string(REQUEST_TAG));
+    return Tree(REQUEST_TAG__);
 }
 
 bool parse_boinc_response(Tree &tree, std::istream &in, std::string &error_holder) {
-    return tree.parse(in, error_holder) && RESPONSE_TAG == tree.root.tag;
+    return tree.parse(in, error_holder) && RESPONSE_TAG__ == tree.root.tag;
 }
 
 }}

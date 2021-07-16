@@ -224,11 +224,11 @@ bool parse__(const wxml::Tree &response_tree, LookupAccountPollResponse &respons
     return response_tree.root.found_child(account_out_node) && parse(*account_out_node, response.account_out);
 }
 
-template<typename RESPONSE>
+template<typename Response>
 CommandStatus do_cmd__(Connection &connection,
                        const wxml::Tree &request_tree,
                        std::string &error_holder,
-                       RESPONSE &response) {
+                       Response &response) {
     wxml::Tree response_tree;
 
     auto status = do_rpc__(connection, request_tree, response_tree, error_holder);
@@ -238,11 +238,11 @@ CommandStatus do_cmd__(Connection &connection,
     return parse__(response_tree, response) ? CommandStatus::Ok : CommandStatus::ParsingError;
 }
 
-template<typename RESPONSE>
+template<typename Response>
 CommandStatus do_cmd__(Connection &connection,
                        const char *cmd,
                        std::string &error_holder,
-                       RESPONSE &response) {
+                       Response &response) {
     wxml::Tree request_tree(wxml::create_boinc_request_tree());
     request_tree.root[cmd];
     return do_cmd__(connection, request_tree, error_holder, response);

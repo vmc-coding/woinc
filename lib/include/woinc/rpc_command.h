@@ -56,25 +56,25 @@ struct Command {
         std::string error_;
 };
 
-template<typename REQUEST_TYPE, typename RESPONSE_TYPE, bool REQUIRE_LOCAL_AUTH>
+template<typename RequestType, typename ResponseType, bool RequireLocalAuth>
 struct BOINCCommand : public Command {
     BOINCCommand() = default;
-    explicit BOINCCommand(REQUEST_TYPE &&rq) noexcept : request_(std::move(rq)) {}
+    explicit BOINCCommand(RequestType &&rq) noexcept : request_(std::move(rq)) {}
     virtual ~BOINCCommand() = default;
 
     CommandStatus execute(Connection &connection) override;
 
-    bool requires_local_authorization() const final { return REQUIRE_LOCAL_AUTH; }
+    bool requires_local_authorization() const final { return RequireLocalAuth; }
 
-    REQUEST_TYPE &request() { return request_; }
-    const REQUEST_TYPE &request() const { return request_; }
+    RequestType &request() { return request_; }
+    const RequestType &request() const { return request_; }
 
-    RESPONSE_TYPE &response() { return response_; }
-    const RESPONSE_TYPE &response() const { return response_; }
+    ResponseType &response() { return response_; }
+    const ResponseType &response() const { return response_; }
 
     protected:
-        REQUEST_TYPE request_;
-        RESPONSE_TYPE response_;
+        RequestType request_;
+        ResponseType response_;
 };
 
 struct SuccessResponse {
