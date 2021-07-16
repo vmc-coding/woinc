@@ -1,5 +1,5 @@
 /* ui/qt/tabs/projects_tab.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -94,13 +94,13 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
     WOINC_ADD_BTN(Command::REMOVE, "Remove");
     WOINC_ADD_BTN(Command::PROPERTIES, "Properties");
 
-    WOINC_CONNECT_BTN(Command::UPDATE, PROJECT_OP::UPDATE);
-    WOINC_CONNECT_BTN(Command::SUSPEND, PROJECT_OP::SUSPEND);
-    WOINC_CONNECT_BTN(Command::RESUME, PROJECT_OP::RESUME);
-    WOINC_CONNECT_BTN(Command::NO_NEW_TASKS, PROJECT_OP::NOMOREWORK);
-    WOINC_CONNECT_BTN(Command::ALLOW_NEW_TASKS, PROJECT_OP::ALLOWMOREWORK);
-    WOINC_CONNECT_BTN(Command::RESET, PROJECT_OP::RESET);
-    WOINC_CONNECT_BTN(Command::REMOVE, PROJECT_OP::DETACH);
+    WOINC_CONNECT_BTN(Command::UPDATE, ProjectOp::Update);
+    WOINC_CONNECT_BTN(Command::SUSPEND, ProjectOp::Suspend);
+    WOINC_CONNECT_BTN(Command::RESUME, ProjectOp::Resume);
+    WOINC_CONNECT_BTN(Command::NO_NEW_TASKS, ProjectOp::Nomorework);
+    WOINC_CONNECT_BTN(Command::ALLOW_NEW_TASKS, ProjectOp::Allowmorework);
+    WOINC_CONNECT_BTN(Command::RESET, ProjectOp::Reset);
+    WOINC_CONNECT_BTN(Command::REMOVE, ProjectOp::Detach);
 
     connect(cmd_btns_[Command::PROPERTIES], &QPushButton::released, this,
             [&]() {

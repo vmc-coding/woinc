@@ -103,7 +103,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
     } while (0)
 
     connect(cmd_btns_[Command::RETRY], &QPushButton::released, this,
-            [&]() { WOINC_EXECUTE_OP(FILE_TRANSFER_OP::RETRY); });
+            [&]() { WOINC_EXECUTE_OP(FileTransferOp::Retry); });
 
     connect(cmd_btns_[Command::ABORT], &QPushButton::released, this,
             [&]() {
@@ -124,7 +124,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
 
                 if (QMessageBox::question(this, QString::fromUtf8("Abort file transfer"), msg,
                                           QMessageBox::No | QMessageBox::Yes) == QMessageBox::Yes) {
-                    WOINC_EXECUTE_OP(FILE_TRANSFER_OP::ABORT);
+                    WOINC_EXECUTE_OP(FileTransferOp::Abort);
                 }
             });
 

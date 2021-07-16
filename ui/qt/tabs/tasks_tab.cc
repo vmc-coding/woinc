@@ -111,8 +111,8 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                                                    emit task_op_clicked(task.host, task.project_url, task.name, OP); \
                                            })
 
-    WOINC_CONNECT_BTN(Command::SUSPEND, TASK_OP::SUSPEND);
-    WOINC_CONNECT_BTN(Command::RESUME, TASK_OP::RESUME);
+    WOINC_CONNECT_BTN(Command::SUSPEND, TaskOp::Suspend);
+    WOINC_CONNECT_BTN(Command::RESUME, TaskOp::Resume);
 #undef WOINC_CONNECT_BTN
 
     connect(cmd_btns_[Command::ABORT], &QPushButton::released, this,
@@ -132,7 +132,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                 if (QMessageBox::question(this, QString::fromUtf8("Abort task"), msg,
                                           QMessageBox::No | QMessageBox::Yes) == QMessageBox::Yes)
                     for (auto &&task : selected_tasks_)
-                        emit task_op_clicked(task.host, task.project_url, task.name, TASK_OP::ABORT);
+                        emit task_op_clicked(task.host, task.project_url, task.name, TaskOp::Abort);
             });
 
     connect(cmd_btns_[Command::PROPERTIES], &QPushButton::released, this,

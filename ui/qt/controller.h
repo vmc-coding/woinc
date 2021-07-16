@@ -77,7 +77,7 @@ class Controller : public QObject {
         void register_handler(PeriodicTaskHandler *handler);
         void deregister_handler(PeriodicTaskHandler *handler);
 
-        void load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode,
+        void load_global_prefs(const QString &host, GetGlobalPrefsMode mode,
                                Receiver<GlobalPreferences> receiver, ErrorHandler error_handler);
         void save_global_prefs(const QString &host,
                                const GlobalPreferences &prefs,
@@ -106,13 +106,13 @@ class Controller : public QObject {
         void trigger_shutdown();
 
         void do_active_only_tasks(QString host, bool value);
-        void do_file_transfer_op(QString host, FILE_TRANSFER_OP op, QString project_url, QString filename);
-        void do_project_op(QString host, QString project_url, PROJECT_OP op);
-        void do_task_op(QString host, QString project_url, QString name, TASK_OP op);
+        void do_file_transfer_op(QString host, FileTransferOp op, QString project_url, QString filename);
+        void do_project_op(QString host, QString project_url, ProjectOp op);
+        void do_task_op(QString host, QString project_url, QString name, TaskOp op);
 
-        void set_gpu_mode(QString host, RUN_MODE mode);
-        void set_network_mode(QString host, RUN_MODE mode);
-        void set_run_mode(QString host, RUN_MODE mode);
+        void set_gpu_mode(QString host, RunMode mode);
+        void set_network_mode(QString host, RunMode mode);
+        void set_run_mode(QString host, RunMode mode);
 
         void schedule_disk_usage_update(QString host);
         void schedule_projects_update(QString host);

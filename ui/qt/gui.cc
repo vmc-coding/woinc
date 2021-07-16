@@ -1,5 +1,5 @@
 /* ui/qt/gui.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -111,13 +111,13 @@ void Gui::create_activity_menu_(const Model &model, Controller &controller) {
     menu->connected();
 #endif
 
-    connect(menu, &ActivityMenu::run_mode_set, [&controller](QString host, RUN_MODE mode) {
+    connect(menu, &ActivityMenu::run_mode_set, [&controller](QString host, RunMode mode) {
         controller.set_run_mode(host, mode);
     });
-    connect(menu, &ActivityMenu::gpu_mode_set, [&controller](QString host, RUN_MODE mode) {
+    connect(menu, &ActivityMenu::gpu_mode_set, [&controller](QString host, RunMode mode) {
         controller.set_gpu_mode(host, mode);
     });
-    connect(menu, &ActivityMenu::network_mode_set, [&controller](QString host, RUN_MODE mode) {
+    connect(menu, &ActivityMenu::network_mode_set, [&controller](QString host, RunMode mode) {
         controller.set_network_mode(host, mode);
     });
 }
@@ -135,7 +135,7 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
             [=, &controller](QString host) {
                 // TODO Load the prefs in the dialog while showing a loading animation
                 controller.load_global_prefs(
-                    host, GET_GLOBAL_PREFS_MODE::WORKING,
+                    host, GetGlobalPrefsMode::Working,
                     [=, &controller](GlobalPreferences loaded_prefs) {
                         auto *dlg = new PreferencesDialog(std::move(loaded_prefs), this);
 

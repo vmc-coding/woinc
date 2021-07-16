@@ -1,5 +1,5 @@
 /* ui/qt/menu.cc --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -123,41 +123,41 @@ ActivityMenu::ActivityMenu(const QString &title, QWidget *parent)
 
     auto *group = new QActionGroup(this);
 
-    ADD_ACTION(run_always_, "&Run always", run_mode_set, RUN_MODE::ALWAYS);
-    ADD_ACTION(run_auto_, "Run based on &preferences", run_mode_set, RUN_MODE::AUTO);
-    ADD_ACTION(run_never_, "&Suspend", run_mode_set, RUN_MODE::NEVER);
+    ADD_ACTION(run_always_, "&Run always", run_mode_set, RunMode::Always);
+    ADD_ACTION(run_auto_, "Run based on &preferences", run_mode_set, RunMode::Auto);
+    ADD_ACTION(run_never_, "&Suspend", run_mode_set, RunMode::Never);
 
     addSeparator();
 
     group = new QActionGroup(this);
 
-    ADD_ACTION(gpu_always_, "Use GPU always", gpu_mode_set, RUN_MODE::ALWAYS);
-    ADD_ACTION(gpu_auto_, "Use GPU based on preferences", gpu_mode_set, RUN_MODE::AUTO);
-    ADD_ACTION(gpu_never_, "&Suspend GPU", gpu_mode_set, RUN_MODE::NEVER);
+    ADD_ACTION(gpu_always_, "Use GPU always", gpu_mode_set, RunMode::Always);
+    ADD_ACTION(gpu_auto_, "Use GPU based on preferences", gpu_mode_set, RunMode::Auto);
+    ADD_ACTION(gpu_never_, "&Suspend GPU", gpu_mode_set, RunMode::Never);
 
     addSeparator();
 
     group = new QActionGroup(this);
 
-    ADD_ACTION(network_always_, "Network activity always", network_mode_set, RUN_MODE::ALWAYS);
-    ADD_ACTION(network_auto_, "Network activity based on preferences", network_mode_set, RUN_MODE::AUTO);
-    ADD_ACTION(network_never_, "Suspend network activity", network_mode_set, RUN_MODE::NEVER);
+    ADD_ACTION(network_always_, "Network activity always", network_mode_set, RunMode::Always);
+    ADD_ACTION(network_auto_, "Network activity based on preferences", network_mode_set, RunMode::Auto);
+    ADD_ACTION(network_never_, "Suspend network activity", network_mode_set, RunMode::Never);
 
 #undef ADD_ACTION
 }
 
 void ActivityMenu::update_run_modes(RunModes modes) {
-    run_always_->setChecked(modes.cpu == RUN_MODE::ALWAYS);
-    run_auto_->setChecked(modes.cpu == RUN_MODE::AUTO);
-    run_never_->setChecked(modes.cpu == RUN_MODE::NEVER);
+    run_always_->setChecked(modes.cpu == RunMode::Always);
+    run_auto_->setChecked(modes.cpu == RunMode::Auto);
+    run_never_->setChecked(modes.cpu == RunMode::Never);
 
-    gpu_always_->setChecked(modes.gpu == RUN_MODE::ALWAYS);
-    gpu_auto_->setChecked(modes.gpu == RUN_MODE::AUTO);
-    gpu_never_->setChecked(modes.gpu == RUN_MODE::NEVER);
+    gpu_always_->setChecked(modes.gpu == RunMode::Always);
+    gpu_auto_->setChecked(modes.gpu == RunMode::Auto);
+    gpu_never_->setChecked(modes.gpu == RunMode::Never);
 
-    network_always_->setChecked(modes.network == RUN_MODE::ALWAYS);
-    network_auto_->setChecked(modes.network == RUN_MODE::AUTO);
-    network_never_->setChecked(modes.network == RUN_MODE::NEVER);
+    network_always_->setChecked(modes.network == RunMode::Always);
+    network_auto_->setChecked(modes.network == RunMode::Auto);
+    network_never_->setChecked(modes.network == RunMode::Never);
 }
 
 // ----- OptionsMenu -----

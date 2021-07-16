@@ -77,7 +77,7 @@ QString resolve_task_status(const woinc::Task &task,
     QString result;
     QTextStream ss(&result);
 
-    bool throttled = cc_status.cpu.suspend_reason == woinc::SUSPEND_REASON::CPU_THROTTLE;
+    bool throttled = cc_status.cpu.suspend_reason == woinc::SuspendReason::CpuThrottle;
 
     auto handle_state_new = [&]() { ss << "New"; };
 
@@ -86,7 +86,7 @@ QString resolve_task_status(const woinc::Task &task,
             ss << "Download failed";
         } else {
             ss << "Downloading";
-            if (cc_status.network.suspend_reason != woinc::SUSPEND_REASON::NOT_SUSPENDED)
+            if (cc_status.network.suspend_reason != woinc::SuspendReason::NotSuspended)
                 ss << " (suspended - " << woinc::ui::common::to_string(cc_status.network.suspend_reason) << ")";
         }
     };
@@ -96,25 +96,25 @@ QString resolve_task_status(const woinc::Task &task,
             ss << "Project suspended by user";
         } else if (task.suspended_via_gui) {
             ss << "Task suspended by user";
-        } else if (cc_status.cpu.suspend_reason != woinc::SUSPEND_REASON::NOT_SUSPENDED
+        } else if (cc_status.cpu.suspend_reason != woinc::SuspendReason::NotSuspended
                    && !throttled
                    && task.active_task != nullptr
-                   && task.active_task->active_task_state != woinc::ACTIVE_TASK_STATE::EXECUTING) {
+                   && task.active_task->active_task_state != woinc::ActiveTaskState::Executing) {
             ss << "Suspended - " << woinc::ui::common::to_string(cc_status.cpu.suspend_reason);
-        } else if (cc_status.gpu.suspend_reason != woinc::SUSPEND_REASON::NOT_SUSPENDED && uses_gpu(task)) {
+        } else if (cc_status.gpu.suspend_reason != woinc::SuspendReason::NotSuspended && uses_gpu(task)) {
             ss << "GPU suspended - " << woinc::ui::common::to_string(cc_status.gpu.suspend_reason);
         } else if (task.active_task != nullptr) {
             if (task.active_task->too_large) {
                 ss << "Waiting for memory";
             } else if (task.active_task->needs_shmem) {
                 ss << "Waiting for shared memory";
-            } else if (task.active_task->scheduler_state == woinc::SCHEDULER_STATE::SCHEDULED) {
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Scheduled) {
                 ss << "Running";
                 if (non_cpu_intensive)
                     ss << " (non-CPU-intensive)";
-            } else if (task.active_task->scheduler_state == woinc::SCHEDULER_STATE::PREEMPTED) {
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Preempted) {
                 ss << "Waiting to run";
-            } else if (task.active_task->scheduler_state == woinc::SCHEDULER_STATE::UNINITIALIZED) {
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Uninitialized) {
                 ss << "Ready to start";
             }
         } else {
@@ -145,7 +145,7 @@ QString resolve_task_status(const woinc::Task &task,
             ss << "Upload failed";
         } else {
             ss << "Uploading";
-            if (cc_status.network.suspend_reason != woinc::SUSPEND_REASON::NOT_SUSPENDED)
+            if (cc_status.network.suspend_reason != woinc::SuspendReason::NotSuspended)
                 ss << " (suspended - " << woinc::ui::common::to_string(cc_status.network.suspend_reason) << ")";
         }
     };
@@ -169,12 +169,12 @@ QString resolve_task_status(const woinc::Task &task,
         ss << "GPU missing, ";
 
     switch (task.state) {
-        case woinc::RESULT_CLIENT_STATE::NEW:               handle_state_new(); break;
-        case woinc::RESULT_CLIENT_STATE::FILES_DOWNLOADING: handle_state_files_downloading(); break;
-        case woinc::RESULT_CLIENT_STATE::FILES_DOWNLOADED:  handle_state_files_downloaded(); break;
-        case woinc::RESULT_CLIENT_STATE::COMPUTE_ERROR:     handle_state_compute_error(); break;
-        case woinc::RESULT_CLIENT_STATE::FILES_UPLOADING:   handle_state_files_uploading(); break;
-        case woinc::RESULT_CLIENT_STATE::ABORTED:           handle_state_aborted(); break;
+        case woinc::ResultClientState::New:              handle_state_new(); break;
+        case woinc::ResultClientState::FilesDownloading: handle_state_files_downloading(); break;
+        case woinc::ResultClientState::FilesDownloaded:  handle_state_files_downloaded(); break;
+        case woinc::ResultClientState::ComputeError:     handle_state_compute_error(); break;
+        case woinc::ResultClientState::FilesUploading:   handle_state_files_uploading(); break;
+        case woinc::ResultClientState::Aborted:          handle_state_aborted(); break;
         default: handle_state_default();
     }
 
@@ -207,7 +207,7 @@ QString resolve_project_status(const woinc::Project &project) {
     if (project.detach_when_done)
         status << QString::fromUtf8("Will remove when tasks done");
 
-    if (project.sched_rpc_pending != woinc::RPC_REASON::NONE) {
+    if (project.sched_rpc_pending != woinc::RpcReason::None) {
         status << QString::fromUtf8("Scheduler request pending");
         status << QString::fromUtf8(woinc::ui::common::to_string(project.sched_rpc_pending));
     }
@@ -267,9 +267,9 @@ QString resolve_transfer_status(const woinc::FileTransfer &file_transfer, const 
     } else if (file_transfer.status == ERR_GIVEUP_DOWNLOAD || file_transfer.status == ERR_GIVEUP_UPLOAD) {
         ss << "failed";
     } else {
-        if (cc_status.network.suspend_reason != woinc::SUSPEND_REASON::NOT_SUSPENDED) {
+        if (cc_status.network.suspend_reason != woinc::SuspendReason::NotSuspended) {
             ss << "suspended - ";
-            if (cc_status.network.suspend_reason != woinc::SUSPEND_REASON::UNKNOWN_TO_WOINC)
+            if (cc_status.network.suspend_reason != woinc::SuspendReason::UnknownToWoinc)
                 ss << woinc::ui::common::to_string(cc_status.network.suspend_reason);
             else
                 ss << "unknown reason";
@@ -646,7 +646,7 @@ Events ModelHandler::map_(woinc::Messages wmessages) {
         dest.message      = QString::fromStdString(source.body).trimmed();
         dest.project_name = QString::fromStdString(source.project);
         dest.seqno        = source.seqno;
-        dest.user_alert   = source.priority == MSG_INFO::USER_ALERT;
+        dest.user_alert   = source.priority == MsgInfo::UserAlert;
         dest.timestamp    = source.timestamp;
 
         events.push_back(dest);
@@ -871,11 +871,11 @@ QVariant ModelHandler::map_(woinc::Tasks wtasks, const HostModel &host_model) {
         dest.received_time = source.received_time;
 
         if (!dest.active_task && (
-                source.state == woinc::RESULT_CLIENT_STATE::COMPUTE_ERROR ||
-                source.state == woinc::RESULT_CLIENT_STATE::FILES_UPLOADING ||
-                source.state == woinc::RESULT_CLIENT_STATE::FILES_UPLOADED ||
-                source.state == woinc::RESULT_CLIENT_STATE::ABORTED ||
-                source.state == woinc::RESULT_CLIENT_STATE::UPLOAD_FAILED)) {
+                source.state == woinc::ResultClientState::ComputeError ||
+                source.state == woinc::ResultClientState::FilesUploading ||
+                source.state == woinc::ResultClientState::FilesUploaded ||
+                source.state == woinc::ResultClientState::Aborted ||
+                source.state == woinc::ResultClientState::UploadFailed)) {
             dest.progress = 1;
             dest.elapsed_seconds = static_cast<int>(round(source.final_elapsed_time));
             if (!dest.elapsed_seconds)

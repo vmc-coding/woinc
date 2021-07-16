@@ -1,5 +1,5 @@
 /* ui/qt/menu.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -101,9 +101,9 @@ class ActivityMenu : public HostAwareMenu {
         QAction *network_never_;
 
     signals:
-        void run_mode_set(QString host, RUN_MODE mode);
-        void gpu_mode_set(QString host, RUN_MODE mode);
-        void network_mode_set(QString host, RUN_MODE mode);
+        void run_mode_set(QString host, RunMode mode);
+        void gpu_mode_set(QString host, RunMode mode);
+        void network_mode_set(QString host, RunMode mode);
 };
 
 class OptionsMenu : public HostAwareMenu {

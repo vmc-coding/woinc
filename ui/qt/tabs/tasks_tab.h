@@ -1,5 +1,5 @@
 /* ui/qt/tabs/tasks_tab.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -63,7 +63,7 @@ class ButtonPanel : public QWidget {
 
     signals:
         void active_only_tasks_clicked(QString host, bool value);
-        void task_op_clicked(QString host, QString project_url, QString name, TASK_OP op);
+        void task_op_clicked(QString host, QString project_url, QString name, TaskOp op);
 
     private:
         enum class Command {
@@ -155,7 +155,7 @@ class TasksTab : public QWidget {
 
     signals:
         void active_only_tasks_clicked(QString host, bool value);
-        void task_op_clicked(QString host, QString project_url, QString name, TASK_OP op);
+        void task_op_clicked(QString host, QString project_url, QString name, TaskOp op);
 
         // delegated signals from the model to the internal widgets
 

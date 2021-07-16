@@ -1,5 +1,5 @@
 /* ui/qt/tabs/projects_tab.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -71,7 +71,7 @@ class ButtonPanel : public QWidget {
         void update_selected_projects(SelectedProjects selected_projects);
 
     signals:
-        void project_op_clicked(QString host, QString project_url, PROJECT_OP op);
+        void project_op_clicked(QString host, QString project_url, ProjectOp op);
 
     private:
         enum class Command {
@@ -163,7 +163,7 @@ class ProjectsTab : public QWidget {
         virtual ~ProjectsTab() = default;
 
     signals:
-        void project_op_clicked(QString host, QString project_url, PROJECT_OP op);
+        void project_op_clicked(QString host, QString project_url, ProjectOp op);
 
         // delegated signals from the model to the internal widgets
 

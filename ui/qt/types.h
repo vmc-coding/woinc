@@ -101,9 +101,9 @@ struct Project {
 typedef std::vector<Project> Projects;
 
 struct RunModes {
-    RUN_MODE cpu = RUN_MODE::UNKNOWN_TO_WOINC;
-    RUN_MODE gpu = RUN_MODE::UNKNOWN_TO_WOINC;
-    RUN_MODE network = RUN_MODE::UNKNOWN_TO_WOINC;
+    RunMode cpu = RunMode::UnknownToWoinc;
+    RunMode gpu = RunMode::UnknownToWoinc;
+    RunMode network = RunMode::UnknownToWoinc;
 };
 
 struct Task {

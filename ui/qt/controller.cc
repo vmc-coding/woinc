@@ -189,7 +189,7 @@ void Controller::deregister_handler(PeriodicTaskHandler *handler){
     ctrl_->deregister_handler(handler);
 }
 
-void Controller::load_global_prefs(const QString &host, GET_GLOBAL_PREFS_MODE mode,
+void Controller::load_global_prefs(const QString &host, GetGlobalPrefsMode mode,
                                    Receiver<GlobalPreferences> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<GlobalPreferences>(std::move(receiver),
                                                          std::move(error_handler),
@@ -273,48 +273,48 @@ void Controller::do_active_only_tasks(QString host, bool value) {
     ctrl_->active_only_tasks(host.toStdString(), value);
 }
 
-void Controller::do_file_transfer_op(QString host, FILE_TRANSFER_OP op, QString project_url, QString filename) {
+void Controller::do_file_transfer_op(QString host, FileTransferOp op, QString project_url, QString filename) {
     ctrl_->file_transfer_op(host.toStdString(), op, project_url.toStdString(), filename.toStdString());
 }
 
-void Controller::do_project_op(QString host, QString project_url, PROJECT_OP op) {
+void Controller::do_project_op(QString host, QString project_url, ProjectOp op) {
     ctrl_->project_op(host.toStdString(), op, project_url.toStdString());
 }
 
-void Controller::do_task_op(QString host, QString project_url, QString name, TASK_OP op) {
+void Controller::do_task_op(QString host, QString project_url, QString name, TaskOp op) {
     ctrl_->task_op(host.toStdString(), op, project_url.toStdString(), name.toStdString());
 }
 
-void Controller::set_gpu_mode(QString host, RUN_MODE mode) {
+void Controller::set_gpu_mode(QString host, RunMode mode) {
     ctrl_->gpu_mode(host.toStdString(), mode);
 }
 
-void Controller::set_network_mode(QString host, RUN_MODE mode) {
+void Controller::set_network_mode(QString host, RunMode mode) {
     ctrl_->network_mode(host.toStdString(), mode);
 }
 
-void Controller::set_run_mode(QString host, RUN_MODE mode) {
+void Controller::set_run_mode(QString host, RunMode mode) {
     ctrl_->run_mode(host.toStdString(), mode);
 }
 
 void Controller::schedule_disk_usage_update(QString host) {
-    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GET_DISK_USAGE);
+    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetDiskUsage);
 }
 
 void Controller::schedule_projects_update(QString host) {
-    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GET_PROJECT_STATUS);
+    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetProjectStatus);
 }
 
 void Controller::schedule_state_update(QString host) {
-    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GET_CLIENT_STATE);
+    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetClientState);
 }
 
 void Controller::schedule_tasks_update(QString host) {
-    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GET_TASKS);
+    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetTasks);
 }
 
 void Controller::schedule_statistics_update(QString host) {
-    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GET_STATISTICS);
+    ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetStatistics);
 }
 
 void Controller::connect(const HandlerAdapter *adapter) const {
@@ -368,18 +368,18 @@ void Controller::handle_host_error(QString host, Error error) {
     QString msg;
 
     switch (error) {
-        case Error::DISCONNECTED:
-        case Error::CONNECTION_ERROR:
+        case Error::Disconnected:
+        case Error::ConnectionError:
             msg = QString("Connection to host \"%1\" lost.").arg(host);
             break;
-        case Error::UNAUTHORIZED:
+        case Error::Unauthorized:
             msg = QString("Not authorized to host \"%1\".").arg(host);
             break;
-        case Error::CLIENT_ERROR:
-        case Error::PARSING_ERROR:
+        case Error::ClientError:
+        case Error::ParsingError:
             msg = QString("Communication error with host \"%1\".").arg(host);
             break;
-        case Error::LOGIC_ERROR:
+        case Error::LogicError:
             msg = QString("Internal error handling host \"%1\".").arg(host);
             break;
     }

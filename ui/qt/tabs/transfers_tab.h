@@ -1,5 +1,5 @@
 /* ui/qt/tabs/transfers_tab.h --
-   Written and Copyright (C) 2018-2020 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -69,7 +69,7 @@ class ButtonPanel : public QWidget {
         void update_selected_transfers(SelectedTransfers selected_transfers);
 
     signals:
-        void file_transfer_op_clicked(QString host, FILE_TRANSFER_OP op, QString project_url, QString filename);
+        void file_transfer_op_clicked(QString host, FileTransferOp op, QString project_url, QString filename);
 
     private:
         void update_();
@@ -155,7 +155,7 @@ class TransfersTab : public QWidget {
         virtual ~TransfersTab() = default;
 
     signals:
-        void file_transfer_op_clicked(QString host, FILE_TRANSFER_OP op, QString project_url, QString filename);
+        void file_transfer_op_clicked(QString host, FileTransferOp op, QString project_url, QString filename);
 
         // delegated signals from the model to the internal widgets
 
