@@ -38,23 +38,28 @@ namespace wxml = woinc::xml;
 
 namespace {
 
-template<typename T, std::enable_if_t<std::is_enum<T>::value, int> = 0>
-void convert_to_enum__(std::underlying_type_t<T> value, T &dest) {
-    if (value < 0 || value >= static_cast<std::underlying_type_t<T>>(T::UnknownToWoinc))
-        dest = T::UnknownToWoinc;
+template<typename From, typename To,
+    std::enable_if_t<
+        std::is_enum<To>::value && std::is_convertible<From, std::underlying_type_t<To>>::value,
+        decltype(To::UnknownToWoinc) // ensures we have an enum defining UnknownToWoinc;
+                                     // maybe there will be a nicer way to express this with concepts in c++20 and above
+    > = To()>
+void convert_to_enum__(From value, To &dest) {
+    if (value < 0 || value >= static_cast<int>(To::UnknownToWoinc))
+        dest = To::UnknownToWoinc;
     else
-        dest = static_cast<T>(value);
+        dest = static_cast<To>(value);
 }
 
-void parse__(std::underlying_type_t<woinc::NetworkStatus> value, woinc::NetworkStatus &dest) {
+void parse__(int value, woinc::NetworkStatus &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::RunMode> value, woinc::RunMode &dest) {
+void parse__(int value, woinc::RunMode &dest) {
     convert_to_enum__(value - 1, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::SuspendReason> value, woinc::SuspendReason &dest) {
+void parse__(int value, woinc::SuspendReason &dest) {
     switch (value) {
         case    0: dest = woinc::SuspendReason::NotSuspended; break;
         case    1: dest = woinc::SuspendReason::Batteries; break;
@@ -78,27 +83,27 @@ void parse__(std::underlying_type_t<woinc::SuspendReason> value, woinc::SuspendR
     }
 }
 
-void parse__(std::underlying_type_t<woinc::SchedulerState> value, woinc::SchedulerState &dest) {
+void parse__(int value, woinc::SchedulerState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::ResultClientState> value, woinc::ResultClientState &dest) {
+void parse__(int value, woinc::ResultClientState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::ActiveTaskState> value, woinc::ActiveTaskState &dest) {
+void parse__(int value, woinc::ActiveTaskState &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::MsgInfo> value, woinc::MsgInfo &dest) {
+void parse__(int value, woinc::MsgInfo &dest) {
     convert_to_enum__(value - 1, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::RpcReason> value, woinc::RpcReason &dest) {
+void parse__(int value, woinc::RpcReason &dest) {
     convert_to_enum__(value, dest);
 }
 
-void parse__(std::underlying_type_t<woinc::DayOfWeek> value, woinc::DayOfWeek &dest) {
+void parse__(int value, woinc::DayOfWeek &dest) {
     convert_to_enum__(value, dest);
 }
 
