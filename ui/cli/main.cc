@@ -129,10 +129,6 @@ int main(int argc, char **argv) {
         args.pop();
     }
 
-#ifndef NDEBUG
-    std::cout << "Connect to host " << hostname << " on port " << port << "\n";
-#endif
-
     // if requested show version and quit
 
     if (matches(args, "-v") || matches(args, "--version")) {
@@ -164,6 +160,10 @@ int main(int argc, char **argv) {
     empty_or_die(args);
 
     // execute the command
+
+#ifndef NDEBUG
+    std::cout << "Connect to host " << hostname << " on port " << port << "\n";
+#endif
 
     Client client{hostname, port, password};
     cmd_iter->second.execute(client, ctx);
