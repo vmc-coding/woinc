@@ -2,19 +2,19 @@ include(woincSetupCompilerOptions)
 
 # create the command tests
 
-set(WOINC_CMD_TESTS
-    authorize_cmd_test
-    exchange_versions_cmd_test
-    get_cc_status_cmd_test
-    get_results_cmd_test
-)
+#set(WOINC_CMD_TESTS
+    #authorize_cmd_test
+    #exchange_versions_cmd_test
+    #get_cc_status_cmd_test
+    #get_results_cmd_test
+#)
 
-foreach(testname IN LISTS WOINC_CMD_TESTS)
-    add_executable(${testname} commands/${testname}.cc test.cc ../src/xml.cc)
-    woincSetupCompilerOptions(${testname})
-    target_link_libraries(${testname} PRIVATE woinc pugixml)
-    add_test(${testname} ${testname})
-endforeach()
+#foreach(testname IN LISTS WOINC_CMD_TESTS)
+    #add_executable(${testname} commands/${testname}.cc test.cc ../src/xml.cc)
+    #woincSetupCompilerOptions(${testname})
+    #target_link_libraries(${testname} PRIVATE woinc pugixml)
+    #add_test(${testname} ${testname})
+#endforeach()
 
 # create other tests
 
