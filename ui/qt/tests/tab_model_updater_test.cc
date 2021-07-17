@@ -6,7 +6,7 @@
 #include <QTableView>
 #include <QtTest>
 
-#include "../widgets/tab_model_updater.h"
+#include "../tabs/tab_model_updater.h"
 
 namespace {
 
@@ -69,7 +69,7 @@ class TabView : public QObject {
         }
 
     private:
-        QAbstractTableModel &model_;
+        const QAbstractTableModel &model_;
         std::vector<Data> data_;
 };
 
