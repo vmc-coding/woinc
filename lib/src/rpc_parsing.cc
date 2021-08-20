@@ -167,7 +167,7 @@ void parse_child_content_(const wxml::Node &node, const wxml::Tag &child_tag, T 
 #ifndef NDEBUG
     try {
 #endif
-        typename std::underlying_type<T>::type value;
+        int value;
         parse__(child_iter->content, value);
         parse__(value, dest);
 #ifndef NDEBUG
