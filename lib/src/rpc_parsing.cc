@@ -854,34 +854,35 @@ void parse_(const wxml::Node &node, woinc::Workunit &workunit) {
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
 }
 
+template<typename Type>
+bool wrapped_parse_(const woinc::xml::Node &node, Type &t) {
+    try {
+        parse_(node, t);
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
 } // unnamed namespace
 
 namespace woinc { namespace rpc {
 
-#define WRAPPED_PARSE(TYPE) bool parse(const woinc::xml::Node &node, TYPE &t) { \
-    try { \
-        parse_(node, t); \
-    } catch (...) { \
-        return false; \
-    } \
-    return true; \
-}
-
-WRAPPED_PARSE(woinc::AccountOut)
-WRAPPED_PARSE(woinc::AllProjectsList)
-WRAPPED_PARSE(woinc::CCStatus)
-WRAPPED_PARSE(woinc::ClientState)
-WRAPPED_PARSE(woinc::DiskUsage)
-WRAPPED_PARSE(woinc::FileTransfer)
-WRAPPED_PARSE(woinc::GlobalPreferences)
-WRAPPED_PARSE(woinc::HostInfo)
-WRAPPED_PARSE(woinc::Message)
-WRAPPED_PARSE(woinc::Notice)
-WRAPPED_PARSE(woinc::Project)
-WRAPPED_PARSE(woinc::ProjectConfig)
-WRAPPED_PARSE(woinc::Statistics)
-WRAPPED_PARSE(woinc::Task)
-WRAPPED_PARSE(woinc::Version)
-WRAPPED_PARSE(woinc::Workunit)
+bool parse(const woinc::xml::Node &node, woinc::AccountOut &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::AllProjectsList &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::CCStatus &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::ClientState &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::DiskUsage &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::FileTransfer &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::GlobalPreferences &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::HostInfo &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Message &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Notice &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Project &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::ProjectConfig &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Statistics &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Task &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Version &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::Workunit &t) { return wrapped_parse_(node, t); }
 
 }}
