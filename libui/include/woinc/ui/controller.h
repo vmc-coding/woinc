@@ -58,7 +58,7 @@ class Controller {
         // TODO rename to async_add_host?
         virtual void add_host(const std::string &host,
                               const std::string &url,
-                              std::uint16_t port);
+                              std::uint16_t port = 31416);
 
         virtual void authorize_host(const std::string &host,
                                     const std::string &password);
