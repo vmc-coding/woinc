@@ -76,3 +76,5 @@ install(EXPORT woincui-config
 # make the project importable from the build directory
 export(TARGETS woincui FILE woincuiConfig.cmake)
 add_library(woinc::ui ALIAS woincui)
+
+add_subdirectory(profiling EXCLUDE_FROM_ALL)
