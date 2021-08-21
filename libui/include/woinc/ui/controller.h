@@ -19,6 +19,7 @@
 #ifndef WOINC_UI_CONTROLLER_H_
 #define WOINC_UI_CONTROLLER_H_
 
+#include <chrono>
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -70,8 +71,8 @@ class Controller {
 
     public: // periodic tasks handling
 
-        virtual void periodic_task_interval(PeriodicTask task, int seconds);
-        virtual int periodic_task_interval(PeriodicTask task) const;
+        virtual void periodic_task_interval(PeriodicTask task, std::chrono::milliseconds interval);
+        virtual std::chrono::milliseconds periodic_task_interval(PeriodicTask task) const;
 
         virtual void schedule_periodic_tasks(const std::string &host, bool value);
 

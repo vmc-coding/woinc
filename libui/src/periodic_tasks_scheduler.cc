@@ -138,7 +138,7 @@ void PeriodicTasksScheduler::handle_post_execution(const std::string &host, Job 
 bool PeriodicTasksScheduler::should_be_scheduled_(const PeriodicTasksSchedulerContext::Task &task,
                                                   const Configuration::Intervals &intervals,
                                                   const decltype(PeriodicTasksSchedulerContext::Task::last_execution) &now) const {
-    return now >= task.last_execution + std::chrono::seconds(intervals.at(static_cast<size_t>(task.type)));
+    return now >= task.last_execution + std::chrono::milliseconds(intervals.at(static_cast<size_t>(task.type)));
 }
 
 void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSchedulerContext::Task &task) {

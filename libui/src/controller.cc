@@ -84,8 +84,8 @@ class WOINCUI_LOCAL Controller::Impl {
         void remove_host(const std::string &host);
         void async_remove_host(std::string host);
 
-        void periodic_task_interval(const PeriodicTask task, int interval);
-        int periodic_task_interval(const PeriodicTask task) const;
+        void periodic_task_interval(const PeriodicTask task, std::chrono::milliseconds interval);
+        std::chrono::milliseconds periodic_task_interval(const PeriodicTask task) const;
         void schedule_periodic_tasks(const std::string &host, bool value);
         void reschedule_now(const std::string &host, PeriodicTask task);
 
@@ -287,11 +287,11 @@ void Controller::Impl::async_remove_host(std::string host) {
     std::thread([=]() { async_remove_host_(host); }).detach();
 }
 
-void Controller::Impl::periodic_task_interval(const PeriodicTask task, int interval) {
+void Controller::Impl::periodic_task_interval(const PeriodicTask task, std::chrono::milliseconds interval) {
     configuration_.interval(task, interval);
 }
 
-int Controller::Impl::periodic_task_interval(const PeriodicTask task) const {
+std::chrono::milliseconds Controller::Impl::periodic_task_interval(const PeriodicTask task) const {
     return configuration_.interval(task);
 }
 
@@ -664,11 +664,11 @@ void Controller::async_remove_host(std::string host) {
     impl_->async_remove_host(host);
 }
 
-void Controller::periodic_task_interval(const PeriodicTask task, int interval) {
+void Controller::periodic_task_interval(const PeriodicTask task, std::chrono::milliseconds interval) {
     impl_->periodic_task_interval(task, interval);
 }
 
-int Controller::periodic_task_interval(const PeriodicTask task) const {
+std::chrono::milliseconds Controller::periodic_task_interval(const PeriodicTask task) const {
     return impl_->periodic_task_interval(task);
 }
 

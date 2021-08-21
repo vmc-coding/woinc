@@ -1,5 +1,5 @@
 /* libui/src/configuration.cc --
-   Written and Copyright (C) 2018 by vmc.
+   Written and Copyright (C) 2018-2021 by vmc.
 
    This file is part of woinc.
 
@@ -25,14 +25,14 @@
 
 namespace woinc { namespace ui {
 
-void Configuration::interval(PeriodicTask task, int seconds) {
+void Configuration::interval(PeriodicTask task, std::chrono::milliseconds ms) {
     WOINC_CONFIGURATION_LOCK_GUARD;
-    intervals_[static_cast<size_t>(task)] = std::chrono::seconds(seconds);
+    intervals_[static_cast<size_t>(task)] = ms;
 }
 
-int Configuration::interval(PeriodicTask task) const {
+std::chrono::milliseconds Configuration::interval(PeriodicTask task) const {
     WOINC_CONFIGURATION_LOCK_GUARD;
-    return static_cast<int>(intervals_.at(static_cast<size_t>(task)).count());
+    return intervals_.at(static_cast<size_t>(task));
 }
 
 Configuration::Intervals Configuration::intervals() const {
