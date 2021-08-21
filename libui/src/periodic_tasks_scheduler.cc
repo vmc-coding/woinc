@@ -84,20 +84,24 @@ PeriodicTasksScheduler::PeriodicTasksScheduler(PeriodicTasksSchedulerContext &co
 {}
 
 void PeriodicTasksScheduler::operator()() {
-    using namespace std::chrono_literals;
+    const auto max_wake_up__time = std::chrono::milliseconds(200);
 
     std::unique_lock<decltype(context_.lock_)> guard(context_.lock_);
 
-    int cache_counter = 0;
-    Configuration::Intervals intervals;
+    Configuration::Intervals intervals(context_.configuration_.intervals());
+    auto last_cache_update = std::chrono::steady_clock::now();
+
+    auto wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up__time);
 
     while (!context_.shutdown_triggered_) {
-        // update interval cache once a second
-        if (cache_counter == 0)
-            intervals = std::move(context_.configuration_.intervals());
-        cache_counter = (cache_counter + 1) % 5;
-
         const auto now = std::chrono::steady_clock::now();
+
+        // update interval cache once a second
+        if (now - last_cache_update > std::chrono::seconds(1)) {
+            intervals = context_.configuration_.intervals();
+            wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up__time);
+            last_cache_update = now;
+        }
 
         for (auto &host_tasks : context_.tasks_) {
             if (!context_.configuration_.schedule_periodic_tasks(host_tasks.first))
@@ -107,7 +111,7 @@ void PeriodicTasksScheduler::operator()() {
                     schedule_(host_tasks.first, task);
         }
 
-        context_.condition_.wait_for(guard, 200ms);
+        context_.condition_.wait_for(guard, wake_up_interval);
     }
 }
 
