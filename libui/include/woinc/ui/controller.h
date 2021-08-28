@@ -95,6 +95,8 @@ class Controller {
 
         virtual std::future<bool> read_global_prefs_override(const std::string &host);
 
+        virtual std::future<bool> read_config_files(const std::string &host);
+
         virtual std::future<bool> run_mode(const std::string &host, RunMode mode);
         virtual std::future<bool> gpu_mode(const std::string &host, RunMode mode);
         virtual std::future<bool> network_mode(const std::string &host, RunMode mode);

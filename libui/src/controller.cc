@@ -99,6 +99,7 @@ class WOINCUI_LOCAL Controller::Impl {
         std::future<GlobalPreferences> load_global_preferences(const std::string &host, GetGlobalPrefsMode mode);
         std::future<bool> save_global_preferences(const std::string &host, const GlobalPreferences &prefs, const GlobalPreferencesMask &mask);
         std::future<bool> read_global_prefs_override(const std::string &host);
+        std::future<bool> read_config_files(const std::string &host);
 
         std::future<bool> run_mode(const std::string &host, RunMode mode);
         std::future<bool> gpu_mode(const std::string &host, RunMode mode);
@@ -425,6 +426,18 @@ std::future<bool> Controller::Impl::read_global_prefs_override(const std::string
         "Error reading the preferences");
 }
 
+std::future<bool> Controller::Impl::read_config_files(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::ReadCCConfigCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error reading the config files");
+}
+
 std::future<bool> Controller::Impl::run_mode(const std::string &host, RunMode mode) {
     check_not_empty_host_name__(host);
 
@@ -711,6 +724,10 @@ std::future<bool> Controller::save_global_preferences(const std::string &host,
 
 std::future<bool> Controller::read_global_prefs_override(const std::string &host) {
     return impl_->read_global_prefs_override(host);
+}
+
+std::future<bool> Controller::read_config_files(const std::string &host) {
+    return impl_->read_config_files(host);
 }
 
 std::future<bool> Controller::gpu_mode(const std::string &host, RunMode mode) {
