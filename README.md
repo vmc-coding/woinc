@@ -70,19 +70,19 @@ They may not be up to date, but there are some [here](http://83.169.22.26/woinc/
     ```
     and some woinc specific flags (TRUE|FALSE instead of ON|OFF is valid also)
     ```
-    -DWOINC_BUILD_LIB=<ON|OFF>     # build libwoinc
-    -DWOINC_BUILD_LIBUI=<ON|OFF>   # build libwoincui
-    -DWOINC_BUILD_CLI_UI=<ON|OFF>  # build woincdmd
-    -DWOINC_BUILD_CLI_QT=<ON|OFF>  # build woincqt
-    -DWOINC_CLI_COMMANDS<OIN|OFF>  # enable some extra commands in woinccmd
-    -DWOINC_EXPOSE_FULL_STRUCTURES # also handle data from the client woinc doesn't need but maybe someone using this lib; off by default
-    -DWOINC_BUILD_SHARED_LIBS      # build shared instead of static libs of libwoinc and libwoincui
+    -DWOINC_BUILD_LIB=<ON|OFF>              # build libwoinc
+    -DWOINC_BUILD_LIBUI=<ON|OFF>            # build libwoincui
+    -DWOINC_BUILD_CLI_UI=<ON|OFF>           # build woincdmd
+    -DWOINC_BUILD_CLI_QT=<ON|OFF>           # build woincqt
+    -DWOINC_CLI_COMMANDS=<ON|OFF>           # enable some extra commands in woinccmd
+    -DWOINC_EXPOSE_FULL_STRUCTURES=<ON|OFF> # also handle data from the client woinc doesn't need but maybe someone using this lib; off by default
+    -DWOINC_BUILD_SHARED_LIBS=<ON|OFF>      # build shared instead of static libs of libwoinc and libwoincui
     ```
     and for dev
     ```
-    -DWOINC_ENABLE_COVERAGE         # tells the compiler to enable coverage
-    -DWOINC_ENABLE_SANITIZER        # enables some sanitizer in the compiler
-    -DWOINC_VERBOSE_DEBUG_LOGGING   # enables verbose debug logging
+    -DWOINC_ENABLE_COVERAGE=<ON|OFF>        # tells the compiler to enable coverage
+    -DWOINC_ENABLE_SANITIZER=<ON|OFF>       # enables some sanitizer in the compiler
+    -DWOINC_VERBOSE_DEBUG_LOGGING=<ON|OFF>  # enables verbose debug logging
     ```
     example with flags
     ```shell script
