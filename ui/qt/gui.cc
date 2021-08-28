@@ -173,6 +173,18 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                 QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
             });
     });
+
+    connect(options_menu, &OptionsMenu::local_prefs_file_to_be_read, [=, &controller](QString host) {
+        controller.read_global_prefs(
+            host,
+            [=](bool success){
+                if (!success)
+                    QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Failed to read the preferences file"), QMessageBox::Ok);
+            },
+            [=](QString error) {
+                QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+            });
+    });
 }
 
 void Gui::create_tools_menu_(const Model &model, Controller &controller) {

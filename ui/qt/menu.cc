@@ -180,7 +180,9 @@ OptionsMenu::OptionsMenu(const QString &title, QWidget *parent)
     connect(addAction("Read config files"), &QAction::triggered, [&]() {
         emit config_files_to_be_read(selected_host_);
     });
-    addAction("Read local prefs file")->setEnabled(false);
+    connect(addAction("Read local prefs file"), &QAction::triggered, [&]() {
+        emit local_prefs_file_to_be_read(selected_host_);
+    });
 }
 
 // ----- ToolsMenu -----

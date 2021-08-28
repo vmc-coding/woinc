@@ -116,6 +116,7 @@ class OptionsMenu : public HostAwareMenu {
     signals:
         void computation_preferences_to_be_shown(QString host);
         void config_files_to_be_read(QString host);
+        void local_prefs_file_to_be_read(QString host);
 };
 
 class ToolsMenu : public HostAwareMenu {
