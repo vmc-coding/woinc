@@ -177,7 +177,9 @@ OptionsMenu::OptionsMenu(const QString &title, QWidget *parent)
     addAction("Event Log options...")->setEnabled(false); // Ctrl+Shift+F
     addAction("&Other options...")->setEnabled(false);
     addSeparator();
-    addAction("Read config files")->setEnabled(false);
+    connect(addAction("Read config files"), &QAction::triggered, [&]() {
+        emit config_files_to_be_read(selected_host_);
+    });
     addAction("Read local prefs file")->setEnabled(false);
 }
 

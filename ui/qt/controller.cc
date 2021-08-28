@@ -212,6 +212,12 @@ void Controller::read_global_prefs(const QString &host, Receiver<bool> receiver,
                                             ctrl_->read_global_prefs_override(host.toStdString())));
 }
 
+void Controller::read_config_files(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            ctrl_->read_config_files(host.toStdString())));
+}
+
 void Controller::load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<AllProjectsList>(std::move(receiver),
                                                        std::move(error_handler),

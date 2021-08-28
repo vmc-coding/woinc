@@ -86,6 +86,8 @@ class Controller : public QObject {
                                ErrorHandler error_handler);
         void read_global_prefs(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler);
 
+        void read_config_files(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler);
+
         void load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler);
 
         void start_loading_project_config(const QString &host, const QString &master_url, Receiver<bool> receiver, ErrorHandler error_handler);

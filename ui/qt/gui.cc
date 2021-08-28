@@ -162,6 +162,17 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                     });
             });
 
+    connect(options_menu, &OptionsMenu::config_files_to_be_read, [=, &controller](QString host) {
+        controller.read_config_files(
+            host,
+            [=](bool success){
+                if (!success)
+                    QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Failed to read the config files"), QMessageBox::Ok);
+            },
+            [=](QString error) {
+                QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
+            });
+    });
 }
 
 void Gui::create_tools_menu_(const Model &model, Controller &controller) {
