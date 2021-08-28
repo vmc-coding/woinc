@@ -20,6 +20,9 @@
 
 #include <cassert>
 
+#include <QDesktopServices>
+#include <QUrl>
+
 namespace woinc { namespace ui { namespace qt {
 
 // ----- HostAwareMenu -----
@@ -207,11 +210,16 @@ ToolsMenu::ToolsMenu(const QString &title, QWidget *parent)
 HelpMenu::HelpMenu(const QString &title, QWidget *parent)
     : QMenu(title, parent)
 {
-    addAction("BOINC &help")->setEnabled(false);
-    addAction("w&oincqt help")->setEnabled(false);
+    connect(addAction("BOINC &help"), &QAction::triggered, []() {
+        QDesktopServices::openUrl(QUrl("https://boinc.berkeley.edu/wiki/BOINC_Help"));
+    });
     addSeparator();
-    addAction("BOINC &web site")->setEnabled(false);
-    addAction("woincqt web &site")->setEnabled(false);
+    connect(addAction("&BOINC web site"), &QAction::triggered, []() {
+        QDesktopServices::openUrl(QUrl("https://boinc.berkeley.edu/"));
+    });
+    connect(addAction("&woinc web site"), &QAction::triggered, []() {
+        QDesktopServices::openUrl(QUrl("https://github.com/vmc-coding/woinc"));
+    });
     addSeparator();
     addAction("Check for new BOINC version")->setEnabled(false);
     addAction("Check for new woincqt version")->setEnabled(false);
