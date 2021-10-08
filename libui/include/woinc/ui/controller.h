@@ -118,6 +118,7 @@ class Controller {
                                                  std::string authenticator);
 
         virtual std::future<bool> network_available(const std::string &host);
+        virtual std::future<bool> run_benchmarks(const std::string &host);
 
     private:
         struct Impl;
