@@ -327,6 +327,10 @@ void Controller::run_cpu_benchmarks(QString host) {
     ctrl_->run_benchmarks(host.toStdString());
 }
 
+void Controller::retry_pending_transfers(QString host) {
+    ctrl_->network_available(host.toStdString());
+}
+
 void Controller::connect(const HandlerAdapter *adapter) const {
 #define WOINC_CONNECT(FROM, TO) QObject::connect(adapter, &HandlerAdapter::FROM, \
                                                  this, &Controller::TO, \

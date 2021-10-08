@@ -205,6 +205,7 @@ void Gui::create_tools_menu_(const Model &model, Controller &controller) {
             });
 
     connect(menu, &ToolsMenu::cpu_benchmarks_to_be_run, &controller, &Controller::run_cpu_benchmarks);
+    connect(menu, &ToolsMenu::pending_transfers_to_be_retried, &controller, &Controller::retry_pending_transfers);
 }
 
 void Gui::create_help_menu_() {

@@ -129,6 +129,7 @@ class ToolsMenu : public HostAwareMenu {
     signals:
         void add_project_wizard_to_be_shown(QString host);
         void cpu_benchmarks_to_be_run(QString host);
+        void pending_transfers_to_be_retried(QString host);
 };
 
 class HelpMenu : public QMenu {

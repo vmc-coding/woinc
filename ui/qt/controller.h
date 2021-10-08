@@ -123,6 +123,7 @@ class Controller : public QObject {
         void schedule_tasks_update(QString host);
 
         void run_cpu_benchmarks(QString host);
+        void retry_pending_transfers(QString host);
 
     public:
         void connect(const HandlerAdapter *adapter) const;
