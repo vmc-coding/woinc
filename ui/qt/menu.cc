@@ -204,7 +204,7 @@ ToolsMenu::ToolsMenu(const QString &title, QWidget *parent)
     connect(addAction("Run CPU &benchmarks"), &QAction::triggered, [&]() {
         emit cpu_benchmarks_to_be_run(selected_host_);
     });
-    connect(addAction("Retry pending transfers"), &QAction::triggered, [&]() {
+    connect(addAction("Retry pending &transfers"), &QAction::triggered, [&]() {
         emit pending_transfers_to_be_retried(selected_host_);
     });
 }
