@@ -116,6 +116,8 @@ class WOINCUI_LOCAL Controller::Impl {
 
         std::future<bool> attach_project(const std::string &host, std::string master_url, std::string authenticator);
 
+        std::future<bool> network_available(const std::string &host);
+
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
         // which will be deleted in the erase call leading to a use after free access later on
@@ -561,6 +563,18 @@ std::future<bool> Controller::Impl::attach_project(const std::string &host,
         {std::move(master_url), std::move(authenticator)});
 }
 
+std::future<bool> Controller::Impl::network_available(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::NetworkAvailableCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error retrying deferred network communication");
+}
+
 void Controller::Impl::remove_host_(std::string host) {
     periodic_tasks_scheduler_context_.remove_host(host);
     host_controllers_.at(host)->shutdown();
@@ -626,7 +640,6 @@ void Controller::Impl::verify_known_host_(const std::string &host, const char *)
         throw UnknownHostException{host};
     }
 }
-
 
 // ---- Controller ----
 
@@ -767,6 +780,10 @@ std::future<bool> Controller::attach_project(const std::string &host,
                                              std::string master_url,
                                              std::string authenticator) {
     return impl_->attach_project(host, std::move(master_url), std::move(authenticator));
+}
+
+std::future<bool> Controller::network_available(const std::string &host) {
+    return impl_->network_available(host);
 }
 
 }}

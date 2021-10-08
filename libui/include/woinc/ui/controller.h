@@ -117,6 +117,8 @@ class Controller {
                                                  std::string master_url,
                                                  std::string authenticator);
 
+        virtual std::future<bool> network_available(const std::string &host);
+
     private:
         struct Impl;
         std::unique_ptr<Impl> impl_;
