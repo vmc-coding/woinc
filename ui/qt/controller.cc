@@ -323,6 +323,10 @@ void Controller::schedule_statistics_update(QString host) {
     ctrl_->reschedule_now(host.toStdString(), PeriodicTask::GetStatistics);
 }
 
+void Controller::run_cpu_benchmarks(QString host) {
+    ctrl_->run_benchmarks(host.toStdString());
+}
+
 void Controller::connect(const HandlerAdapter *adapter) const {
 #define WOINC_CONNECT(FROM, TO) QObject::connect(adapter, &HandlerAdapter::FROM, \
                                                  this, &Controller::TO, \

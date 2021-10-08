@@ -203,6 +203,8 @@ void Gui::create_tools_menu_(const Model &model, Controller &controller) {
                 wizard->setAttribute(Qt::WA_DeleteOnClose);
                 wizard->open();
             });
+
+    connect(menu, &ToolsMenu::cpu_benchmarks_to_be_run, &controller, &Controller::run_cpu_benchmarks);
 }
 
 void Gui::create_help_menu_() {

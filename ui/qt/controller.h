@@ -122,6 +122,8 @@ class Controller : public QObject {
         void schedule_statistics_update(QString host);
         void schedule_tasks_update(QString host);
 
+        void run_cpu_benchmarks(QString host);
+
     public:
         void connect(const HandlerAdapter *adapter) const;
 
