@@ -64,7 +64,7 @@ void HostAwareMenu::host_unselected_(){
 // ----- FileMenu -----
 
 FileMenu::FileMenu(const QString &title, QWidget *parent)
-    : QMenu(title, parent)
+    : HostAwareMenu(title, parent)
 {
     auto *new_window = addAction("New woincqt window");
     new_window->setShortcuts(QKeySequence::New);
@@ -75,7 +75,9 @@ FileMenu::FileMenu(const QString &title, QWidget *parent)
     select_computer->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_I);
     connect(select_computer, &QAction::triggered, this, &FileMenu::computer_to_be_selected);
 
-    addAction("Shut down connected client...")->setEnabled(false);
+    connect(addAction("Shut down connected client..."), &QAction::triggered, [&]() {
+        emit shutdown_to_be_triggered(selected_host_);
+    });
 
     addSeparator();
 

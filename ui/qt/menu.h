@@ -54,7 +54,7 @@ class HostAwareMenu : public QMenu {
 #endif
 };
 
-class FileMenu : public QMenu {
+class FileMenu : public HostAwareMenu {
     Q_OBJECT
 
     public:
@@ -64,6 +64,7 @@ class FileMenu : public QMenu {
     signals:
         void to_quit();
         void computer_to_be_selected();
+        void shutdown_to_be_triggered(QString host);
 };
 
 class ViewMenu : public QMenu {

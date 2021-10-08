@@ -45,7 +45,7 @@ void Gui::open(const Model &model, Controller &controller) {
     // TODO should only be set if we don't have these values from some settings/config file
     resize(QSize(1000, 600));
 
-    create_file_menu_();
+    create_file_menu_(model, controller);
     create_view_menu_();
     create_activity_menu_(model, controller);
     create_options_menu_(model, controller);
@@ -79,9 +79,15 @@ void Gui::show_error(QString title, QString message) {
     QMessageBox::critical(this, title, message, QMessageBox::Ok);
 }
 
-void Gui::create_file_menu_() {
+void Gui::create_file_menu_(const Model &model, Controller &controller) {
     auto *menu = new FileMenu("&File", this);
     menuBar()->addMenu(menu);
+
+    connect(&model, &Model::host_selected,   menu, &FileMenu::select_host);
+    connect(&model, &Model::host_unselected, menu, &FileMenu::unselect_host);
+#ifndef NDEBUG
+    menu->connected();
+#endif
 
     connect(menu, &FileMenu::computer_to_be_selected, [this]() {
         auto dlg = new SelectComputerDialog(this);
@@ -90,6 +96,7 @@ void Gui::create_file_menu_() {
         dlg->open();
     });
 
+    connect(menu, &FileMenu::shutdown_to_be_triggered, &controller, &Controller::trigger_client_shutdown);
     connect(menu, &FileMenu::to_quit, this, &Gui::quit);
 }
 

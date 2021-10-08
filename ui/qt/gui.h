@@ -1,5 +1,5 @@
 /* ui/qt/gui.h --
-   Written and Copyright (C) 2017-2020 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -53,8 +53,8 @@ class Gui : public QMainWindow {
         void show_error(QString title, QString message);
 
     private:
+        void create_file_menu_(const Model &model, Controller &controller);
         void create_view_menu_();
-        void create_file_menu_();
         void create_activity_menu_(const Model &model, Controller &controller);
         void create_options_menu_(const Model &model, Controller &controller);
         void create_tools_menu_(const Model &model, Controller &controller);

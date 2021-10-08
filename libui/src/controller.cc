@@ -118,6 +118,7 @@ class WOINCUI_LOCAL Controller::Impl {
 
         std::future<bool> network_available(const std::string &host);
         std::future<bool> run_benchmarks(const std::string &host);
+        std::future<bool> quit(const std::string &host);
 
     private: // helper methods which assume the controller is already locked
         // use a copy of the host string as it may be the key of the host controller map
@@ -588,6 +589,18 @@ std::future<bool> Controller::Impl::run_benchmarks(const std::string &host) {
         "Error triggering the benchmarks run");
 }
 
+std::future<bool> Controller::Impl::quit(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::QuitCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error quitting the client");
+}
+
 void Controller::Impl::remove_host_(std::string host) {
     periodic_tasks_scheduler_context_.remove_host(host);
     host_controllers_.at(host)->shutdown();
@@ -801,6 +814,10 @@ std::future<bool> Controller::network_available(const std::string &host) {
 
 std::future<bool> Controller::run_benchmarks(const std::string &host) {
     return impl_->run_benchmarks(host);
+}
+
+std::future<bool> Controller::quit(const std::string &host) {
+    return impl_->quit(host);
 }
 
 }}

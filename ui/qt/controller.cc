@@ -271,8 +271,18 @@ void Controller::add_host(QString host, QString url, unsigned short port, QStrin
     }
 }
 
-void Controller::trigger_shutdown() {
+void Controller::trigger_ui_shutdown() {
     ctrl_->shutdown();
+}
+
+void Controller::trigger_client_shutdown(QString host) {
+    ctrl_->schedule_periodic_tasks(host.toStdString(), false);
+    auto result = ctrl_->quit(host.toStdString());
+    // TODO don't block here
+    if (result.get())
+        ctrl_->shutdown();
+    else
+        ctrl_->schedule_periodic_tasks(host.toStdString(), true);
 }
 
 void Controller::do_active_only_tasks(QString host, bool value) {

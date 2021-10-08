@@ -1,5 +1,5 @@
 /* ui/qt/main.cc --
-   Written and Copyright (C) 2017-2019 by vmc.
+   Written and Copyright (C) 2017-2021 by vmc.
 
    This file is part of woinc.
 
@@ -128,7 +128,7 @@ void connect_adapter_model__(woincqt::HandlerAdapter *adapter, woincqt::ModelHan
 }
 
 void connect_app_controller__(QApplication *app, woincqt::Controller *controller) {
-    QObject::connect(app, &QApplication::aboutToQuit, controller, &woincqt::Controller::trigger_shutdown);
+    QObject::connect(app, &QApplication::aboutToQuit, controller, &woincqt::Controller::trigger_ui_shutdown);
 }
 
 void connect_gui_controller__(woincqt::Gui *gui, woincqt::Controller *controller) {

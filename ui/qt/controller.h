@@ -105,7 +105,8 @@ class Controller : public QObject {
         void add_host(QString host, QString url, unsigned short port, QString password);
 
     public slots:
-        void trigger_shutdown();
+        void trigger_ui_shutdown();
+        void trigger_client_shutdown(QString host);
 
         void do_active_only_tasks(QString host, bool value);
         void do_file_transfer_op(QString host, FileTransferOp op, QString project_url, QString filename);
