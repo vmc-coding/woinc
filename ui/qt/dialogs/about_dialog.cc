@@ -33,7 +33,7 @@
 
 namespace {
 
-void __add_line(QGridLayout *grid, const QString &txt) {
+void add_line__(QGridLayout *grid, const QString &txt) {
     auto *lbl = new QLabel(txt);
     lbl->setAlignment(Qt::AlignHCenter);
     lbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
@@ -41,7 +41,7 @@ void __add_line(QGridLayout *grid, const QString &txt) {
     grid->addWidget(lbl, grid->rowCount(), 0, 1, 2);
 }
 
-void __add_line(QGridLayout *grid, const QString &lhs, const QString &rhs) {
+void add_line__(QGridLayout *grid, const QString &lhs, const QString &rhs) {
     auto *lbl_lhs = new QLabel(lhs);
     lbl_lhs->setAlignment(Qt::AlignRight);
     lbl_lhs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
@@ -67,12 +67,12 @@ AboutDialog::AboutDialog(QWidget *parent)
     setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     setLayout(grid);
 
-    __add_line(grid, QStringLiteral("<h1>woincqt</h1>"));
-    __add_line(grid, QStringLiteral("Version:"), QString::asprintf("%d.%d", major_version(), minor_version()));
-    __add_line(grid, QStringLiteral("QT version:"), qVersion());
-    __add_line(grid, QStringLiteral("Copyright:"), QStringLiteral("(C) 2017-2022 by <a href=\"mailto:vmc.coding@gmail.com\">vmc</>"));
-    __add_line(grid, QStringLiteral("woincqt is distributed under the GNU General Public License v3.0."));
-    __add_line(grid, QStringLiteral("For more information, visit <a href=\"https://github.com/vmc-coding/woinc\">https://github.com/vmc-coding/woinc</a>"));
+    add_line__(grid, QStringLiteral("<h1>woincqt</h1>"));
+    add_line__(grid, QStringLiteral("Version:"), QString::asprintf("%d.%d", major_version(), minor_version()));
+    add_line__(grid, QStringLiteral("QT version:"), qVersion());
+    add_line__(grid, QStringLiteral("Copyright:"), QStringLiteral("(C) 2017-2022 by <a href=\"mailto:vmc.coding@gmail.com\">vmc</>"));
+    add_line__(grid, QStringLiteral("woincqt is distributed under the GNU General Public License v3.0."));
+    add_line__(grid, QStringLiteral("For more information, visit <a href=\"https://github.com/vmc-coding/woinc\">https://github.com/vmc-coding/woinc</a>"));
 
     auto *btn_ok = new QPushButton(QStringLiteral("OK"));
     btn_ok->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
