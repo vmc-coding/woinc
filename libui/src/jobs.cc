@@ -126,12 +126,11 @@ void PeriodicJob::execute(Client &client) {
                 cmd.request().seqno = payload.seqno;
                 auto status = client.execute(cmd);
                 if (status == wrpc::CommandStatus::Ok) {
-                    if (!cmd.response().notices.empty()) {
+                    if (!cmd.response().notices.empty())
                         payload.seqno = cmd.response().notices.back().seqno;
-                        handler_registry.for_periodic_task_handler([&](auto &handler) {
-                            handler.on_update(client.host(), cmd.response().notices, cmd.response().refreshed);
-                        });
-                    }
+                    handler_registry.for_periodic_task_handler([&](auto &handler) {
+                        handler.on_update(client.host(), cmd.response().notices, cmd.response().refreshed);
+                    });
                 } else {
                     handler_registry.for_host_handler([&](auto &handler) {
                         handler.on_host_error(client.host(), as_error__(status));
