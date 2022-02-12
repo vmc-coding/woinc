@@ -1,5 +1,5 @@
 /* ui/qt/menu.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -139,6 +139,9 @@ class HelpMenu : public QMenu {
     public:
         HelpMenu(const QString &title, QWidget *parent = nullptr);
         virtual ~HelpMenu() = default;
+
+    signals:
+        void about_dialog_to_be_shown();
 };
 
 }}}

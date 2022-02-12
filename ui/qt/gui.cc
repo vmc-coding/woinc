@@ -1,5 +1,5 @@
 /* ui/qt/gui.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -30,6 +30,7 @@
 #include <woinc/ui/error.h>
 
 #include "qt/controller.h"
+#include "qt/dialogs/about_dialog.h"
 #include "qt/dialogs/add_project_wizard.h"
 #include "qt/dialogs/preferences_dialog.h"
 #include "qt/dialogs/select_computer_dialog.h"
@@ -219,6 +220,11 @@ void Gui::create_help_menu_() {
     auto *menu = new HelpMenu("&Help", this);
     menuBar()->addMenu(menu);
 
+    connect(menu, &HelpMenu::about_dialog_to_be_shown, []() {
+        auto *dlg = new AboutDialog();
+        dlg->setAttribute(Qt::WA_DeleteOnClose);
+        dlg->open();
+    });
 }
 
 }}}

@@ -21,6 +21,7 @@ set(WOINCQT_SOURCES
     types.cc
     utils.cc
 
+    dialogs/about_dialog.cc
     dialogs/add_project_wizard.cc
     dialogs/preferences_dialog.cc
     dialogs/project_properties_dialog.cc

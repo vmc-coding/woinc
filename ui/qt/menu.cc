@@ -1,5 +1,5 @@
 /* ui/qt/menu.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -230,7 +230,9 @@ HelpMenu::HelpMenu(const QString &title, QWidget *parent)
     addAction("Check for new BOINC version")->setEnabled(false);
     addAction("Check for new woincqt version")->setEnabled(false);
     addSeparator();
-    addAction("About woinc&qt...")->setEnabled(false);
+    connect(addAction("&About woincqt..."), &QAction::triggered, [=]() {
+        emit about_dialog_to_be_shown();
+    });
 }
 
 }}}
