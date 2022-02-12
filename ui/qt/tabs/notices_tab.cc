@@ -87,6 +87,9 @@ void NoticesTab::update_() {
     QStringList txts;
     txts.reserve(static_cast<int>(notices_.size()));
 
+    if (notices_.empty())
+        txts << QStringLiteral("There are no notices at this time.");
+
     for (auto notice = notices_.rbegin(); notice != notices_.rend(); ++notice) {
         QString title;
 
