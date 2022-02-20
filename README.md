@@ -36,6 +36,7 @@ Ideas for next milestones in random order:
 - python bindings
 - more UI clients, e.g. GTK or maybe as a web app
 - instead of coding the Qt-GUI in C++, use QML and Qt Quick; implementing it all "by hand" had been exercise for me to learn Qt; but maybe I'll drop Qt because of their license bullshit
+- get a usable UI running on the Pinephone
 
 Mail me, if you have opinions on this software or some features you'd like to be implemented.
 Or implement them and create a pull request ;)
