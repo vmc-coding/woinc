@@ -1,5 +1,5 @@
 /* lib/rpc_parsing.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -195,6 +195,7 @@ void parse_(const woinc::xml::Node &node, woinc::ActiveTask &active_task);
 void parse_(const woinc::xml::Node &node, woinc::AllProjectsList &projects);
 void parse_(const woinc::xml::Node &node, woinc::App &app);
 void parse_(const woinc::xml::Node &node, woinc::AppVersion &app_version);
+void parse_(const woinc::xml::Node &node, woinc::CCConfig &cc_config);
 void parse_(const woinc::xml::Node &node, woinc::CCStatus &cc_status);
 void parse_(const woinc::xml::Node &node, woinc::ClientState &client_state);
 void parse_(const woinc::xml::Node &node, woinc::DailyStatistic &daily_statistic);
@@ -205,6 +206,7 @@ void parse_(const woinc::xml::Node &node, woinc::FileXfer &file_xfer);
 void parse_(const woinc::xml::Node &node, woinc::GlobalPreferences &global_prefs);
 void parse_(const woinc::xml::Node &node, woinc::GuiUrl &gui_url);
 void parse_(const woinc::xml::Node &node, woinc::HostInfo &info);
+void parse_(const woinc::xml::Node &node, woinc::LogFlags &log_flags);
 void parse_(const woinc::xml::Node &node, woinc::Message &msg);
 void parse_(const woinc::xml::Node &node, woinc::Notice &notice);
 void parse_(const woinc::xml::Node &node, woinc::PersistentFileXfer &persistent_file_xfer);
@@ -316,6 +318,84 @@ void parse_(const wxml::Node &node, woinc::AppVersion &app_version) {
     WOINC_PARSE_CHILD_CONTENT(node, app_version, cmdline);
     WOINC_PARSE_CHILD_CONTENT(node, app_version, file_prefix);
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
+}
+
+void parse_(const wxml::Node &node, woinc::CCConfig &cc_config) {
+    auto options_node_iter = node.find_child("options");
+    assert(node.found_child(options_node_iter));
+    auto options_node = *options_node_iter;
+
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, abort_jobs_on_exit);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, allow_multiple_clients);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, allow_remote_gui_rpc);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, disallow_attach);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, dont_check_file_sizes);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, dont_contact_ref_site);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, dont_suspend_nci);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, dont_use_vbox);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, dont_use_wsl);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, exit_after_finish);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, exit_before_start);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, exit_when_idle);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, fetch_minimal_work);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, fetch_on_update);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, http_1_0);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, lower_client_priority);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, no_alt_platform);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, no_gpus);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, no_info_fetch);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, no_opencl);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, no_priority_change);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, os_random_only);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, report_results_immediately);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, run_apps_manually);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, simple_gui_only);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, skip_cpu_benchmarks);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, stderr_head);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, suppress_net_info);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, unsigned_apps_ok);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, use_all_gpus);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, use_certs);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, use_certs_only);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, vbox_window);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, rec_half_life_days);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, start_delay);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, http_transfer_timeout);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, http_transfer_timeout_bps);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_event_log_lines);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_file_xfers);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_file_xfers_per_project);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stderr_file_size);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stdout_file_size);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_tasks_reported);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, ncpus);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, process_priority);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, process_priority_special);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, save_stats_days);
+
+    // TODO what are the other flags?
+    if (options_node.has_child("ignore_cuda_dev") || options_node.has_child("ignore_nvidia_dev"))
+        cc_config.ignore_gpu_instance[1] = true;
+    if (options_node.has_child("ignore_ati_dev"))
+        cc_config.ignore_gpu_instance[2] = true;
+    if (options_node.has_child("ignore_intel_dev"))
+        cc_config.ignore_gpu_instance[3] = true;
+
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, force_auth);
+
+    for (const auto &child: options_node.children) {
+        if (child.tag == "alt_platform")
+            cc_config.alt_platforms.push_back(child.content);
+        else if (child.tag == "exclusive_app")
+            cc_config.exclusive_apps.push_back(child.content);
+        else if (child.tag == "exclusive_gpu_app")
+            cc_config.exclusive_gpu_apps.push_back(child.content);
+    }
+    //TODO: std::vector<ExcludeGpu> exclude_gpus;
+
+    auto log_flags_node = node.find_child("log_flags");
+    if (node.found_child(log_flags_node))
+        parse_(*log_flags_node, cc_config.log_flags);
 }
 
 // see handle_get_cc_status() in BOINC/client/gui_rpc_server_ops.cpp
@@ -565,6 +645,49 @@ void parse_(const woinc::xml::Node &node, woinc::HostInfo &info) {
     WOINC_PARSE_CHILD_CONTENT(node, info, product_name);
     WOINC_PARSE_CHILD_CONTENT(node, info, virtualbox_version);
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
+}
+
+void parse_(const wxml::Node &node, woinc::LogFlags &log_flags) {
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, file_xfer);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, sched_ops);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, task);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, android_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, app_msg_receive);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, app_msg_send);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, async_file_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, benchmark_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, checkpoint_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, coproc_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched_status);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, dcf_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, disk_usage_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, file_xfer_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, gui_rpc_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, heartbeat_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, http_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, http_xfer_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, idle_detection_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, mem_usage_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, network_status_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, notice_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, poll_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, priority_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, proxy_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, rr_simulation);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, rrsim_detail);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, sched_op_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, scrsave_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, slot_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, state_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, statefile_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, suspend_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, task_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, time_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, trickle_debug);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, unparsed_xml);
+    WOINC_PARSE_CHILD_CONTENT(node, log_flags, work_fetch_debug);
 }
 
 // ses MESSAGE_DESCS::write in BOINC/client/client_msgs.cpp
@@ -870,6 +993,7 @@ namespace woinc { namespace rpc {
 
 bool parse(const woinc::xml::Node &node, woinc::AccountOut &t) { return wrapped_parse_(node, t); }
 bool parse(const woinc::xml::Node &node, woinc::AllProjectsList &t) { return wrapped_parse_(node, t); }
+bool parse(const woinc::xml::Node &node, woinc::CCConfig &t) { return wrapped_parse_(node, t); }
 bool parse(const woinc::xml::Node &node, woinc::CCStatus &t) { return wrapped_parse_(node, t); }
 bool parse(const woinc::xml::Node &node, woinc::ClientState &t) { return wrapped_parse_(node, t); }
 bool parse(const woinc::xml::Node &node, woinc::DiskUsage &t) { return wrapped_parse_(node, t); }

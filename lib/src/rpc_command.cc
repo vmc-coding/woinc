@@ -1,5 +1,5 @@
 /* lib/rpc_command.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -101,6 +101,11 @@ bool parse__(const wxml::Tree &response_tree, ExchangeVersionsResponse &response
 bool parse__(const wxml::Tree &response_tree, GetAllProjectsListResponse &response) {
     auto all_projects_node = response_tree.root.find_child("projects");
     return response_tree.root.found_child(all_projects_node) && parse(*all_projects_node, response.projects);
+}
+
+bool parse__(const wxml::Tree &response_tree, GetCCConfigResponse &response) {
+    auto cc_config_node = response_tree.root.find_child("cc_config");
+    return response_tree.root.found_child(cc_config_node) && parse(*cc_config_node, response.cc_config);
 }
 
 bool parse__(const wxml::Tree &response_tree, GetCCStatusResponse &response) {
@@ -331,6 +336,11 @@ CommandStatus GetAllProjectsListCommand::execute(Connection &connection) {
 }
 
 template<>
+CommandStatus GetCCConfigCommand::execute(Connection &connection) {
+    return do_cmd__(connection, "get_cc_config", error_, response());
+}
+
+template<>
 CommandStatus GetCCStatusCommand::execute(Connection &connection) {
     return do_cmd__(connection, "get_cc_status", error_, response());
 }
@@ -524,6 +534,95 @@ CommandStatus ReadGlobalPreferencesOverrideCommand::execute(Connection &connecti
 template<>
 CommandStatus RunBenchmarksCommand::execute(Connection &connection) {
     return do_cmd__(connection, "run_benchmarks", error_, response());
+}
+
+template<>
+CommandStatus SetCCConfigCommand::execute(Connection &connection) {
+    // to avoid removing configs woinc doesn't know we read the current cc config first
+    // and update all the values woinc knows in the xml tree before sending it back to the client
+    wxml::Tree current_ccc_tree;
+
+    {
+        wxml::Tree request_tree(wxml::create_boinc_request_tree());
+        request_tree.root["get_cc_config"];
+        auto status = do_rpc__(connection, request_tree, current_ccc_tree, error_);
+        if (status != CommandStatus::Ok)
+            return status;
+    }
+
+    wxml::Tree request_tree(wxml::create_boinc_request_tree());
+    auto &cmd_node = request_tree.root["set_cc_config"];
+    auto &ccc_node = cmd_node["cc_config"];
+    ccc_node = current_ccc_tree.root["cc_config"];
+    auto &options_tree = ccc_node["options"];
+    auto &cc_config = request().cc_config;
+
+#define WOINC_MAP_OPTION(OPTION) do { options_tree[#OPTION] = std::move(cc_config.OPTION); } while(false)
+
+    WOINC_MAP_OPTION(abort_jobs_on_exit);
+    WOINC_MAP_OPTION(allow_multiple_clients);
+    WOINC_MAP_OPTION(allow_remote_gui_rpc);
+    WOINC_MAP_OPTION(disallow_attach);
+    WOINC_MAP_OPTION(dont_check_file_sizes);
+    WOINC_MAP_OPTION(dont_contact_ref_site);
+    WOINC_MAP_OPTION(dont_suspend_nci);
+    WOINC_MAP_OPTION(dont_use_vbox);
+    WOINC_MAP_OPTION(dont_use_wsl);
+    WOINC_MAP_OPTION(exit_after_finish);
+    WOINC_MAP_OPTION(exit_before_start);
+    WOINC_MAP_OPTION(exit_when_idle);
+    WOINC_MAP_OPTION(fetch_minimal_work);
+    WOINC_MAP_OPTION(fetch_on_update);
+    WOINC_MAP_OPTION(http_1_0);
+    WOINC_MAP_OPTION(lower_client_priority);
+    WOINC_MAP_OPTION(no_alt_platform);
+    WOINC_MAP_OPTION(no_gpus);
+    WOINC_MAP_OPTION(no_info_fetch);
+    WOINC_MAP_OPTION(no_opencl);
+    WOINC_MAP_OPTION(no_priority_change);
+    WOINC_MAP_OPTION(os_random_only);
+    WOINC_MAP_OPTION(report_results_immediately);
+    WOINC_MAP_OPTION(run_apps_manually);
+    WOINC_MAP_OPTION(simple_gui_only);
+    WOINC_MAP_OPTION(skip_cpu_benchmarks);
+    WOINC_MAP_OPTION(stderr_head);
+    WOINC_MAP_OPTION(suppress_net_info);
+    WOINC_MAP_OPTION(unsigned_apps_ok);
+    WOINC_MAP_OPTION(use_all_gpus);
+    WOINC_MAP_OPTION(use_certs);
+    WOINC_MAP_OPTION(use_certs_only);
+    WOINC_MAP_OPTION(vbox_window);
+    WOINC_MAP_OPTION(rec_half_life_days);
+    WOINC_MAP_OPTION(start_delay);
+    WOINC_MAP_OPTION(http_transfer_timeout);
+    WOINC_MAP_OPTION(http_transfer_timeout_bps);
+    WOINC_MAP_OPTION(max_event_log_lines);
+    WOINC_MAP_OPTION(max_file_xfers);
+    WOINC_MAP_OPTION(max_file_xfers_per_project);
+    WOINC_MAP_OPTION(max_stderr_file_size);
+    WOINC_MAP_OPTION(max_stdout_file_size);
+    WOINC_MAP_OPTION(max_tasks_reported);
+    WOINC_MAP_OPTION(ncpus);
+    WOINC_MAP_OPTION(process_priority);
+    WOINC_MAP_OPTION(process_priority_special);
+    WOINC_MAP_OPTION(save_stats_days);
+    WOINC_MAP_OPTION(force_auth);
+
+#undef WOINC_MAP_OPTION
+
+    options_tree.remove_childs("alt_platform");
+    for (auto &&platform : cc_config.alt_platforms)
+        options_tree.add_child("alt_platform") = platform;
+
+    options_tree.remove_childs("exclusive_app");
+    for (auto &&app : cc_config.exclusive_apps)
+        options_tree.add_child("exclusive__app") = app;
+
+    options_tree.remove_childs("exclusive_gpu_app");
+    for (auto &&app : cc_config.exclusive_gpu_apps)
+        options_tree.add_child("exclusive_gpu_app") = app;
+
+    return do_cmd__(connection, request_tree, error_, response());
 }
 
 SetGpuModeRequest::SetGpuModeRequest(RunMode m, double d)

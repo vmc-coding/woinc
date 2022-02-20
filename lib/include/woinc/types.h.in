@@ -1,5 +1,5 @@
 /* woinc/types.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -19,6 +19,7 @@
 #ifndef WOINC_TYPES_H_
 #define WOINC_TYPES_H_
 
+#include <array>
 #include <ctime>
 #include <map>
 #include <memory>
@@ -28,6 +29,7 @@
 #include <woinc/defs.h>
 
 namespace woinc {
+
 
 struct FileRef {
     bool main_program = false;
@@ -40,6 +42,50 @@ struct FileRef {
 };
 
 typedef std::vector<FileRef> FileRefs;
+
+struct LogFlags {
+    bool file_xfer = true;
+    bool sched_ops = true;
+    bool task = true;
+
+    bool android_debug = false;
+    bool app_msg_receive = false;
+    bool app_msg_send = false;
+    bool async_file_debug = false;
+    bool benchmark_debug = false;
+    bool checkpoint_debug = false;
+    bool coproc_debug = false;
+    bool cpu_sched = false;
+    bool cpu_sched_debug = false;
+    bool cpu_sched_status = false;
+    bool dcf_debug = false;
+    bool disk_usage_debug = false;
+    bool file_xfer_debug = false;
+    bool gui_rpc_debug = false;
+    bool heartbeat_debug = false;
+    bool http_debug = false;
+    bool http_xfer_debug = false;
+    bool idle_detection_debug = false;
+    bool mem_usage_debug = false;
+    bool network_status_debug = false;
+    bool notice_debug = false;
+    bool poll_debug = false;
+    bool priority_debug = false;
+    bool proxy_debug = false;
+    bool rr_simulation = false;
+    bool rrsim_detail = false;
+    bool sched_op_debug = false;
+    bool scrsave_debug = false;
+    bool slot_debug = false;
+    bool state_debug = false;
+    bool statefile_debug = false;
+    bool suspend_debug = false;
+    bool task_debug = false;
+    bool time_debug = false;
+    bool trickle_debug = false;
+    bool unparsed_xml = false;
+    bool work_fetch_debug = false;
+};
 
 struct AccountOut {
     int error_num = 0;
@@ -113,6 +159,78 @@ struct AppVersion {
 };
 
 typedef std::vector<AppVersion> AppVersions;
+
+struct CCConfig {
+    struct ExcludeGpu {
+        int device_num = -1;
+        std::string appname;
+        std::string type;
+        std::string url;
+    };
+
+    //TODO: COPROCS config_coprocs;
+    //TODO: PROXY_INFO proxy_info;
+    bool abort_jobs_on_exit = false;
+    bool allow_multiple_clients = false;
+    bool allow_remote_gui_rpc = false;
+    bool disallow_attach = false;
+    bool dont_check_file_sizes = false;
+    bool dont_contact_ref_site = false;
+    bool dont_suspend_nci = false;
+    bool dont_use_vbox = false;
+    bool dont_use_wsl = false;
+    bool exit_after_finish = false;
+    bool exit_before_start = false;
+    bool exit_when_idle = false;
+    bool fetch_minimal_work = false;
+    bool fetch_on_update = false;
+    bool http_1_0 = false;
+    bool lower_client_priority = false;
+    bool no_alt_platform = false;
+    bool no_gpus = false;
+    bool no_info_fetch = false;
+    bool no_opencl = false;
+    bool no_priority_change = false;
+    bool os_random_only = false;
+    bool report_results_immediately = false;
+    bool run_apps_manually = false;
+    bool simple_gui_only = false;
+    bool skip_cpu_benchmarks = false;
+    bool stderr_head = false;
+    bool suppress_net_info = false;
+    bool unsigned_apps_ok = false;
+    bool use_all_gpus = false;
+    bool use_certs = false;
+    bool use_certs_only = false;
+    bool vbox_window = false;
+
+    double rec_half_life_days = 10;
+    double start_delay = 0;
+
+    int http_transfer_timeout = 300;
+    int http_transfer_timeout_bps = 10;
+    int max_event_log_lines = 2000;
+    int max_file_xfers = 8;
+    int max_file_xfers_per_project = 2;
+    int max_stderr_file_size = 0;
+    int max_stdout_file_size = 0;
+    int max_tasks_reported = 0;
+    int ncpus = -1;
+    int process_priority = -1;
+    int process_priority_special = -1;
+    int save_stats_days = 30;
+
+    std::array<int, 5> ignore_gpu_instance = {0};
+
+    std::string force_auth = "default";
+
+    std::vector<ExcludeGpu> exclude_gpus;
+    std::vector<std::string> alt_platforms;
+    std::vector<std::string> exclusive_apps;
+    std::vector<std::string> exclusive_gpu_apps;
+
+    LogFlags log_flags;
+};
 
 struct CCStatus {
     struct State {

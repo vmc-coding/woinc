@@ -1,5 +1,5 @@
 /* lib/xml.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -55,6 +55,8 @@ namespace woinc { namespace xml WOINC_LOCAL {
         Node &operator[](Tag tag);
 
         Node &add_child(Tag tag);
+
+        void remove_childs(Tag tag);
 
         bool has_child(const Tag &t) const {
             return found_child(find_child(t));

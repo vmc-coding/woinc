@@ -1,5 +1,5 @@
 /* woinc/rpc_command.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -118,6 +118,16 @@ struct GetAllProjectsListResponse {
 };
 
 typedef BOINCCommand<GetAllProjectsListRequest, GetAllProjectsListResponse, false> GetAllProjectsListCommand;
+
+// --- GetCCConfigCommand ---
+
+struct GetCCConfigRequest {};
+
+struct GetCCConfigResponse {
+    CCConfig cc_config;
+};
+
+typedef BOINCCommand<GetCCConfigRequest, GetCCConfigResponse, true> GetCCConfigCommand;
 
 // --- GetCCStatusCommand ---
 
@@ -366,6 +376,16 @@ struct RunBenchmarksRequest {};
 struct RunBenchmarksResponse : public SuccessResponse {};
 
 typedef BOINCCommand<RunBenchmarksRequest, RunBenchmarksResponse, true> RunBenchmarksCommand;
+
+// --- SetCCConfig ---
+
+struct SetCCConfigRequest {
+    CCConfig cc_config;
+};
+
+struct SetCCConfigResponse : public SuccessResponse {};
+
+typedef BOINCCommand<SetCCConfigRequest, SetCCConfigResponse, true> SetCCConfigCommand;
 
 // --- SetGlobalPreferences ---
 

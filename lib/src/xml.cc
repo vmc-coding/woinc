@@ -1,5 +1,5 @@
 /* lib/xml.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -54,6 +54,10 @@ Node &Node::operator[](Tag t) {
 Node &Node::add_child(Tag t) {
     children.push_back(Node(std::move(t)));
     return children.back();
+}
+
+void Node::remove_childs(Tag t) {
+    children.remove_if([&](auto &node) { return node.tag == t; });
 }
 
 Nodes::const_iterator Node::find_child(const Tag &t) const {
