@@ -1,5 +1,5 @@
 /* ui/qt/tabs/tasks_tab.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -124,7 +124,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                 if (selected_tasks_.size() == 1) {
                     auto &task = selected_tasks_.front();
                     ts << "this task '" << task.name << "'?\n(Progress: "
-                        << task.progress << "%, Status: " << task.status << ")";
+                        << 100 * task.progress << "%, Status: " << task.status << ")";
                 } else {
                     ts << "these " << selected_tasks_.size() << " tasks?";
                 }
