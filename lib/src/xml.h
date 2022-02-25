@@ -83,6 +83,8 @@ namespace woinc { namespace xml WOINC_LOCAL {
         std::ostream &print(std::ostream &out, size_t indention_level = 0) const;
     };
 
+    std::ostream &operator<<(std::ostream &out, const Node &node);
+
     struct Tree {
         Node root;
 

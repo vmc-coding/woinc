@@ -108,6 +108,11 @@ void parse_node(const pugi::xml_node &pugi_node, Node &woinc_node) {
 
 } // unnamed namespace
 
+
+std::ostream &operator<<(std::ostream &out, const Node &node) {
+    return node.print(out);
+}
+
 bool Tree::parse(std::istream &in, std::string &error_holder) {
     pugi::xml_document tree;
 
