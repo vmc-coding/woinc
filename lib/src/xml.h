@@ -70,17 +70,14 @@ namespace woinc { namespace xml WOINC_LOCAL {
         /*
          * Syntactic sugar to set the content of a node.
          */
+        template<typename T>
+        void operator=(T t) {
+            content = std::to_string(t);
+        }
 
+        template<typename T = Content>
         void operator=(Content c) {
             content = std::move(c);
-        }
-
-        void operator=(int i) {
-            content = std::to_string(i);
-        }
-
-        void operator=(double d) {
-            content = std::to_string(d);
         }
 
         std::ostream &print(std::ostream &out, size_t indention_level = 0) const;

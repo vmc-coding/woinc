@@ -80,11 +80,6 @@ std::ostream &Node::print(std::ostream &out, size_t indention_level) const {
         for (const auto &child : children)
             child.print(out, indention_level + 1);
         out << indent << "</" << tag << ">\n";
-    } else if (content.empty()) {
-        // From https://boinc.berkeley.edu/trac/wiki/GuiRpcProtocol (Feb 17)
-        // "Self-closing tags must not have a space before the slash,
-        // or current client and server will not parse it correctly."
-        out << indent << "<" << tag << "/>\n";
     } else {
         out << indent << "<" << tag << ">"
             << content
