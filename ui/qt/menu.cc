@@ -75,7 +75,8 @@ FileMenu::FileMenu(const QString &title, QWidget *parent)
     select_computer->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_I);
     connect(select_computer, &QAction::triggered, this, &FileMenu::computer_to_be_selected);
 
-    connect(addAction("Shut down connected client..."), &QAction::triggered, [&]() {
+    shut_down_client_ = addAction("Shut down connected client...");
+    connect(shut_down_client_, &QAction::triggered, [&]() {
         emit shutdown_to_be_triggered(selected_host_);
     });
 
@@ -86,6 +87,14 @@ FileMenu::FileMenu(const QString &title, QWidget *parent)
     auto *exit = addAction("Exit woincqt");
     exit->setShortcuts(QKeySequence::Quit);
     connect(exit, &QAction::triggered, this, &FileMenu::to_quit);
+}
+
+void FileMenu::host_selected_() {
+    shut_down_client_->setEnabled(true);
+}
+
+void FileMenu::host_unselected_(){
+    shut_down_client_->setEnabled(false);
 }
 
 // ----- ViewMenu -----

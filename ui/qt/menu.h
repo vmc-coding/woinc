@@ -24,6 +24,8 @@
 #include "qt/defs.h"
 #include "qt/types.h"
 
+struct QAction;
+
 namespace woinc { namespace ui { namespace qt {
 
 // helper class while we support only one selected host
@@ -65,6 +67,13 @@ class FileMenu : public HostAwareMenu {
         void to_quit();
         void computer_to_be_selected();
         void shutdown_to_be_triggered(QString host);
+
+    protected:
+        void host_selected_() final override;
+        void host_unselected_() final override;
+
+    private:
+        QAction *shut_down_client_;
 };
 
 class ViewMenu : public QMenu {
