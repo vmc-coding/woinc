@@ -26,6 +26,7 @@ set(WOINCQT_SOURCES
     dialogs/preferences_dialog.cc
     dialogs/project_properties_dialog.cc
     dialogs/select_computer_dialog.cc
+    dialogs/simple_progress_animation.cc
     dialogs/task_properties_dialog.cc
 
     tabs/delegates.cc

@@ -36,25 +36,9 @@ struct QTimer;
 namespace woinc { namespace ui { namespace qt {
 
 struct Controller;
+struct SimpleProgressAnimation;
 
 namespace add_project_wizard_internals {
-
-class SimpleProgressAnimation : public QWidget {
-    Q_OBJECT
-
-    public:
-        SimpleProgressAnimation(QWidget *parent = nullptr);
-        virtual ~SimpleProgressAnimation();
-
-        void start(QString base_msg);
-        void stop();
-
-    private:
-        QTimer *timer_;
-        QString base_msg_;
-        int counter_;
-        QLabel *label_;
-};
 
 class ChooseProjectPage: public QWizardPage {
     Q_OBJECT

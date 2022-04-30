@@ -42,6 +42,7 @@
 #endif
 
 #include "qt/controller.h"
+#include "qt/dialogs/simple_progress_animation.h"
 #include "qt/dialogs/utils.h"
 
 namespace {
@@ -77,47 +78,6 @@ QStringList extract_categories__(const woinc::AllProjectsList &projects) {
 namespace woinc { namespace ui { namespace qt {
 
 namespace add_project_wizard_internals {
-
-// ----- SimpleProgressAnimation -----
-
-SimpleProgressAnimation::SimpleProgressAnimation(QWidget *parent)
-    : QWidget(parent), timer_(new QTimer(this)), label_(new QLabel(this))
-{
-    label_->setStyleSheet("font-weight: bold");
-    label_->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    label_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    setLayout(add_widgets__(new QVBoxLayout, label_));
-
-    connect(timer_, &QTimer::timeout, [=]() {
-        label_->setText(base_msg_ + QStringLiteral(".").repeated(counter_));
-        counter_ = (counter_ + 1) % 4;
-
-        if (timer_->isSingleShot()) {
-            timer_->setInterval(500);
-            timer_->setSingleShot(false);
-            timer_->start();
-        }
-    });
-}
-
-SimpleProgressAnimation::~SimpleProgressAnimation() = default;
-
-void SimpleProgressAnimation::start(QString base_msg) {
-    base_msg_ = std::move(base_msg);
-    base_msg_.append(' ');
-    counter_ = 0;
-
-    // don't show anything for an initial delay of 200ms
-    label_->clear();
-    timer_->setInterval(200);
-    timer_->setSingleShot(true);
-    timer_->start();
-}
-
-void SimpleProgressAnimation::stop() {
-    timer_->stop();
-    label_->clear();
-}
 
 // ----- ChooseProjectPage -----
 

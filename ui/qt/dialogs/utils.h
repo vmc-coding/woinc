@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/utils.h --
-   Written and Copyright (C) 2021 by vmc.
+   Written and Copyright (C) 2021-2022 by vmc.
 
    This file is part of woinc.
 
@@ -17,6 +17,12 @@
    along with woinc. If not, see <http://www.gnu.org/licenses/>. */
 
 // TODO C++17: Use [[maybe_unused]] instead of template<typename AVOID_UNUSED_WARNING = void>
+
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QWidget>
 
 namespace {
 
