@@ -19,3 +19,5 @@ add_custom_target(ui-qt-tests DEPENDS
 
 add_custom_target(check-ui-qt COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS ui-qt-tests
     COMMENT "Run test cases for the Qt UI" VERBATIM)
+
+set(WOINC_ALL_TEST_TARGETS ${WOINC_ALL_TEST_TARGETS} ui-qt-tests PARENT_SCOPE)

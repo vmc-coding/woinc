@@ -99,6 +99,9 @@ target_link_libraries(woinc PRIVATE pugixml Threads::Threads)
 
 add_subdirectory(tests EXCLUDE_FROM_ALL)
 
+set(WOINC_ALL_TEST_TARGETS ${WOINC_ALL_TEST_TARGETS} PARENT_SCOPE)
+set(WOINC_ALL_MANUAL_TEST_TARGETS ${WOINC_ALL_MANUAL_TEST_TARGETS} PARENT_SCOPE)
+
 ### install the woinc library as target woinc::core ###
 
 set_target_properties(woinc PROPERTIES EXPORT_NAME core)

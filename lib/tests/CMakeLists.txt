@@ -33,7 +33,7 @@ set(WOINC_TESTS
 add_executable(manual_posix_socket_tests test.cc manual/posix_socket_tests.cc ../src/socket_posix.cc)
 woincSetupCompilerOptions(manual_posix_socket_tests)
 
-set(MANUAL_WOINC_TESTS
+set(WOINC_MANUAL_TESTS
     manual_posix_socket_tests
 )
 
@@ -43,14 +43,17 @@ endforeach()
 
 # add custom targets
 
-add_custom_target(tests DEPENDS
+add_custom_target(lib-tests DEPENDS
     ${WOINC_TESTS}
     ${WOINC_CMD_TESTS}
-    COMMENT "Build test cases" VERBATIM)
+    COMMENT "Build test cases for libwoinc" VERBATIM)
 
-add_custom_target(manual-tests DEPENDS
-    ${MANUAL_WOINC_TESTS}
-    COMMENT "Build manual test cases" VERBATIM)
+add_custom_target(lib-manual-tests DEPENDS
+    ${WOINC_MANUAL_TESTS}
+    COMMENT "Build manual test cases for libwoinc" VERBATIM)
 
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS tests
-    COMMENT "Run test cases" VERBATIM)
+add_custom_target(check-lib COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS lib-tests
+    COMMENT "Run test cases for libwoinc" VERBATIM)
+
+set(WOINC_ALL_TEST_TARGETS ${WOINC_ALL_TEST_TARGETS} lib-tests PARENT_SCOPE)
+set(WOINC_ALL_MANUAL_TEST_TARGETS ${WOINC_ALL_MANUAL_TEST_TARGETS} lib-manual-tests PARENT_SCOPE)

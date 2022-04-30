@@ -75,6 +75,8 @@ find_package(Threads REQUIRED)
 
 ### subprojects ###
 
+# to be able to provide global tests and check targets
+# we collect all sub targets in WOINC_ALL_TEST_TARGETS and WOINC_ALL_MANUAL_TEST_TARGETS
 enable_testing()
 
 if(WOINC_BUILD_LIB)
@@ -92,3 +94,12 @@ elseif(NEED_WOINC_LIBUI)
 endif()
 
 add_subdirectory(ui)
+
+add_custom_target(tests DEPENDS ${WOINC_ALL_TEST_TARGETS}
+    COMMENT "Build test cases" VERBATIM)
+
+add_custom_target(manual-tests DEPENDS ${WOINC_ALL_MANUAL_TEST_TARGETS}
+    COMMENT "Build manual test cases" VERBATIM)
+
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS tests
+    COMMENT "Run test cases" VERBATIM)

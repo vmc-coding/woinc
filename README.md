@@ -115,6 +115,12 @@ Or implement them and create a pull request ;)
       $ ~/woinc/bin/woinccmd
     ```
 
+## tests
+Build and run all tests with the 'check' target:
+```shell script
+    $ make check
+```
+
 ## Running woinccmd
 Sorry, all I have is
 ```shell script
