@@ -557,7 +557,7 @@ CommandStatus SetCCConfigCommand::execute(Connection &connection) {
     auto &options_tree = ccc_node["options"];
     auto &cc_config = request().cc_config;
 
-#define WOINC_MAP_OPTION(OPTION) do { options_tree[#OPTION] = std::move(cc_config.OPTION); } while(false)
+#define WOINC_MAP_OPTION(OPTION) do { options_tree[#OPTION] = cc_config.OPTION; } while(false)
 
     WOINC_MAP_OPTION(abort_jobs_on_exit);
     WOINC_MAP_OPTION(allow_multiple_clients);
