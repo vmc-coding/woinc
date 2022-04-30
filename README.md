@@ -65,24 +65,24 @@ Or implement them and create a pull request ;)
 ## building
 - get the source of woinc, e.g. by cloning the repo
     ```shell script
-      $ git clone https://github.com/vmc-coding/woinc.git woinc.git
+    $ git clone https://github.com/vmc-coding/woinc.git woinc.git
     ```
 - create an out of tree build directory
     ```shell script
-      $ mkdir -p woinc.git/build && cd woinc.git/build
+    $ mkdir -p woinc.git/build && cd woinc.git/build
     ```
 - configure the build with cmake (cross compilation not yet tested, I'd help, if asked for)
 
     basic:
     ```shell script
-      $ cmake ..
-      $ make
+    $ cmake ..
+    $ make
     ```
     for a parallel build add the -j parameter for the last step, e.g.
     ```
-      $ make -j4
-      # or if nproc is installed:
-      $ make -j $(nproc)
+    $ make -j4
+    # or if nproc is installed:
+    $ make -j $(nproc)
     ```
     of course there are a lot of options to set:
     ```
@@ -108,23 +108,23 @@ Or implement them and create a pull request ;)
     ```
     example with flags
     ```shell script
-      $ git clone https://github.com/vmc-coding/woinc.git woinc.git
-      $ mkdir -p woinc.git/build && cd woinc.git/build
-      $ cmake -DCMAKE_INSTALL_PREFIX=~/woinc -DCMAKE_CXX_FLAGS="-march=native -O2 -DNDEBUG" ..
-      $ make -j $(nproc) install
-      $ ~/woinc/bin/woinccmd
+    $ git clone https://github.com/vmc-coding/woinc.git woinc.git
+    $ mkdir -p woinc.git/build && cd woinc.git/build
+    $ cmake -DCMAKE_INSTALL_PREFIX=~/woinc -DCMAKE_CXX_FLAGS="-march=native -O2 -DNDEBUG" ..
+    $ make -j $(nproc) install
+    $ ~/woinc/bin/woinccmd
     ```
 
 ## tests
 Build and run all tests with the 'check' target:
 ```shell script
-    $ make check
+$ make check
 ```
 
 ## Running woinccmd
 Sorry, all I have is
 ```shell script
-    $ woinccmd -?
+$ woinccmd -?
 ```
 No manpage yet. But it's compatible with boinccmd - for the stuff implemented - so you may see their manpage.
 
