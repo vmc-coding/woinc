@@ -1164,14 +1164,13 @@ void do_show_tasks_statistics(Client &client) {
     });
 
     for (auto &&project : projects) {
-        auto &counts_by_status = counts_by_project_by_status[project.project_name];
-
         for (auto &&task : tasks) {
             if (project.master_url != task.project_url)
                 continue;
 
             std::string status{map_task_status(task, cc_status)};
 
+            auto &counts_by_status = counts_by_project_by_status[project.project_name];
             auto iter = counts_by_status.find(status);
             if (iter != counts_by_status.end())
                 iter->second ++;
