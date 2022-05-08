@@ -1012,6 +1012,30 @@ void do_lookup_account_cmd(Client &client, CommandContext ctx) {
 #ifdef WOINC_CLI_COMMANDS
 namespace {
 
+woinc::Projects load_projects(Client &client) {
+    wrpc::GetProjectStatusCommand project_cmd;
+    client.do_cmd(project_cmd);
+    return project_cmd.response().projects;
+}
+
+woinc::Tasks load_tasks(Client &client) {
+    wrpc::GetResultsCommand task_cmd;
+    client.do_cmd(task_cmd);
+    return task_cmd.response().tasks;
+}
+
+woinc::CCStatus load_cc_status(Client &client) {
+    wrpc::GetCCStatusCommand cc_cmd;
+    client.do_cmd(cc_cmd);
+    return cc_cmd.response().cc_status;
+}
+
+woinc::Statistics load_statistics(Client &client) {
+    wrpc::GetStatisticsCommand stats_cmd;
+    client.do_cmd(stats_cmd);
+    return stats_cmd.response().statistics;
+}
+
 std::string duration_to_string(double d) {
     auto dv = std::div(static_cast<int>(round(d)), 24 * 3600);
     int days = dv.quot;
@@ -1129,23 +1153,9 @@ std::string map_task_status(const woinc::Task &task, const woinc::CCStatus &cc_s
 }
 
 void do_show_tasks_statistics(Client &client) {
-    woinc::CCStatus cc_status;
-    woinc::Projects projects;
-    woinc::Tasks tasks;
-
-    {
-        wrpc::GetCCStatusCommand cc_cmd;
-        client.do_cmd(cc_cmd);
-        cc_status = std::move(cc_cmd.response().cc_status);
-
-        wrpc::GetResultsCommand task_cmd;
-        client.do_cmd(task_cmd);
-        tasks = std::move(task_cmd.response().tasks);
-
-        wrpc::GetProjectStatusCommand project_cmd;
-        client.do_cmd(project_cmd);
-        projects = std::move(project_cmd.response().projects);
-    }
+    woinc::CCStatus cc_status{load_cc_status(client)};
+    woinc::Projects projects{load_projects(client)};
+    woinc::Tasks tasks{load_tasks(client)};
 
     std::map<std::string, std::map<std::string, int>> counts_by_project_by_status;
 
@@ -1201,18 +1211,8 @@ void do_show_tasks_statistics(Client &client) {
 }
 
 void do_sum_remaining_cpu_time(Client &client) {
-    woinc::Projects projects;
-    woinc::Tasks tasks;
-
-    {
-        wrpc::GetProjectStatusCommand project_cmd;
-        client.do_cmd(project_cmd);
-        projects = std::move(project_cmd.response().projects);
-
-        wrpc::GetResultsCommand task_cmd;
-        client.do_cmd(task_cmd);
-        tasks = std::move(task_cmd.response().tasks);
-    }
+    woinc::Projects projects{load_projects(client)};
+    woinc::Tasks tasks{load_tasks(client)};
 
     std::map<std::string, bool> is_non_cpu_intensive;
     std::map<std::string, double> seconds_by_project;
@@ -1262,10 +1262,7 @@ void do_estimate_times(Client &client) {
         out << std::right << std::setw(width) << what << NL__;
     };
 
-    wrpc::GetResultsCommand cmd;
-    client.do_cmd(cmd);
-
-    for (const auto &task : cmd.response().tasks) {
+    for (const auto &task : load_tasks(client)) {
         if (task.ready_to_report || task.active_task == nullptr)
             continue;
 
@@ -1293,7 +1290,10 @@ void do_estimate_times(Client &client) {
     }
 }
 
-void print(const woinc::Statistics &statistics, const woinc::Projects &projects, bool user_mode) {
+void do_get_statistics(Client &client, bool user_mode) {
+    woinc::Statistics statistics{load_statistics(client)};
+    woinc::Projects projects{load_projects(client)};
+
     auto indent = INDENT3__;
     int counter = 0;
 
@@ -1354,16 +1354,6 @@ void print(const woinc::Statistics &statistics, const woinc::Projects &projects,
                              stats.day,
                              user_mode ? stats.user_total_credit : stats.host_total_credit);
     }
-}
-
-void do_get_statistics(Client &client, bool user_mode) {
-    wrpc::GetProjectStatusCommand projects_cmd;
-    client.do_cmd(projects_cmd);
-
-    wrpc::GetStatisticsCommand stats_cmd;
-    client.do_cmd(stats_cmd);
-
-    print(stats_cmd.response().statistics, projects_cmd.response().projects, user_mode);
 }
 
 } // woinc commands
