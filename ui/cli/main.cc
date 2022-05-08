@@ -1,5 +1,5 @@
 /* ui/cli/main.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -28,6 +28,7 @@
 #include <map>
 #include <numeric>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <thread>
 #include <type_traits>
@@ -228,12 +229,13 @@ COMMANDS:
     out << R"(
   ### further woinccmd commands ###
 
-  --sum_remaining_cpu_time          compute the sum of the remaining cpu
-                                    time of all non finished WUs
   --estimate_times                  estimate the compuation time of running WUs
                                     based on the elapsed time
   --get_statistics [ "user" | "host" ]
                                     show statistics of all attached projects
+  --show_tasks_statistics           show aggregated statistics of all tasks on the client
+  --sum_remaining_cpu_time          compute the sum of the remaining cpu
+                                    time of all non finished WUs
 )";
 #endif
     exit(exit_code);
@@ -1030,8 +1032,11 @@ std::string duration_to_string(double d) {
 
 template<typename ITER>
 std::ostream &print_table(std::ostream &out, ITER first, ITER last) {
-    const auto num_items_per_entry = std::tuple_size<typename ITER::value_type>();
-    std::array<size_t, num_items_per_entry> widths = { 0 };
+    if (first == last)
+        return out;
+
+    const auto num_items_per_entry = first->size();
+    std::vector<size_t> widths(num_items_per_entry, 0);
 
     // compute width of each column
     for (auto iter = first; iter != last; ++iter)
@@ -1069,6 +1074,130 @@ std::ostream &print_table(std::ostream &out, ITER first, ITER last) {
     }
 
     return out;
+}
+
+std::string map_task_status(const woinc::Task &task, const woinc::CCStatus &cc_status) {
+    std::string status {"Other"};
+
+    if (task.state == woinc::ResultClientState::FilesDownloading) {
+        if (task.ready_to_report) {
+            status = "Download failed";
+        } else {
+            status = "Downloading";
+            if (cc_status.network.suspend_reason != woinc::SuspendReason::NotSuspended)
+                status = " (suspended)";
+        }
+    } else if (task.state == woinc::ResultClientState::FilesDownloaded) {
+        if (task.project_suspended_via_gui) {
+            status = "Project suspended by user";
+        } else if (task.suspended_via_gui) {
+            status = "Task suspended by user";
+        } else if (cc_status.gpu.suspend_reason != woinc::SuspendReason::NotSuspended) {
+            status = "GPU suspended";
+        } else if (task.active_task != nullptr) {
+            if (task.active_task->too_large || task.active_task->needs_shmem) {
+                status = "Waiting for (shared) memory";
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Scheduled) {
+                status = "Running";
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Preempted) {
+                status = "Waiting to run";
+            } else if (task.active_task->scheduler_state == woinc::SchedulerState::Uninitialized) {
+                status = "Ready to start";
+            }
+        } else {
+            status = "Ready to start";
+        }
+    } else if (task.state == woinc::ResultClientState::ComputeError) {
+        status = "Computation error";
+    } else if (task.state == woinc::ResultClientState::FilesUploading) {
+        if (task.ready_to_report) {
+            status = "Upload failed";
+        } else {
+            status = "Uploading";
+            if (cc_status.network.suspend_reason != woinc::SuspendReason::NotSuspended)
+                status = " (suspended)";
+        }
+    } else if (task.state == woinc::ResultClientState::Aborted) {
+        status = "Aborted";
+    } else if (task.got_server_ack) {
+        status = "Acknowledged";
+    } else if (task.ready_to_report) {
+        status = "Ready to report";
+    }
+
+    return status;
+}
+
+void do_show_tasks_statistics(Client &client) {
+    woinc::CCStatus cc_status;
+    woinc::Projects projects;
+    woinc::Tasks tasks;
+
+    {
+        wrpc::GetCCStatusCommand cc_cmd;
+        client.do_cmd(cc_cmd);
+        cc_status = std::move(cc_cmd.response().cc_status);
+
+        wrpc::GetResultsCommand task_cmd;
+        client.do_cmd(task_cmd);
+        tasks = std::move(task_cmd.response().tasks);
+
+        wrpc::GetProjectStatusCommand project_cmd;
+        client.do_cmd(project_cmd);
+        projects = std::move(project_cmd.response().projects);
+    }
+
+    std::map<std::string, std::map<std::string, int>> counts_by_project_by_status;
+
+    std::sort(projects.begin(), projects.end(), [](auto &&a, auto &&b) {
+        return a.project_name < b.project_name;
+    });
+
+    for (auto &&project : projects) {
+        auto &counts_by_status = counts_by_project_by_status[project.project_name];
+
+        for (auto &&task : tasks) {
+            if (project.master_url != task.project_url)
+                continue;
+
+            std::string status{map_task_status(task, cc_status)};
+
+            auto iter = counts_by_status.find(status);
+            if (iter != counts_by_status.end())
+                iter->second ++;
+            else
+                counts_by_status.emplace(status, 1);
+        }
+    }
+
+    std::set<std::string> seen_states;
+    for (auto &&piter : counts_by_project_by_status)
+        for (auto &&stiter : piter.second)
+            seen_states.insert(stiter.first);
+
+    std::vector<std::vector<std::string>> entries;
+    entries.reserve(counts_by_project_by_status.size() + 1);
+
+    {
+        std::vector<std::string> header;
+        header.push_back("Project");
+        header.insert(header.end(), seen_states.cbegin(), seen_states.cend());
+        entries.push_back(std::move(header));
+    }
+
+    for (auto &&piter : counts_by_project_by_status) {
+        const auto &counts_by_status = piter.second;
+        std::vector<std::string> entry;
+        entry.push_back(piter.first);
+        for (auto &&state : seen_states) {
+            auto citer = counts_by_status.find(state);
+            entry.push_back(citer != counts_by_status.end() ? std::to_string(citer->second) : "");
+        }
+        assert(entry.size() == entries[0].size());
+        entries.push_back(std::move(entry));
+    }
+
+    print_table(std::cout, entries.cbegin(), entries.cend());
 }
 
 void do_sum_remaining_cpu_time(Client &client) {
@@ -1366,10 +1495,6 @@ CommandMap command_map() {
             create_cmd_executor<wrpc::SetRunModeCommand>()
 #ifdef WOINC_CLI_COMMANDS
         }},
-        { "--sum_remaining_cpu_time", {
-            [](Arguments &) -> CommandContext { return nullptr; },
-            [](Client &client, CommandContext) { do_sum_remaining_cpu_time(client); }
-        }},
         { "--estimate_times", {
             [](Arguments &) -> CommandContext { return nullptr; },
             [](Client &client, CommandContext) { do_estimate_times(client); }
@@ -1390,6 +1515,14 @@ CommandMap command_map() {
                 do_get_statistics(client, *static_cast<bool *>(ctx));
                 delete static_cast<bool *>(ctx);
             }
+        }},
+        { "--show_tasks_statistics", {
+            [](Arguments &) -> CommandContext { return nullptr; },
+            [](Client &client, CommandContext) { do_show_tasks_statistics(client); }
+        }},
+        { "--sum_remaining_cpu_time", {
+            [](Arguments &) -> CommandContext { return nullptr; },
+            [](Client &client, CommandContext) { do_sum_remaining_cpu_time(client); }
 #endif
         }}
     };
