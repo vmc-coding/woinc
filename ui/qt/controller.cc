@@ -1,5 +1,5 @@
 /* ui/qt/controller.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -33,7 +33,7 @@
 
 #include "qt/adapter.h"
 
-#define WOINC_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
+#define WOINC_LOCK_GUARD std::lock_guard<decltype(mutex_)> guard(mutex_)
 
 namespace {
 
@@ -158,7 +158,7 @@ class Controller::Poller {
         }
 
     private:
-        std::mutex lock_;
+        std::mutex mutex_;
         QTimer timer_;
         std::vector<std::unique_ptr<Subscription>> subscriptions_;
 };

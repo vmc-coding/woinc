@@ -1,5 +1,5 @@
 /* ui/qt/controller.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -139,7 +139,7 @@ class Controller : public QObject {
         struct Poller;
         std::unique_ptr<woinc::ui::Controller> ctrl_;
         std::unique_ptr<Poller> poller_;
-        std::mutex lock_;
+        std::mutex mutex_;
         std::vector<std::pair<QString, QString>> pending_logins_;
 };
 
