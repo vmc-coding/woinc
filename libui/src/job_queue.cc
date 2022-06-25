@@ -60,9 +60,10 @@ Job *JobQueue::pop() {
 }
 
 void JobQueue::shutdown() {
-    mutex_.lock();
-    shutdown_ = true;
-    mutex_.unlock();
+    {
+        std::lock_guard<decltype(mutex_)> guard(mutex_);
+        shutdown_ = true;
+    }
 
     condition_.notify_all();
 }
@@ -71,19 +72,25 @@ void JobQueue::push_(Job *job, bool front) {
     if (job == nullptr)
         throw std::invalid_argument("Received nullptr instead of a job");
 
-    mutex_.lock();
-    if (!shutdown_) {
-        if (front)
-            jobs_.push_front(job);
-        else
-            jobs_.push_back(job);
-        mutex_.unlock();
-        condition_.notify_one();
-    } else {
-        mutex_.unlock();
-        // the queue takes ownership but as the shutdown is triggered, we simply delete the job
-        delete job;
+    bool pushed = true;
+
+    {
+        std::lock_guard<decltype(mutex_)> guard(mutex_);
+
+        if (!shutdown_) {
+            if (front)
+                jobs_.push_front(job);
+            else
+                jobs_.push_back(job);
+        } else {
+            pushed = false;
+        }
     }
+
+    if (pushed)
+        condition_.notify_one();
+    else // the queue takes ownership but as the shutdown is triggered, we simply delete the job
+        delete job;
 }
 
 }}
