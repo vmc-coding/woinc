@@ -42,20 +42,21 @@ void JobQueue::push_back(Job *job) {
 }
 
 Job *JobQueue::pop() {
+    Job *job = nullptr;
     std::unique_lock<std::mutex> lock(mutex_);
 
-    while (!shutdown_) {
-        if (jobs_.empty()) {
-            condition_.wait(lock);
-        } else {
-            Job *job = jobs_.front();
-            assert(job != nullptr);
-            jobs_.pop_front();
-            return job;
-        }
+    condition_.wait(lock, [this]() { return !jobs_.empty() || shutdown_; });
+
+    if (!shutdown_) {
+        assert(!jobs_.empty());
+
+        job = jobs_.front();
+        jobs_.pop_front();
+
+        assert(job);
     }
 
-    return nullptr;
+    return job;
 }
 
 void JobQueue::shutdown() {
