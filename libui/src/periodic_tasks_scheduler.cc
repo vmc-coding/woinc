@@ -84,14 +84,14 @@ PeriodicTasksScheduler::PeriodicTasksScheduler(PeriodicTasksSchedulerContext &co
 {}
 
 void PeriodicTasksScheduler::operator()() {
-    const auto max_wake_up__time = std::chrono::milliseconds(200);
+    const auto max_wake_up_time = std::chrono::milliseconds(200);
 
     std::unique_lock<decltype(context_.mutex_)> guard(context_.mutex_);
 
     Configuration::Intervals intervals(context_.configuration_.intervals());
     auto last_cache_update = std::chrono::steady_clock::now();
 
-    auto wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up__time);
+    auto wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up_time);
 
     while (!context_.shutdown_triggered_) {
         const auto now = std::chrono::steady_clock::now();
@@ -99,7 +99,7 @@ void PeriodicTasksScheduler::operator()() {
         // update interval cache once a second
         if (now - last_cache_update > std::chrono::seconds(1)) {
             intervals = context_.configuration_.intervals();
-            wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up__time);
+            wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up_time);
             last_cache_update = now;
         }
 
