@@ -1,5 +1,5 @@
 /* libui/src/handler_registry.h --
-   Written and Copyright (C) 2019 by vmc.
+   Written and Copyright (C) 2019-2022 by vmc.
 
    This file is part of woinc.
 
@@ -42,7 +42,7 @@ class WOINCUI_LOCAL HandlerRegistry {
         void for_periodic_task_handler(std::function<void(PeriodicTaskHandler &handler)> f) const;
 
     private:
-        mutable std::mutex lock_;
+        mutable std::mutex mutex_;
 
         std::vector<HostHandler *> host_handler_;
         std::vector<PeriodicTaskHandler *> periodic_task_handler_;

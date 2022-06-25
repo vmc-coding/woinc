@@ -1,5 +1,5 @@
 /* libui/src/periodic_tasks_scheduler.h --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -52,7 +52,7 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
 
         const Configuration &configuration_;
 
-        std::mutex lock_;
+        std::mutex mutex_;
         std::condition_variable condition_;
 
         bool shutdown_triggered_ = false;

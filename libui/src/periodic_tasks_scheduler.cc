@@ -1,5 +1,5 @@
 /* libui/src/periodic_tasks_scheduler.cc --
-   Written and Copyright (C) 2018-2021 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -37,7 +37,7 @@ PeriodicTasksSchedulerContext::PeriodicTasksSchedulerContext(const Configuration
 {}
 
 void PeriodicTasksSchedulerContext::add_host(const std::string &host, HostController &controller) {
-    std::lock_guard<decltype(lock_)> guard(lock_);
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
     tasks_.emplace(host, std::array<Task, 9> {
         Task(PeriodicTask::GetCCStatus),
         Task(PeriodicTask::GetClientState),
@@ -54,14 +54,14 @@ void PeriodicTasksSchedulerContext::add_host(const std::string &host, HostContro
 }
 
 void PeriodicTasksSchedulerContext::remove_host(const std::string &host) {
-    std::lock_guard<decltype(lock_)> guard(lock_);
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
     tasks_.erase(host);
     host_controllers_.erase(host);
     states_.erase(host);
 }
 
 void PeriodicTasksSchedulerContext::reschedule_now(const std::string &host, PeriodicTask to_reschedule) {
-    std::lock_guard<decltype(lock_)> guard(lock_);
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
 
     for (auto &task : tasks_.at(host)) {
         if (task.type == to_reschedule) {
@@ -73,7 +73,7 @@ void PeriodicTasksSchedulerContext::reschedule_now(const std::string &host, Peri
 }
 
 void PeriodicTasksSchedulerContext::trigger_shutdown() {
-    std::lock_guard<decltype(lock_)> guard(lock_);
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
     shutdown_triggered_ = true;
 }
 
@@ -86,7 +86,7 @@ PeriodicTasksScheduler::PeriodicTasksScheduler(PeriodicTasksSchedulerContext &co
 void PeriodicTasksScheduler::operator()() {
     const auto max_wake_up__time = std::chrono::milliseconds(200);
 
-    std::unique_lock<decltype(context_.lock_)> guard(context_.lock_);
+    std::unique_lock<decltype(context_.mutex_)> guard(context_.mutex_);
 
     Configuration::Intervals intervals(context_.configuration_.intervals());
     auto last_cache_update = std::chrono::steady_clock::now();
@@ -121,7 +121,7 @@ void PeriodicTasksScheduler::handle_post_execution(const std::string &host, Job 
 
     PeriodicJob *job = static_cast<PeriodicJob *>(j);
 
-    std::lock_guard<decltype(context_.lock_)> guard(context_.lock_);
+    std::lock_guard<decltype(context_.mutex_)> guard(context_.mutex_);
 
     auto &tasks = context_.tasks_.at(host);
     auto task = std::find_if(tasks.begin(), tasks.end(), [&](const auto &t) {

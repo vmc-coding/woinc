@@ -1,5 +1,5 @@
 /* libui/src/job_queue.cc --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -26,7 +26,7 @@ namespace woinc { namespace ui {
 JobQueue::~JobQueue() {
     shutdown();
 
-    std::lock_guard<decltype(lock_)> guard(lock_);
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
     while (!jobs_.empty()) {
         delete jobs_.front();
         jobs_.pop_front();
@@ -42,7 +42,7 @@ void JobQueue::push_back(Job *job) {
 }
 
 Job *JobQueue::pop() {
-    std::unique_lock<std::mutex> lock(lock_);
+    std::unique_lock<std::mutex> lock(mutex_);
 
     while (!shutdown_) {
         if (jobs_.empty()) {
@@ -59,9 +59,9 @@ Job *JobQueue::pop() {
 }
 
 void JobQueue::shutdown() {
-    lock_.lock();
+    mutex_.lock();
     shutdown_ = true;
-    lock_.unlock();
+    mutex_.unlock();
 
     condition_.notify_all();
 }
@@ -70,16 +70,16 @@ void JobQueue::push_(Job *job, bool front) {
     if (job == nullptr)
         throw std::invalid_argument("Received nullptr instead of a job");
 
-    lock_.lock();
+    mutex_.lock();
     if (!shutdown_) {
         if (front)
             jobs_.push_front(job);
         else
             jobs_.push_back(job);
-        lock_.unlock();
+        mutex_.unlock();
         condition_.notify_one();
     } else {
-        lock_.unlock();
+        mutex_.unlock();
         // the queue takes ownership but as the shutdown is triggered, we simply delete the job
         delete job;
     }

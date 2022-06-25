@@ -1,5 +1,5 @@
 /* libui/src/handler_registry.cc --
-   Written and Copyright (C) 2019 by vmc.
+   Written and Copyright (C) 2019-2022 by vmc.
 
    This file is part of woinc.
 
@@ -22,7 +22,7 @@
 
 namespace woinc { namespace ui {
 
-#define WOINC_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
+#define WOINC_LOCK_GUARD std::lock_guard<decltype(mutex_)> guard(mutex_)
 
 void HandlerRegistry::register_handler(HostHandler *handler) {
     WOINC_LOCK_GUARD;

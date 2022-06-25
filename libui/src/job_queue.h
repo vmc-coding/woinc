@@ -1,5 +1,5 @@
 /* libui/src/job_queue.h --
-   Written and Copyright (C) 2017, 2018 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -55,7 +55,7 @@ class WOINCUI_LOCAL JobQueue {
     private:
         bool shutdown_ = false;
 
-        std::mutex lock_;
+        std::mutex mutex_;
         std::condition_variable condition_;
 
         typedef std::deque<Job *> Queue;

@@ -1,5 +1,5 @@
 /* libui/src/configuration.cc --
-   Written and Copyright (C) 2018-2021 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cassert>
 
-#define WOINC_CONFIGURATION_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
+#define WOINC_CONFIGURATION_LOCK_GUARD std::lock_guard<decltype(mutex_)> guard(mutex_)
 
 namespace woinc { namespace ui {
 

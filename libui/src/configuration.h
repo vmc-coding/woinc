@@ -1,5 +1,5 @@
 /* libui/src/configuration.h --
-   Written and Copyright (C) 2018-2021 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -53,7 +53,7 @@ class WOINCUI_LOCAL Configuration {
         void remove_host(const std::string &host);
 
     private:
-        mutable std::mutex lock_;
+        mutable std::mutex mutex_;
 
         Intervals intervals_ = {
             std::chrono::milliseconds(1 * 1000),    // GetCCStatus

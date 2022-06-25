@@ -1,5 +1,5 @@
 /* ui/controller/controller.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -35,7 +35,7 @@
 #include "host_controller.h"
 #include "periodic_tasks_scheduler.h"
 
-#define WOINC_LOCK_GUARD std::lock_guard<decltype(lock_)> guard(lock_)
+#define WOINC_LOCK_GUARD std::lock_guard<decltype(mutex_)> guard(mutex_)
 
 namespace wrpc = woinc::rpc;
 
@@ -162,7 +162,7 @@ class WOINCUI_LOCAL Controller::Impl {
 
 
     private:
-        std::mutex lock_;
+        std::mutex mutex_;
 
         bool shutdown_ = false;
 
