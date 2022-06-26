@@ -1,5 +1,5 @@
 /* libui/src/client.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -24,11 +24,11 @@ Client::~Client() {
     disconnect();
 }
 
-bool Client::connect(const std::string &host, std::uint16_t port) {
+bool Client::connect(std::string host, std::uint16_t port) {
     disconnect();
 
-    host_ = host;
-    connected_ = rpc_connection_.open(host, port);
+    host_ = std::move(host);
+    connected_ = rpc_connection_.open(host_, port);
 
     return connected_;
 }

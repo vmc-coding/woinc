@@ -49,7 +49,7 @@ class WOINCUI_LOCAL Configuration {
 
     private:
         friend class Controller;
-        void add_host(const std::string &host);
+        void add_host(std::string host);
         void remove_host(const std::string &host);
 
     private:

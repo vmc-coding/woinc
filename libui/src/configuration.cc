@@ -64,10 +64,10 @@ bool Configuration::schedule_periodic_tasks(const std::string &host) const {
     return host_configurations_.at(host).schedule_periodic_tasks;
 }
 
-void Configuration::add_host(const std::string &host) {
+void Configuration::add_host(std::string host) {
     WOINC_CONFIGURATION_LOCK_GUARD;
     assert(host_configurations_.find(host) == host_configurations_.end());
-    host_configurations_.emplace(host, HostConfiguration());
+    host_configurations_.emplace(std::move(host), HostConfiguration());
 }
 
 void Configuration::remove_host(const std::string &host) {

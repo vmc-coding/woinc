@@ -38,7 +38,7 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
     public:
         PeriodicTasksSchedulerContext(const Configuration &config, const HandlerRegistry &hander_registry);
 
-        void add_host(const std::string &host, HostController &controller);
+        void add_host(std::string host, HostController &controller);
         void remove_host(const std::string &host);
 
         void reschedule_now(const std::string &host, PeriodicTask task);

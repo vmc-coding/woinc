@@ -36,7 +36,7 @@ PeriodicTasksSchedulerContext::PeriodicTasksSchedulerContext(const Configuration
     : handler_registry_(handler_registry), configuration_(config)
 {}
 
-void PeriodicTasksSchedulerContext::add_host(const std::string &host, HostController &controller) {
+void PeriodicTasksSchedulerContext::add_host(std::string host, HostController &controller) {
     std::lock_guard<decltype(mutex_)> guard(mutex_);
     tasks_.emplace(host, std::array<Task, 9> {
         Task(PeriodicTask::GetCCStatus),
@@ -50,7 +50,7 @@ void PeriodicTasksSchedulerContext::add_host(const std::string &host, HostContro
         Task(PeriodicTask::GetTasks)
     });
     host_controllers_.emplace(host, controller);
-    states_.emplace(host, State());
+    states_.emplace(std::move(host), State());
 }
 
 void PeriodicTasksSchedulerContext::remove_host(const std::string &host) {

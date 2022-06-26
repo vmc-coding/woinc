@@ -32,7 +32,7 @@ namespace woinc { namespace ui {
 // and the only user is the controller, we ensure thread safety there.
 class WOINCUI_LOCAL HostController {
     public:
-        HostController(const std::string &name);
+        HostController(std::string name);
         virtual ~HostController();
 
         HostController(HostController &) = delete;

@@ -45,7 +45,7 @@ struct Worker {
 
 namespace woinc { namespace ui {
 
-HostController::HostController(const std::string &name) : host_name_(name) {}
+HostController::HostController(std::string name) : host_name_(std::move(name)) {}
 
 HostController::~HostController() {
     shutdown();
