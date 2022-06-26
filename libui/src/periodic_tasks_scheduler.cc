@@ -37,8 +37,7 @@ PeriodicTasksSchedulerContext::PeriodicTasksSchedulerContext(const Configuration
 {}
 
 void PeriodicTasksSchedulerContext::add_host(std::string host, HostController &controller) {
-    std::lock_guard<decltype(mutex_)> guard(mutex_);
-    tasks_.emplace(host, std::array<Task, 9> {
+    auto tasks = std::array<Task, 9> {
         Task(PeriodicTask::GetCCStatus),
         Task(PeriodicTask::GetClientState),
         Task(PeriodicTask::GetDiskUsage),
@@ -48,7 +47,10 @@ void PeriodicTasksSchedulerContext::add_host(std::string host, HostController &c
         Task(PeriodicTask::GetProjectStatus),
         Task(PeriodicTask::GetStatistics),
         Task(PeriodicTask::GetTasks)
-    });
+    };
+
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
+    tasks_.emplace(host, std::move(tasks));
     host_controllers_.emplace(host, controller);
     states_.emplace(std::move(host), State());
 }
@@ -61,20 +63,25 @@ void PeriodicTasksSchedulerContext::remove_host(const std::string &host) {
 }
 
 void PeriodicTasksSchedulerContext::reschedule_now(const std::string &host, PeriodicTask to_reschedule) {
-    std::lock_guard<decltype(mutex_)> guard(mutex_);
+    {
+        std::lock_guard<decltype(mutex_)> guard(mutex_);
 
-    for (auto &task : tasks_.at(host)) {
-        if (task.type == to_reschedule) {
-            task.last_execution = std::chrono::steady_clock::time_point::min();
-            condition_.notify_one();
-            break;
+        for (auto &task : tasks_.at(host)) {
+            if (task.type == to_reschedule) {
+                task.last_execution = std::chrono::steady_clock::time_point::min();
+                break;
+            }
         }
     }
+    condition_.notify_one();
 }
 
 void PeriodicTasksSchedulerContext::trigger_shutdown() {
-    std::lock_guard<decltype(mutex_)> guard(mutex_);
-    shutdown_triggered_ = true;
+    {
+        std::lock_guard<decltype(mutex_)> guard(mutex_);
+        shutdown_triggered_ = true;
+    }
+    condition_.notify_all();
 }
 
 // --- PeriodicTasksScheduler ---
