@@ -21,6 +21,7 @@
 
 #include <condition_variable>
 #include <deque>
+#include <memory>
 #include <mutex>
 
 #include "jobs.h"
@@ -39,18 +40,18 @@ class WOINCUI_LOCAL JobQueue {
         JobQueue &operator=(JobQueue &&) = delete;
 
         // The job queue takes ownership of the job
-        void push_front(Job *job);
-        void push_back(Job *job);
+        void push_front(std::unique_ptr<Job> job);
+        void push_back(std::unique_ptr<Job> job);
 
         // Returns the next job to run while blocking if there isn't any job in the queue.
-        // If shutdown is triggered, a nullptr will be returned.
-        // The caller takes ownership of the job
-        Job *pop();
+        // If shutdown is triggered, an empty pointer will be returned.
+        // The caller takes ownership of the job.
+        std::unique_ptr<Job> pop();
 
         void shutdown();
 
     private:
-        void push_(Job *job, bool front);
+        void push_(std::unique_ptr<Job> job, bool front);
 
     private:
         bool shutdown_ = false;
@@ -58,7 +59,7 @@ class WOINCUI_LOCAL JobQueue {
         std::mutex mutex_;
         std::condition_variable condition_;
 
-        typedef std::deque<Job *> Queue;
+        typedef std::deque<std::unique_ptr<Job>> Queue;
         Queue jobs_;
 };
 

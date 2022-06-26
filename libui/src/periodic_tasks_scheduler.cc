@@ -157,10 +157,10 @@ void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSch
     else if (task.type == PeriodicTask::GetTasks)
         payload.active_only = context_.configuration_.active_only_tasks(host);
 
-    auto job = new PeriodicJob(task.type, context_.handler_registry_, payload);
+    auto job = std::make_unique<PeriodicJob>(task.type, context_.handler_registry_, payload);
     job->register_post_execution_handler(this);
 
-    context_.host_controllers_.at(host).schedule(job);
+    context_.host_controllers_.at(host).schedule(std::move(job));
 }
 
 }}

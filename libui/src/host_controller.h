@@ -1,5 +1,5 @@
 /* libui/src/host_controller.h --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -49,8 +49,8 @@ class WOINCUI_LOCAL HostController {
         void shutdown();
 
     public:
-        void schedule_now(Job *job);
-        void schedule(Job *job);
+        void schedule_now(std::unique_ptr<Job> job);
+        void schedule(std::unique_ptr<Job> job);
 
     private:
         const std::string host_name_;

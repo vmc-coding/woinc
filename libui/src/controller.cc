@@ -21,6 +21,7 @@
 #include <cassert>
 #include <exception>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <thread>
@@ -128,7 +129,7 @@ class WOINCUI_LOCAL Controller::Impl {
 
         bool has_host_(const std::string &name) const;
 
-        void schedule_now_(const std::string &host, Job *job, const char *func);
+        void schedule_now_(const std::string &host, std::unique_ptr<Job> job, const char *func);
 
         void verify_not_shutdown_() const;
         void verify_known_host_(const std::string &host, const char *func) const;
@@ -146,8 +147,8 @@ class WOINCUI_LOCAL Controller::Impl {
             Promise promise;
             auto future = promise.get_future();
 
-            auto *job = new woinc::ui::AsyncJob<Result>(
-                new Command{std::move(request)},
+            auto job = std::make_unique<woinc::ui::AsyncJob<Result>>(
+                std::make_unique<Command>(std::move(request)),
                 std::move(promise),
                 [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::CommandStatus status) {
                     if (status == woinc::rpc::CommandStatus::Ok)
@@ -156,7 +157,7 @@ class WOINCUI_LOCAL Controller::Impl {
                         p.set_exception(std::make_exception_ptr(std::runtime_error{error_msg}));
                 });
 
-            schedule_now_(host, job, func);
+            schedule_now_(host, std::move(job), func);
             return future;
         }
 
@@ -228,7 +229,8 @@ void Controller::Impl::add_host(std::string host,
     check_not_empty_host_name__(host);
     check_not_empty__(url, "Missing url to host");
 
-    HostController *host_controller = nullptr;
+    // to be able to use it by copy in the connect-thread
+    HostController *host_controller_ptr;
 
     {
         WOINC_LOCK_GUARD;
@@ -238,7 +240,8 @@ void Controller::Impl::add_host(std::string host,
         if (has_host_(host))
             throw std::invalid_argument("Host \"" + host + "\" already registered.");
 
-        host_controller = new HostController(host);
+        auto host_controller = std::make_unique<HostController>(host);
+        host_controller_ptr = host_controller.get();
 
         configuration_.add_host(host);
         host_controllers_.emplace(host, std::move(host_controller));
@@ -252,7 +255,7 @@ void Controller::Impl::add_host(std::string host,
 
     // connect asynchronously because the connect may block for a long time (see man 2 connect)
     std::thread([=]() {
-        bool connected = host_controller->connect(url, port);
+        bool connected = host_controller_ptr->connect(url, port);
         handler_registry_.for_host_handler([&](HostHandler &handler) {
             if (connected)
                 handler.on_host_connected(host);
@@ -620,32 +623,24 @@ bool Controller::Impl::has_host_(const std::string &name) const {
 }
 
 #ifndef NDEBUG
-void Controller::Impl::schedule_now_(const std::string &host, Job *job, const char *func) {
+void Controller::Impl::schedule_now_(const std::string &host, std::unique_ptr<Job> job, const char *func) {
 #else
-void Controller::Impl::schedule_now_(const std::string &host, Job *job, const char *) {
+void Controller::Impl::schedule_now_(const std::string &host, std::unique_ptr<Job> job, const char *) {
 #endif
     assert(job != nullptr);
     assert(func != nullptr);
 
-    decltype(host_controllers_.find(host)) hc;
+    verify_not_shutdown_();
 
-    try {
-        verify_not_shutdown_();
-
-        hc = host_controllers_.find(host);
-        if (hc == host_controllers_.end()) {
+    auto hc = host_controllers_.find(host);
+    if (hc == host_controllers_.end()) {
 #ifndef NDEBUG
-            std::cerr << "Controller::" << func << " on non existing host \"" << host << "\" called\n";
+        std::cerr << "Controller::" << func << " on non existing host \"" << host << "\" called\n";
 #endif
-            throw UnknownHostException{host};
-        }
-    } catch (...) {
-        delete job;
-        throw;
+        throw UnknownHostException{host};
     }
 
-    // not in the try-catch-block as the job queue takes ownership of the job
-    hc->second->schedule_now(job);
+    hc->second->schedule_now(std::move(job));
 }
 
 void Controller::Impl::verify_not_shutdown_() const {
@@ -670,7 +665,7 @@ void Controller::Impl::verify_known_host_(const std::string &host, const char *)
 // ---- Controller ----
 
 Controller::Controller()
-    : impl_(new Impl)
+    : impl_(std::make_unique<Impl>())
 {}
 
 Controller::~Controller() {

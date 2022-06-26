@@ -19,41 +19,36 @@
 #include "job_queue.h"
 
 #include <cassert>
+#include <memory>
 #include <stdexcept>
 
 namespace woinc { namespace ui {
 
 JobQueue::~JobQueue() {
     shutdown();
-
-    std::lock_guard<decltype(mutex_)> guard(mutex_);
-    while (!jobs_.empty()) {
-        delete jobs_.front();
-        jobs_.pop_front();
-    }
 }
 
-void JobQueue::push_front(Job *job) {
-    push_(job, true);
+void JobQueue::push_front(std::unique_ptr<Job> job) {
+    push_(std::move(job), true);
 }
 
-void JobQueue::push_back(Job *job) {
-    push_(job, false);
+void JobQueue::push_back(std::unique_ptr<Job> job) {
+    push_(std::move(job), false);
 }
 
-Job *JobQueue::pop() {
-    Job *job = nullptr;
+std::unique_ptr<Job> JobQueue::pop() {
+    std::unique_ptr<Job> job;
     std::unique_lock<std::mutex> lock(mutex_);
 
     condition_.wait(lock, [this]() { return !jobs_.empty() || shutdown_; });
 
     if (!shutdown_) {
-        assert(!jobs_.empty());
+        assert(!jobs_.empty() && "Found empty job queue");
 
-        job = jobs_.front();
+        job = std::move(jobs_.front());
         jobs_.pop_front();
 
-        assert(job);
+        assert(job && "Received empty job from the queue");
     }
 
     return job;
@@ -68,9 +63,8 @@ void JobQueue::shutdown() {
     condition_.notify_all();
 }
 
-void JobQueue::push_(Job *job, bool front) {
-    if (job == nullptr)
-        throw std::invalid_argument("Received nullptr instead of a job");
+void JobQueue::push_(std::unique_ptr<Job> job, bool front) {
+    assert(job && "Can't insert empty job");
 
     bool pushed = true;
 
@@ -79,9 +73,9 @@ void JobQueue::push_(Job *job, bool front) {
 
         if (!shutdown_) {
             if (front)
-                jobs_.push_front(job);
+                jobs_.push_front(std::move(job));
             else
-                jobs_.push_back(job);
+                jobs_.push_back(std::move(job));
         } else {
             pushed = false;
         }
@@ -89,8 +83,6 @@ void JobQueue::push_(Job *job, bool front) {
 
     if (pushed)
         condition_.notify_one();
-    else // the queue takes ownership but as the shutdown is triggered, we simply delete the job
-        delete job;
 }
 
 }}

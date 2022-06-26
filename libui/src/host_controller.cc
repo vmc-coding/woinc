@@ -1,5 +1,5 @@
 /* libui/src/host_controller.cc --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -32,13 +32,8 @@ struct Worker {
     {}
 
     void operator()() {
-        Job *job;
-        do {
-            if ((job = job_queue_.pop()) != nullptr) {
-                (*job)(client_);
-                delete job;
-            }
-        } while (job != nullptr);
+        while (auto job = job_queue_.pop())
+            (*job)(client_);
     }
 
     private:
@@ -65,7 +60,7 @@ bool HostController::connect(const std::string &url, std::uint16_t port) {
 }
 
 void HostController::authorize(const std::string &password, const HandlerRegistry &handler_registry) {
-    schedule(new AuthorizationJob(password, handler_registry));
+    schedule(std::make_unique<AuthorizationJob>(password, handler_registry));
 }
 
 void HostController::disconnect() {
@@ -79,12 +74,12 @@ void HostController::shutdown() {
     disconnect();
 }
 
-void HostController::schedule_now(Job *job) {
-    job_queue_.push_front(job);
+void HostController::schedule_now(std::unique_ptr<Job> job) {
+    job_queue_.push_front(std::move(job));
 }
 
-void HostController::schedule(Job *job) {
-    job_queue_.push_back(job);
+void HostController::schedule(std::unique_ptr<Job> job) {
+    job_queue_.push_back(std::move(job));
 }
 
 }}
