@@ -58,7 +58,7 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
         std::mutex mutex_;
         std::condition_variable condition_;
 
-        bool shutdown_triggered_ = false;
+        volatile bool shutdown_triggered_ = false;
 
         struct Task {
             Task(PeriodicTask t) : type(t) {}

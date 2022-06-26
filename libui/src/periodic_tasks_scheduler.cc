@@ -27,6 +27,8 @@
 #include <iostream>
 #endif
 
+using namespace std::chrono_literals;
+
 namespace woinc { namespace ui {
 
 // --- PeriodicTasksSchedulerContext ---
@@ -63,13 +65,7 @@ void PeriodicTasksSchedulerContext::remove_host(const std::string &host) {
 void PeriodicTasksSchedulerContext::reschedule_now(const std::string &host, PeriodicTask to_reschedule) {
     {
         std::lock_guard<decltype(mutex_)> guard(mutex_);
-
-        for (auto &task : tasks_.at(host)) {
-            if (task.type == to_reschedule) {
-                task.last_execution = std::chrono::steady_clock::time_point::min();
-                break;
-            }
-        }
+        tasks_.at(host).at(static_cast<size_t>(to_reschedule)).last_execution = std::chrono::steady_clock::time_point::min();
     }
     condition_.notify_one();
 }
@@ -89,44 +85,49 @@ PeriodicTasksScheduler::PeriodicTasksScheduler(PeriodicTasksSchedulerContext &co
 {}
 
 void PeriodicTasksScheduler::operator()() {
-    const auto max_wake_up_time = std::chrono::milliseconds(200);
+    const auto max_wake_up_time = 200ms;
 
-    std::unique_lock<decltype(context_.mutex_)> guard(context_.mutex_);
-
-    Configuration::Intervals intervals(context_.configuration_.intervals());
+    auto intervals{context_.configuration_.intervals()};
+    auto wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up_time);
     auto last_cache_update = std::chrono::steady_clock::now();
 
-    auto wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up_time);
-
-    while (!context_.shutdown_triggered_) {
+    while (true) {
         const auto now = std::chrono::steady_clock::now();
 
         // update interval cache once a second
-        if (now - last_cache_update > std::chrono::seconds(1)) {
-            intervals = context_.configuration_.intervals();
+        if (now - last_cache_update > 1s) {
+            intervals = std::move(context_.configuration_.intervals());
             wake_up_interval = std::min(*std::min_element(intervals.begin(), intervals.end()), max_wake_up_time);
             last_cache_update = now;
         }
 
-        for (auto &host_tasks : context_.tasks_) {
-            if (!context_.configuration_.schedule_periodic_tasks(host_tasks.first))
-                continue;
-            for (auto &task : host_tasks.second)
-                if (!task.pending && should_be_scheduled_(task, intervals, now))
-                    schedule_(host_tasks.first, task);
+        std::unique_lock<decltype(context_.mutex_)> guard(context_.mutex_);
+
+        if (!context_.shutdown_triggered_) {
+            for (auto &host_tasks : context_.tasks_) {
+                if (!context_.configuration_.schedule_periodic_tasks(host_tasks.first))
+                    continue;
+                for (auto &task : host_tasks.second)
+                    if (!task.pending && should_be_scheduled_(task, intervals, now))
+                        schedule_(host_tasks.first, task);
+            }
         }
 
-        context_.condition_.wait_for(guard, wake_up_interval);
+        if (context_.condition_.wait_for(guard, wake_up_interval, [=]() { return context_.shutdown_triggered_; }))
+            break;
     }
 }
 
 void PeriodicTasksScheduler::handle_post_execution(const std::string &host, Job *j) {
+    std::lock_guard<decltype(context_.mutex_)> guard(context_.mutex_);
+
+    if (context_.shutdown_triggered_)
+        return;
+
     // we schedule and therefore register to periodic tasks only
     assert(dynamic_cast<PeriodicJob *>(j) != nullptr);
 
     PeriodicJob *job = static_cast<PeriodicJob *>(j);
-
-    std::lock_guard<decltype(context_.mutex_)> guard(context_.mutex_);
 
     auto &tasks = context_.tasks_.at(host);
     auto task = std::find_if(tasks.begin(), tasks.end(), [&](const auto &t) {
