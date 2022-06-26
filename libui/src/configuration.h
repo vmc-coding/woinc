@@ -56,15 +56,15 @@ class WOINCUI_LOCAL Configuration {
         mutable std::mutex mutex_;
 
         Intervals intervals_ = {
-            std::chrono::milliseconds(1 * 1000),    // GetCCStatus
-            std::chrono::milliseconds(3600 * 1000), // GetClientState
-            std::chrono::milliseconds(60 * 1000),   // GetDiskUsage
-            std::chrono::milliseconds(1 * 1000),    // GetFileTransfers
-            std::chrono::milliseconds(1 * 1000),    // GetMessages
-            std::chrono::milliseconds(60 * 1000),   // GetNotices
-            std::chrono::milliseconds(1 * 1000),    // GetProjectStatus
-            std::chrono::milliseconds(60 * 1000),   // GetStatistics
-            std::chrono::milliseconds(1 * 1000)     // GetTasks
+            std::chrono::seconds(1),    // GetCCStatus
+            std::chrono::seconds(3600), // GetClientState
+            std::chrono::seconds(60),   // GetDiskUsage
+            std::chrono::seconds(1),    // GetFileTransfers
+            std::chrono::seconds(1),    // GetMessages
+            std::chrono::seconds(60),   // GetNotices
+            std::chrono::seconds(1),    // GetProjectStatus
+            std::chrono::seconds(60),   // GetStatistics
+            std::chrono::seconds(1)     // GetTasks
         };
 
         struct HostConfiguration {
