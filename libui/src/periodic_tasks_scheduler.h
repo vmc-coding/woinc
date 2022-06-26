@@ -22,13 +22,13 @@
 #include <array>
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <map>
 #include <mutex>
 #include <string>
 
 #include "configuration.h"
 #include "handler_registry.h"
-#include "host_controller.h"
 #include "jobs.h"
 #include "visibility.h"
 
@@ -36,9 +36,12 @@ namespace woinc { namespace ui {
 
 class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
     public:
-        PeriodicTasksSchedulerContext(const Configuration &config, const HandlerRegistry &hander_registry);
+        typedef std::function<void(std::string, std::unique_ptr<Job>)> Scheduler;
 
-        void add_host(std::string host, HostController &controller);
+    public:
+        PeriodicTasksSchedulerContext(const Configuration &config, const HandlerRegistry &hander_registry, Scheduler scheduler);
+
+        void add_host(std::string host);
         void remove_host(const std::string &host);
 
         void reschedule_now(const std::string &host, PeriodicTask task);
@@ -48,9 +51,9 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
     private:
         friend class PeriodicTasksScheduler;
 
-        const HandlerRegistry &handler_registry_;
-
         const Configuration &configuration_;
+        const HandlerRegistry &handler_registry_;
+        const Scheduler scheduler_;
 
         std::mutex mutex_;
         std::condition_variable condition_;
@@ -70,7 +73,6 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
         };
 
         std::map<std::string, std::array<Task, 9>> tasks_;
-        std::map<std::string, HostController &> host_controllers_;
         std::map<std::string, State> states_;
 };
 

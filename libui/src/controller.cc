@@ -179,7 +179,9 @@ class WOINCUI_LOCAL Controller::Impl {
 };
 
 Controller::Impl::Impl() :
-    periodic_tasks_scheduler_context_(configuration_, handler_registry_),
+    periodic_tasks_scheduler_context_(configuration_,
+                                      handler_registry_,
+                                      [=](const std::string &host, std::unique_ptr<Job> job) { host_controllers_.at(host)->schedule(std::move(job)); }),
     periodic_tasks_scheduler_thread_(PeriodicTasksScheduler(periodic_tasks_scheduler_context_))
 {}
 
@@ -246,7 +248,7 @@ void Controller::Impl::add_host(std::string host,
         configuration_.add_host(host);
         host_controllers_.emplace(host, std::move(host_controller));
         // periodic tasks are not scheduled yet
-        periodic_tasks_scheduler_context_.add_host(host, *host_controllers_.at(host));
+        periodic_tasks_scheduler_context_.add_host(host);
 
         handler_registry_.for_host_handler([&](auto &handler) {
             handler.on_host_added(host);

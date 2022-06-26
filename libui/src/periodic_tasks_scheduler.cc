@@ -32,11 +32,11 @@ namespace woinc { namespace ui {
 // --- PeriodicTasksSchedulerContext ---
 
 PeriodicTasksSchedulerContext::PeriodicTasksSchedulerContext(const Configuration &config,
-                                                             const HandlerRegistry &handler_registry)
-    : handler_registry_(handler_registry), configuration_(config)
-{}
+                                                             const HandlerRegistry &handler_registry,
+                                                             Scheduler scheduler)
+    : configuration_(config), handler_registry_(handler_registry), scheduler_(std::move(scheduler)) {}
 
-void PeriodicTasksSchedulerContext::add_host(std::string host, HostController &controller) {
+void PeriodicTasksSchedulerContext::add_host(std::string host) {
     auto tasks = std::array<Task, 9> {
         Task(PeriodicTask::GetCCStatus),
         Task(PeriodicTask::GetClientState),
@@ -51,14 +51,12 @@ void PeriodicTasksSchedulerContext::add_host(std::string host, HostController &c
 
     std::lock_guard<decltype(mutex_)> guard(mutex_);
     tasks_.emplace(host, std::move(tasks));
-    host_controllers_.emplace(host, controller);
     states_.emplace(std::move(host), State());
 }
 
 void PeriodicTasksSchedulerContext::remove_host(const std::string &host) {
     std::lock_guard<decltype(mutex_)> guard(mutex_);
     tasks_.erase(host);
-    host_controllers_.erase(host);
     states_.erase(host);
 }
 
@@ -167,7 +165,7 @@ void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSch
     auto job = std::make_unique<PeriodicJob>(task.type, context_.handler_registry_, payload);
     job->register_post_execution_handler(this);
 
-    context_.host_controllers_.at(host).schedule(std::move(job));
+    context_.scheduler_(host, std::move(job));
 }
 
 }}
