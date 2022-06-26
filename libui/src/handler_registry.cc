@@ -43,6 +43,7 @@ void HandlerRegistry::register_handler(PeriodicTaskHandler *handler) {
 }
 
 void HandlerRegistry::deregister_handler(PeriodicTaskHandler *handler) {
+    WOINC_LOCK_GUARD;
     periodic_task_handler_.erase(std::remove(periodic_task_handler_.begin(),
                                              periodic_task_handler_.end(),
                                              handler),
@@ -60,4 +61,5 @@ void HandlerRegistry::for_periodic_task_handler(std::function<void(PeriodicTaskH
     for (auto &&handler : periodic_task_handler_)
         f(*handler);
 }
+
 }}
