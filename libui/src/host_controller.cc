@@ -21,28 +21,6 @@
 #include <cassert>
 #include <thread>
 
-namespace {
-
-using namespace woinc::ui;
-
-struct Worker {
-    Worker(Client &client, JobQueue &job_queue)
-        : client_(client),
-        job_queue_(job_queue)
-    {}
-
-    void operator()() {
-        while (auto job = job_queue_.pop())
-            (*job)(client_);
-    }
-
-    private:
-        Client &client_;
-        JobQueue &job_queue_;
-};
-
-}
-
 namespace woinc { namespace ui {
 
 HostController::HostController(std::string name) : host_name_(std::move(name)) {}
@@ -55,7 +33,11 @@ bool HostController::connect(const std::string &url, std::uint16_t port) {
     if (!client_.connect(url, port))
         return false;
 
-    worker_thread_ = std::thread(Worker(client_, job_queue_));
+    worker_thread_ = std::thread([&]() {
+        while (auto job = job_queue_.pop())
+            (*job)(client_);
+    });
+
     return true;
 }
 
