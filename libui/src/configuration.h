@@ -33,11 +33,12 @@ namespace woinc { namespace ui {
 
 class WOINCUI_LOCAL Configuration {
     public:
-        typedef std::array<std::chrono::milliseconds, 9> Intervals;
+        typedef std::chrono::milliseconds Interval;
+        typedef std::array<Interval, 9> Intervals;
 
     public:
-        void interval(PeriodicTask task, std::chrono::milliseconds ms);
-        std::chrono::milliseconds interval(PeriodicTask task) const;
+        void interval(PeriodicTask task, Interval duration);
+        Interval interval(PeriodicTask task) const;
 
         Intervals intervals() const;
 

@@ -25,12 +25,12 @@
 
 namespace woinc { namespace ui {
 
-void Configuration::interval(PeriodicTask task, std::chrono::milliseconds ms) {
+void Configuration::interval(PeriodicTask task, Interval duration) {
     WOINC_CONFIGURATION_LOCK_GUARD;
-    intervals_[static_cast<size_t>(task)] = ms;
+    intervals_[static_cast<size_t>(task)] = duration;
 }
 
-std::chrono::milliseconds Configuration::interval(PeriodicTask task) const {
+Configuration::Interval Configuration::interval(PeriodicTask task) const {
     WOINC_CONFIGURATION_LOCK_GUARD;
     return intervals_.at(static_cast<size_t>(task));
 }
