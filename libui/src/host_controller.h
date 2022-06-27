@@ -19,7 +19,9 @@
 #ifndef WOINC_UI_HOST_H_
 #define WOINC_UI_HOST_H_
 
-#include <woinc/ui/controller.h>
+#include <memory>
+#include <string>
+#include <thread>
 
 #include "client.h"
 #include "handler_registry.h"

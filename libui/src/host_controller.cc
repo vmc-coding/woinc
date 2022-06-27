@@ -18,9 +18,6 @@
 
 #include "host_controller.h"
 
-#include <cassert>
-#include <thread>
-
 namespace woinc { namespace ui {
 
 HostController::HostController(std::string name) : host_name_(std::move(name)) {}
