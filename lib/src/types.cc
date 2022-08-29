@@ -18,9 +18,75 @@
 
 #include <woinc/types.h>
 
-namespace woinc {
+#include <algorithm>
+#include <stdexcept>
+
+namespace {
+
+template<class InputIt>
+constexpr InputIt find_log_flag__(InputIt first, InputIt last, const std::string &name) {
+    return std::find_if(first, last, [&](auto &&that) { return name == that.name; });
+}
+
+template<class InputIt>
+constexpr InputIt checked_find_log_flag__(InputIt first, InputIt last, const std::string &name) {
+    auto iter = find_log_flag__(first, last, name);
+    if (iter == last)
+        throw std::out_of_range("Flag " + name + " does not exist");
+    return iter;
+}
+
+}
 
 #define WOINC_COPY(FROM, WHAT) WHAT(FROM.WHAT)
+
+namespace woinc {
+
+
+// ----- LogFlags -----
+
+
+const LogFlags::Flags &LogFlags::flags() const noexcept {
+    return flags_;
+}
+
+void LogFlags::set_defaults() noexcept {
+    for (auto &flag : flags_)
+        flag.value = false;
+    set("file_xfer");
+    set("sched_ops");
+    set("task");
+}
+
+LogFlags::Flag &LogFlags::set(const std::string &name, bool value) noexcept {
+    auto iter = find_log_flag__(flags_.begin(), flags_.end(), name);
+    if (iter == flags_.end()) {
+        flags_.push_back({name, value});
+        return flags_.back();
+    }
+
+    iter->value = value;
+    return *iter;
+}
+
+bool LogFlags::exists(const std::string &name) const noexcept {
+    auto iter = find_log_flag__(flags_.begin(), flags_.end(), name);
+    return iter != flags_.end();
+}
+
+bool LogFlags::at(const std::string &name) const {
+    auto iter = checked_find_log_flag__(flags_.begin(), flags_.end(), name);
+    return iter->value;
+}
+
+bool &LogFlags::at(const std::string &name) {
+    auto iter = checked_find_log_flag__(flags_.begin(), flags_.end(), name);
+    return iter->value;
+}
+
+
+// ----- FileTransfer -----
+
 
 FileTransfer::FileTransfer(const FileTransfer &ft)
     : WOINC_COPY(ft, nbytes)
@@ -39,6 +105,10 @@ FileTransfer::FileTransfer(const FileTransfer &ft)
     if (ft.file_xfer)
         file_xfer = std::make_unique<FileXfer>(*ft.file_xfer);
 }
+
+
+// ----- Task -----
+
 
 Task::Task(const Task &task)
     : WOINC_COPY(task, state)
@@ -73,6 +143,10 @@ Task::Task(const Task &task)
     if (task.active_task)
         active_task = std::make_unique<ActiveTask>(*task.active_task);
 }
+
+
+// ----- ClientState -----
+
 
 ClientState::ClientState(const ClientState &cs)
     : WOINC_COPY(cs, app_versions)

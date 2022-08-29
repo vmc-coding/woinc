@@ -555,6 +555,7 @@ CommandStatus SetCCConfigCommand::execute(Connection &connection) {
     auto &ccc_node = cmd_node["cc_config"];
     ccc_node = current_ccc_tree.root["cc_config"];
     auto &options_tree = ccc_node["options"];
+    auto &log_flags_tree = ccc_node["log_flags"];
     auto &cc_config = request().cc_config;
 
 #define WOINC_MAP_OPTION(OPTION) do { options_tree[#OPTION] = cc_config.OPTION; } while(false)
@@ -621,6 +622,10 @@ CommandStatus SetCCConfigCommand::execute(Connection &connection) {
     options_tree.remove_childs("exclusive_gpu_app");
     for (auto &&app : cc_config.exclusive_gpu_apps)
         options_tree.add_child("exclusive_gpu_app") = app;
+
+    for (const auto &flag : cc_config.log_flags.flags()) {
+        log_flags_tree[flag.name] = flag.value;
+    }
 
     return do_cmd__(connection, request_tree, error_, response());
 }

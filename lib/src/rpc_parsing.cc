@@ -107,6 +107,10 @@ void parse__(int value, woinc::DayOfWeek &dest) {
     convert_to_enum__(value, dest);
 }
 
+void parse__(const std::string &src, bool &dest) {
+    dest = src != "0";
+}
+
 void parse__(const std::string &src, int &dest) {
     dest = std::stoi(src);
 }
@@ -648,46 +652,11 @@ void parse_(const woinc::xml::Node &node, woinc::HostInfo &info) {
 }
 
 void parse_(const wxml::Node &node, woinc::LogFlags &log_flags) {
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, file_xfer);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, sched_ops);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, task);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, android_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, app_msg_receive);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, app_msg_send);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, async_file_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, benchmark_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, checkpoint_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, coproc_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, cpu_sched_status);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, dcf_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, disk_usage_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, file_xfer_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, gui_rpc_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, heartbeat_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, http_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, http_xfer_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, idle_detection_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, mem_usage_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, network_status_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, notice_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, poll_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, priority_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, proxy_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, rr_simulation);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, rrsim_detail);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, sched_op_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, scrsave_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, slot_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, state_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, statefile_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, suspend_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, task_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, time_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, trickle_debug);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, unparsed_xml);
-    WOINC_PARSE_CHILD_CONTENT(node, log_flags, work_fetch_debug);
+    for (const auto &child : node.children) {
+        bool value;
+        parse__(child.content, value);
+        log_flags.set(child.tag, value);
+    }
 }
 
 // ses MESSAGE_DESCS::write in BOINC/client/client_msgs.cpp

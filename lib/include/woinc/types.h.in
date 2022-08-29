@@ -43,48 +43,32 @@ struct FileRef {
 
 typedef std::vector<FileRef> FileRefs;
 
+// to support future and plattform special flags we use a dynamic structure here;
+// the order of the flags corresponds to the order in the xml
 struct LogFlags {
-    bool file_xfer = true;
-    bool sched_ops = true;
-    bool task = true;
+    struct Flag {
+        std::string name;
+        bool value;
+    };
 
-    bool android_debug = false;
-    bool app_msg_receive = false;
-    bool app_msg_send = false;
-    bool async_file_debug = false;
-    bool benchmark_debug = false;
-    bool checkpoint_debug = false;
-    bool coproc_debug = false;
-    bool cpu_sched = false;
-    bool cpu_sched_debug = false;
-    bool cpu_sched_status = false;
-    bool dcf_debug = false;
-    bool disk_usage_debug = false;
-    bool file_xfer_debug = false;
-    bool gui_rpc_debug = false;
-    bool heartbeat_debug = false;
-    bool http_debug = false;
-    bool http_xfer_debug = false;
-    bool idle_detection_debug = false;
-    bool mem_usage_debug = false;
-    bool network_status_debug = false;
-    bool notice_debug = false;
-    bool poll_debug = false;
-    bool priority_debug = false;
-    bool proxy_debug = false;
-    bool rr_simulation = false;
-    bool rrsim_detail = false;
-    bool sched_op_debug = false;
-    bool scrsave_debug = false;
-    bool slot_debug = false;
-    bool state_debug = false;
-    bool statefile_debug = false;
-    bool suspend_debug = false;
-    bool task_debug = false;
-    bool time_debug = false;
-    bool trickle_debug = false;
-    bool unparsed_xml = false;
-    bool work_fetch_debug = false;
+    typedef std::vector<Flag> Flags;
+
+    void set_defaults() noexcept;
+
+    const Flags& flags() const noexcept;
+
+    // adds the flag if it doesn't exist yet
+    Flag &set(const std::string &name, bool value = true) noexcept;
+
+    bool exists(const std::string &name) const noexcept;
+
+    // throws std::out_of_range if flag with given name is unknown;
+    // check with exists() if the flag is there
+    bool at(const std::string &name) const;
+    bool &at(const std::string &name);
+
+    private:
+        Flags flags_;
 };
 
 struct AccountOut {
