@@ -100,6 +100,10 @@ class WOINCUI_LOCAL Controller::Impl {
         std::future<GlobalPreferences> load_global_preferences(const std::string &host, GetGlobalPrefsMode mode);
         std::future<bool> save_global_preferences(const std::string &host, const GlobalPreferences &prefs, const GlobalPreferencesMask &mask);
         std::future<bool> read_global_prefs_override(const std::string &host);
+
+        std::future<CCConfig> cc_config(const std::string &host);
+        std::future<bool> cc_config(const std::string &host, const CCConfig &cc_config);
+
         std::future<bool> read_config_files(const std::string &host);
 
         std::future<bool> run_mode(const std::string &host, RunMode mode);
@@ -435,6 +439,31 @@ std::future<bool> Controller::Impl::read_global_prefs_override(const std::string
         "Error reading the preferences");
 }
 
+std::future<CCConfig> Controller::Impl::cc_config(const std::string &host) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::GetCCConfigCommand, CCConfig>(
+        __func__,
+        host,
+        [](auto &r) { return r.cc_config; },
+        "Error reading the cc_config");
+}
+
+std::future<bool> Controller::Impl::cc_config(const std::string &host, const CCConfig &cc_config) {
+    check_not_empty_host_name__(host);
+
+    WOINC_LOCK_GUARD;
+
+    return create_and_schedule_async_job_<wrpc::SetCCConfigCommand, bool>(
+        __func__,
+        host,
+        [](auto &r) { return r.success; },
+        "Error writing the cc_config",
+        {cc_config});
+}
+
 std::future<bool> Controller::Impl::read_config_files(const std::string &host) {
     check_not_empty_host_name__(host);
 
@@ -760,6 +789,14 @@ std::future<bool> Controller::save_global_preferences(const std::string &host,
 
 std::future<bool> Controller::read_global_prefs_override(const std::string &host) {
     return impl_->read_global_prefs_override(host);
+}
+
+std::future<CCConfig> Controller::cc_config(const std::string &host) {
+    return impl_->cc_config(host);
+}
+
+std::future<bool> Controller::cc_config(const std::string &host, const CCConfig &cc_config) {
+    return impl_->cc_config(host, cc_config);
 }
 
 std::future<bool> Controller::read_config_files(const std::string &host) {
