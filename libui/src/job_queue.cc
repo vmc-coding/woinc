@@ -22,10 +22,16 @@
 #include <memory>
 #include <stdexcept>
 
+#ifndef NDEBUG
+#include <iostream>
+#endif
+
 namespace woinc { namespace ui {
 
 JobQueue::~JobQueue() {
     shutdown();
+    // ensure no one is in a critical section
+    std::unique_lock<std::mutex> lock(mutex_);
 }
 
 void JobQueue::push_front(std::unique_ptr<Job> job) {
