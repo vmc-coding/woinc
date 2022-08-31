@@ -1,5 +1,5 @@
 /* ui/qt/types.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -75,8 +75,7 @@ bool Project::operator==(const Project &that) const {
         && last_rpc_time == that.last_rpc_time
         && min_rpc_time == that.min_rpc_time
         && upload_backoff == that.upload_backoff
-        && resource_share == that.resource_share
-        && resource_share_pct == that.resource_share_pct;
+        && resource_share == that.resource_share;
 }
 
 bool Project::operator!=(const Project &that) const {

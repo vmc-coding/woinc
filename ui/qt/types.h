@@ -1,5 +1,5 @@
 /* ui/qt/types.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -91,8 +91,6 @@ struct Project {
 
     // resource share, sum resource shares
     QPair<double, double> resource_share;
-
-    double resource_share_pct;
 
     bool operator==(const Project &that) const;
     bool operator!=(const Project &that) const;
