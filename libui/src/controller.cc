@@ -196,19 +196,16 @@ Controller::Impl::~Impl() {
 void Controller::Impl::shutdown() {
     WOINC_LOCK_GUARD;
 
-    // shutdown the controller
-
+    // shutdown the controller, i.e. don't accept requests anymore
     shutdown_ = true;
 
+
     // shutdown the periodic tasks scheduler
-
     periodic_tasks_scheduler_context_.trigger_shutdown();
-
     if (periodic_tasks_scheduler_thread_.joinable())
         periodic_tasks_scheduler_thread_.join();
 
     // shutdown the host controllers
-
     while (!host_controllers_.empty())
         remove_host_(host_controllers_.cbegin()->first);
 }

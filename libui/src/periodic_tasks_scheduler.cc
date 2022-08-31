@@ -78,6 +78,34 @@ void PeriodicTasksSchedulerContext::trigger_shutdown() {
     condition_.notify_all();
 }
 
+void PeriodicTasksSchedulerContext::handle_post_execution(const std::string &host, Job *j) {
+    std::lock_guard<decltype(mutex_)> guard(mutex_);
+
+    if (shutdown_triggered_)
+        return;
+
+    // we schedule and therefore register to periodic tasks only
+    assert(dynamic_cast<PeriodicJob *>(j) != nullptr);
+
+    PeriodicJob *job = static_cast<PeriodicJob *>(j);
+
+    auto &tasks = tasks_.at(host);
+    auto task = std::find_if(tasks.begin(), tasks.end(), [&](const auto &t) {
+        return t.type == job->task;
+    });
+
+    if (task != tasks.end()) {
+        task->last_execution = std::chrono::steady_clock::now();
+        task->pending = false;
+
+        if (job->task == PeriodicTask::GetMessages)
+            states_.at(host).messages_seqno = job->payload.seqno;
+        else if (job->task == PeriodicTask::GetNotices)
+            states_.at(host).notices_seqno = job->payload.seqno;
+    }
+}
+
+
 // --- PeriodicTasksScheduler ---
 
 PeriodicTasksScheduler::PeriodicTasksScheduler(PeriodicTasksSchedulerContext &context)
@@ -118,33 +146,6 @@ void PeriodicTasksScheduler::operator()() {
     }
 }
 
-void PeriodicTasksScheduler::handle_post_execution(const std::string &host, Job *j) {
-    std::lock_guard<decltype(context_.mutex_)> guard(context_.mutex_);
-
-    if (context_.shutdown_triggered_)
-        return;
-
-    // we schedule and therefore register to periodic tasks only
-    assert(dynamic_cast<PeriodicJob *>(j) != nullptr);
-
-    PeriodicJob *job = static_cast<PeriodicJob *>(j);
-
-    auto &tasks = context_.tasks_.at(host);
-    auto task = std::find_if(tasks.begin(), tasks.end(), [&](const auto &t) {
-        return t.type == job->task;
-    });
-
-    if (task != tasks.end()) {
-        task->last_execution = std::chrono::steady_clock::now();
-        task->pending = false;
-
-        if (job->task == PeriodicTask::GetMessages)
-            context_.states_.at(host).messages_seqno = job->payload.seqno;
-        else if (job->task == PeriodicTask::GetNotices)
-            context_.states_.at(host).notices_seqno = job->payload.seqno;
-    }
-}
-
 bool PeriodicTasksScheduler::should_be_scheduled_(const PeriodicTasksSchedulerContext::Task &task,
                                                   const Configuration::Intervals &intervals,
                                                   const decltype(PeriodicTasksSchedulerContext::Task::last_execution) &now) const {
@@ -164,7 +165,7 @@ void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSch
         payload.active_only = context_.configuration_.active_only_tasks(host);
 
     auto job = std::make_unique<PeriodicJob>(task.type, context_.handler_registry_, payload);
-    job->register_post_execution_handler(this);
+    job->register_post_execution_handler(&context_);
 
     context_.scheduler_(host, std::move(job));
 }

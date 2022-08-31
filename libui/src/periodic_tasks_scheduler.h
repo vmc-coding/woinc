@@ -34,7 +34,7 @@
 
 namespace woinc { namespace ui {
 
-class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
+class WOINCUI_LOCAL PeriodicTasksSchedulerContext : public PostExecutionHandler {
     public:
         typedef std::function<void(std::string, std::unique_ptr<Job>)> Scheduler;
 
@@ -47,6 +47,12 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
         void reschedule_now(const std::string &host, PeriodicTask task);
 
         void trigger_shutdown();
+
+    public:
+        // we only change state in the context in the post processing step, so let's do it here instead of the scheduler;
+        // on other notes: when doing it in the scheduler one must be aware of,
+        // that the thread deletes the scheduler object once the thread finishes
+        void handle_post_execution(const std::string &host, Job *job) final;
 
     private:
         friend class PeriodicTasksScheduler;
@@ -76,14 +82,11 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext {
         std::map<std::string, State> states_;
 };
 
-class WOINCUI_LOCAL PeriodicTasksScheduler : public PostExecutionHandler {
+class WOINCUI_LOCAL PeriodicTasksScheduler {
     public:
         PeriodicTasksScheduler(PeriodicTasksSchedulerContext &context);
 
         void operator()();
-
-    public:
-        void handle_post_execution(const std::string &host, Job *job) final;
 
     private:
         bool should_be_scheduled_(const PeriodicTasksSchedulerContext::Task &task,
