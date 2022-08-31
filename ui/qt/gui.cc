@@ -32,6 +32,7 @@
 #include "qt/controller.h"
 #include "qt/dialogs/about_dialog.h"
 #include "qt/dialogs/add_project_wizard.h"
+#include "qt/dialogs/event_log_options_dialog.h"
 #include "qt/dialogs/preferences_dialog.h"
 #include "qt/dialogs/select_computer_dialog.h"
 #include "qt/menu.h"
@@ -168,6 +169,75 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                     [=](QString error) {
                         show_error(QString::fromUtf8("Error"), error);
                     });
+            });
+
+    connect(options_menu, &OptionsMenu::event_log_options_to_be_shown,
+            [=, &controller](QString host) {
+                // TODO - load the cc while showing a progress animation before opening the dialog
+                // TODO - open the dlg
+                // TODO - handle dlg lifecycle (apply/save with progress animation/close dlg after save)
+                auto *dlg = new EventLogOptionsDialog(this);
+
+                controller.load_cc_config(
+                    host,
+                    [=, &controller](CCConfig cc_config) {
+                        // for the apply/save operation we need a cc_config object, not the log flags only;
+                        // so we have to register the apply/save handler after we've loaded and therefore know the cc_config
+
+                        connect(dlg, &EventLogOptionsDialog::apply, [=, &controller](woinc::LogFlags log_flags) mutable {
+                            cc_config.log_flags = std::move(log_flags);
+                            dlg->show_progress_animation("Applying log flags");
+                            controller.save_cc_config(
+                                host,
+                                cc_config,
+                                [=, &controller](bool status) {
+                                    if (!status)
+                                        QMessageBox::critical(this,
+                                                              QStringLiteral("Error"),
+                                                              QStringLiteral("The client failed to apply the log flags."),
+                                                              QMessageBox::Ok);
+                                    dlg->stop_progress_animation();
+                                },
+                                [=](QString error) {
+                                    show_error(QString::fromUtf8("Error"), QStringLiteral("Applying the log flags failed:\n") + error);
+                                    dlg->stop_progress_animation();
+                                });
+                        });
+
+                        connect(dlg, &EventLogOptionsDialog::save, [=, &controller](woinc::LogFlags log_flags) mutable {
+                            cc_config.log_flags = std::move(log_flags);
+                            dlg->show_progress_animation("Saving log flags");
+                            controller.save_cc_config(
+                                host,
+                                cc_config,
+                                [=, &controller](bool status) {
+                                    if (!status) {
+                                        QMessageBox::critical(this,
+                                                              QStringLiteral("Error"),
+                                                              QStringLiteral("The client failed to save the log flags."),
+                                                              QMessageBox::Ok);
+                                        dlg->stop_progress_animation();
+                                    } else {
+                                        dlg->close();
+                                    }
+                                },
+                                [=](QString error) {
+                                    show_error(QString::fromUtf8("Error"), QStringLiteral("Saving the log flags failed:\n") + error);
+                                    dlg->stop_progress_animation();
+                                });
+                        });
+
+                        dlg->update(std::move(cc_config.log_flags));
+                        dlg->stop_progress_animation();
+                    },
+                    [=](QString error) {
+                        show_error(QString::fromUtf8("Error"), QStringLiteral("Loading the log flags failed:\n") + error);
+                        dlg->close();
+                    });
+
+                dlg->show_progress_animation("Loading log flags");
+                dlg->setAttribute(Qt::WA_DeleteOnClose);
+                dlg->open();
             });
 
     connect(options_menu, &OptionsMenu::config_files_to_be_read, [=, &controller](QString host) {

@@ -188,7 +188,13 @@ OptionsMenu::OptionsMenu(const QString &title, QWidget *parent)
     addAction("Exclusive applications...")->setEnabled(false);
     addSeparator();
     addAction("Select columns...")->setEnabled(false);
-    addAction("Event Log options...")->setEnabled(false); // Ctrl+Shift+F
+    {
+        auto *action = addAction("Event Log options...");
+        action->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F));
+        connect(action, &QAction::triggered, [&]() {
+            emit event_log_options_to_be_shown(selected_host_);
+        });
+    }
     addAction("&Other options...")->setEnabled(false);
     addSeparator();
     connect(addAction("Read config files"), &QAction::triggered, [&]() {

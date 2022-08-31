@@ -86,6 +86,9 @@ class Controller : public QObject {
                                ErrorHandler error_handler);
         void read_global_prefs(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler);
 
+        void load_cc_config(const QString &host, Receiver<CCConfig> receiver, ErrorHandler error_handler);
+        void save_cc_config(const QString &host, const CCConfig &cc_config, Receiver<bool> receiver, ErrorHandler error_handler);
+
         void read_config_files(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler);
 
         void load_all_projects_list(const QString &host, Receiver<AllProjectsList> receiver, ErrorHandler error_handler);

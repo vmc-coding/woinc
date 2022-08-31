@@ -212,6 +212,18 @@ void Controller::read_global_prefs(const QString &host, Receiver<bool> receiver,
                                             ctrl_->read_global_prefs_override(host.toStdString())));
 }
 
+void Controller::load_cc_config(const QString &host, Receiver<CCConfig> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<CCConfig>(std::move(receiver),
+                                                std::move(error_handler),
+                                                ctrl_->cc_config(host.toStdString())));
+}
+
+void Controller::save_cc_config(const QString &host, const CCConfig &cc_config, Receiver<bool> receiver, ErrorHandler error_handler) {
+    poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
+                                            std::move(error_handler),
+                                            ctrl_->cc_config(host.toStdString(), cc_config)));
+}
+
 void Controller::read_config_files(const QString &host, Receiver<bool> receiver, ErrorHandler error_handler) {
     poller_->add(new SubscriptionImpl<bool>(std::move(receiver),
                                             std::move(error_handler),

@@ -23,6 +23,7 @@ set(WOINCQT_SOURCES
 
     dialogs/about_dialog.cc
     dialogs/add_project_wizard.cc
+    dialogs/event_log_options_dialog.cc
     dialogs/preferences_dialog.cc
     dialogs/project_properties_dialog.cc
     dialogs/select_computer_dialog.cc
