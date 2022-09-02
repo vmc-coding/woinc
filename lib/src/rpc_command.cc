@@ -54,10 +54,6 @@ constexpr CommandStatus map__(ConnectionStatus status) {
     return CommandStatus::LogicError;
 }
 
-constexpr CommandStatus as_status__(bool b) {
-    return b ? CommandStatus::Ok : CommandStatus::ParsingError;
-}
-
 CommandStatus do_rpc__(Connection &connection,
                        const wxml::Tree &request_tree,
                        wxml::Tree &response_tree,
