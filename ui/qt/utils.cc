@@ -1,5 +1,5 @@
 /* ui/qt/utils.cc --
-   Written and Copyright (C) 2018-2020 by vmc.
+   Written and Copyright (C) 2018-2022 by vmc.
 
    This file is part of woinc.
 
@@ -21,6 +21,7 @@
 #include <ctime>
 #include <cstdlib>
 
+#include <QDateTime>
 #include <QString>
 
 namespace woinc { namespace ui { namespace qt {
@@ -80,9 +81,9 @@ QString seconds_as_time_string(long seconds) {
 }
 
 QString time_t_as_string(time_t t) {
-    char buf[128];
-    auto ret = std::strftime(buf, sizeof(buf), "%c", std::localtime(&t));
-    return QString(ret > 0 ? buf : "error");
+    QDateTime qtime;
+    qtime.setSecsSinceEpoch(t);
+    return qtime.toString();
 }
 
 }}}
