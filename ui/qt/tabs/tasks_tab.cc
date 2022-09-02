@@ -122,7 +122,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                 ts << "Are you sure you want to abort ";
 
                 if (selected_tasks_.size() == 1) {
-                    auto &task = selected_tasks_.front();
+                    const auto &task = selected_tasks_.front();
                     ts << "this task '" << task.name << "'?\n(Progress: "
                         << 100 * task.progress << "%, Status: " << task.status << ")";
                 } else {

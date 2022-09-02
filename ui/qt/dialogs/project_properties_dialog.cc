@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/project_properties_dialog.cc --
-   Written and Copyright (C) 2019-2020 by vmc.
+   Written and Copyright (C) 2019-2022 by vmc.
 
    This file is part of woinc.
 
@@ -93,7 +93,7 @@ ProjectPropertiesDialog::ProjectPropertiesDialog(Project in_project, DiskUsage i
         add_row__(glyt, QStringLiteral("File uploads deferred for"), seconds_as_time_string(project_.upload_backoff));
     {
         auto usage_iter = std::find_if(disk_usage_.projects.begin(), disk_usage_.projects.end(),
-                                       [&](auto &pu) { return pu.name == project_.name; });
+                                       [&](const auto &pu) { return pu.name == project_.name; });
         assert(usage_iter != disk_usage_.projects.end());
         auto usage = usage_iter == disk_usage_.projects.end() ? -1 : usage_iter->usage;
         auto factor = normalization_values(usage);

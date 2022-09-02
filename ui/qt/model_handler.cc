@@ -1,5 +1,5 @@
 /* ui/qt/model_handler.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -556,7 +556,7 @@ AppVersions ModelHandler::map_(woinc::AppVersions wapp_versions) {
 
         dest.app_name = QString::fromStdString(source.app_name);
 
-        for (auto &&fr : source.file_refs) {
+        for (const auto &fr : source.file_refs) {
             if (fr.main_program) {
                 dest.executable = QString::fromStdString(fr.file_name);
                 break;
@@ -709,7 +709,7 @@ Projects ModelHandler::map_(woinc::Projects wprojects) {
     projects.reserve(wprojects.size());
 
     double sum_resource_share = std::accumulate(wprojects.cbegin(), wprojects.cend(), 0.,
-                                                [](double sum, auto &proj) { return sum + proj.resource_share; });
+                                                [](double sum, const auto &proj) { return sum + proj.resource_share; });
 
     // convert the response to our data structure
     for (auto &&source : wprojects) {
@@ -789,7 +789,7 @@ QVariant ModelHandler::map_(woinc::Statistics wstatistics, const HostModel &host
         dest.project.team = project->team;
         dest.daily_statistics.reserve(source.daily_statistics.size());
 
-        for (auto &source_ds : source.daily_statistics) {
+        for (const auto &source_ds : source.daily_statistics) {
             DailyStatistic dest_ds;
 
             dest_ds.host_expavg_credit = source_ds.host_expavg_credit;

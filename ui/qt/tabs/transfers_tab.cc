@@ -114,7 +114,7 @@ ButtonPanel::ButtonPanel(QWidget *parent) : QWidget(parent) {
                 auto note = QString::fromUtf8("\nNOTE: Aborting a transfer will invalidate a task and you will not receive credit for it.");
 
                 if (selected_transfers_.size() == 1) {
-                    auto &transfer = selected_transfers_.front();
+                    const auto &transfer = selected_transfers_.front();
                     ts << "this transfer '" << transfer.filename << "'?";
                 } else {
                     ts << "these " << selected_transfers_.size() << " transfers?";
