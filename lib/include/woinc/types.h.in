@@ -623,7 +623,7 @@ struct Task {
     double final_cpu_time = 0;
     double final_elapsed_time = 0;
 
-    int exit_status;
+    int exit_status = 0;
     int signal = 0;
     int version_num = 0;
 
