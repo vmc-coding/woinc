@@ -52,11 +52,11 @@ namespace woinc { namespace xml WOINC_LOCAL {
          * Obviously this only accesses the first found node and should only be used
          * if the caller 'knows' that there is only one child with this tag.
          */
-        Node &operator[](Tag tag);
+        Node &operator[](const Tag &tag);
 
         Node &add_child(Tag tag);
 
-        void remove_childs(Tag tag);
+        void remove_childs(const Tag &tag);
 
         bool has_child(const Tag &t) const {
             return found_child(find_child(t));

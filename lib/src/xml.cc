@@ -37,7 +37,7 @@ namespace woinc { namespace xml {
 
 // --- Node impl
 
-Node &Node::operator[](Tag t) {
+Node &Node::operator[](const Tag &t) {
     assert(!this->tag.empty());
 
     auto n = std::find_if(children.begin(), children.end(), [&](const Node &node) {
@@ -56,8 +56,8 @@ Node &Node::add_child(Tag t) {
     return children.back();
 }
 
-void Node::remove_childs(Tag t) {
-    children.remove_if([&](auto &node) { return node.tag == t; });
+void Node::remove_childs(const Tag &t) {
+    children.remove_if([&](const auto &node) { return node.tag == t; });
 }
 
 Nodes::const_iterator Node::find_child(const Tag &t) const {
