@@ -89,9 +89,6 @@ class WOINCUI_LOCAL PeriodicTasksScheduler {
         void operator()();
 
     private:
-        bool should_be_scheduled_(const PeriodicTasksSchedulerContext::Task &task,
-                                  const Configuration::Intervals &intervals,
-                                  const decltype(PeriodicTasksSchedulerContext::Task::last_execution) &now) const;
         void schedule_(const std::string &host, PeriodicTasksSchedulerContext::Task &task);
 
         PeriodicTasksSchedulerContext &context_;

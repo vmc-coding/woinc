@@ -136,7 +136,7 @@ void PeriodicTasksScheduler::operator()() {
                 if (!context_.configuration_.schedule_periodic_tasks(host_tasks.first))
                     continue;
                 for (auto &task : host_tasks.second)
-                    if (!task.pending && should_be_scheduled_(task, intervals, now))
+                    if (!task.pending && now >= task.last_execution + intervals.at(static_cast<size_t>(task.type)))
                         schedule_(host_tasks.first, task);
             }
         }
@@ -144,12 +144,6 @@ void PeriodicTasksScheduler::operator()() {
         if (context_.condition_.wait_for(guard, wake_up_interval, [=]() { return context_.shutdown_triggered_; }))
             break;
     }
-}
-
-bool PeriodicTasksScheduler::should_be_scheduled_(const PeriodicTasksSchedulerContext::Task &task,
-                                                  const Configuration::Intervals &intervals,
-                                                  const decltype(PeriodicTasksSchedulerContext::Task::last_execution) &now) const {
-    return now >= task.last_execution + std::chrono::milliseconds(intervals.at(static_cast<size_t>(task.type)));
 }
 
 void PeriodicTasksScheduler::schedule_(const std::string &host, PeriodicTasksSchedulerContext::Task &task) {
