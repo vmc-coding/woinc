@@ -18,6 +18,7 @@
 
 #include "qt/model_handler.h"
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -556,12 +557,12 @@ AppVersions ModelHandler::map_(woinc::AppVersions wapp_versions) {
 
         dest.app_name = QString::fromStdString(source.app_name);
 
-        for (const auto &fr : source.file_refs) {
-            if (fr.main_program) {
-                dest.executable = QString::fromStdString(fr.file_name);
-                break;
-            }
-        }
+        auto file_ref_iter = std::find_if(source.file_refs.begin(),
+                                          source.file_refs.end(),
+                                          [](const auto &fr) { return fr.main_program; });
+
+        if (file_ref_iter != source.file_refs.end())
+            dest.executable = QString::fromStdString(file_ref_iter->file_name);
 
         dest.project_url  = QString::fromStdString(source.project_url);
         dest.plan_class   = QString::fromStdString(source.plan_class);
@@ -574,9 +575,10 @@ AppVersions ModelHandler::map_(woinc::AppVersions wapp_versions) {
 }
 
 QVariant ModelHandler::map_(woinc::DiskUsage wdisk_usage, const HostModel &host_model) {
-    double total = wdisk_usage.boinc;
-    for (auto &&project : wdisk_usage.projects)
-        total += project.disk_usage;
+    double total = std::accumulate(wdisk_usage.projects.begin(),
+                                   wdisk_usage.projects.end(),
+                                   wdisk_usage.boinc,
+                                   [](const auto &sum, const auto &project) { return sum + project.disk_usage; });
 
     double available = std::min(std::max(wdisk_usage.allowed - total, 0.), wdisk_usage.free);
     double not_available = wdisk_usage.free - available;
