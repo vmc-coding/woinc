@@ -67,7 +67,7 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext : public PostExecutionHandler 
         volatile bool shutdown_triggered_ = false;
 
         struct Task {
-            Task(PeriodicTask t) : type(t) {}
+            explicit Task(PeriodicTask t) : type(t) {}
             const PeriodicTask type;
             bool pending = false;
             std::chrono::steady_clock::time_point last_execution = std::chrono::steady_clock::time_point::min();
@@ -84,7 +84,7 @@ class WOINCUI_LOCAL PeriodicTasksSchedulerContext : public PostExecutionHandler 
 
 class WOINCUI_LOCAL PeriodicTasksScheduler {
     public:
-        PeriodicTasksScheduler(PeriodicTasksSchedulerContext &context);
+        explicit PeriodicTasksScheduler(PeriodicTasksSchedulerContext &context);
 
         void operator()();
 
