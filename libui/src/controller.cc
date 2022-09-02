@@ -351,7 +351,7 @@ std::future<bool> Controller::Impl::file_transfer_op(const std::string &host, Fi
     auto future = create_and_schedule_async_job_<wrpc::FileTransferOpCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error while executing file transfer operation",
         {op, master_url, filename});
 
@@ -369,7 +369,7 @@ std::future<bool> Controller::Impl::project_op(const std::string &host, ProjectO
     auto future = create_and_schedule_async_job_<wrpc::ProjectOpCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error while executing project operation",
         {op, master_url});
 
@@ -389,7 +389,7 @@ std::future<bool> Controller::Impl::task_op(const std::string &host, TaskOp op,
     auto future = create_and_schedule_async_job_<rpc::TaskOpCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error while executing task operation",
         {op, master_url, task_name});
 
@@ -406,7 +406,7 @@ std::future<GlobalPreferences> Controller::Impl::load_global_preferences(const s
     return create_and_schedule_async_job_<wrpc::GetGlobalPreferencesCommand, GlobalPreferences>(
         __func__,
         host,
-        [](auto &r) { return r.preferences; },
+        [](const auto &r) { return r.preferences; },
         "Error while loading the preferences",
         {mode});
 }
@@ -419,7 +419,7 @@ std::future<bool> Controller::Impl::save_global_preferences(const std::string &h
     return create_and_schedule_async_job_<wrpc::SetGlobalPreferencesCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error while setting the preferences",
         {prefs, mask});
 }
@@ -432,7 +432,7 @@ std::future<bool> Controller::Impl::read_global_prefs_override(const std::string
     return create_and_schedule_async_job_<wrpc::ReadGlobalPreferencesOverrideCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error reading the preferences");
 }
 
@@ -444,7 +444,7 @@ std::future<CCConfig> Controller::Impl::cc_config(const std::string &host) {
     return create_and_schedule_async_job_<wrpc::GetCCConfigCommand, CCConfig>(
         __func__,
         host,
-        [](auto &r) { return r.cc_config; },
+        [](const auto &r) { return r.cc_config; },
         "Error reading the cc_config");
 }
 
@@ -456,7 +456,7 @@ std::future<bool> Controller::Impl::cc_config(const std::string &host, const CCC
     return create_and_schedule_async_job_<wrpc::SetCCConfigCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error writing the cc_config",
         {cc_config});
 }
@@ -469,7 +469,7 @@ std::future<bool> Controller::Impl::read_config_files(const std::string &host) {
     return create_and_schedule_async_job_<wrpc::ReadCCConfigCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error reading the config files");
 }
 
@@ -481,7 +481,7 @@ std::future<bool> Controller::Impl::run_mode(const std::string &host, RunMode mo
     return create_and_schedule_async_job_<wrpc::SetRunModeCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error setting the run mode",
         mode);
 }
@@ -494,7 +494,7 @@ std::future<bool> Controller::Impl::gpu_mode(const std::string &host, RunMode mo
     return create_and_schedule_async_job_<wrpc::SetGpuModeCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error setting the gpu run mode",
         mode);
 }
@@ -507,7 +507,7 @@ std::future<bool> Controller::Impl::network_mode(const std::string &host, RunMod
     return create_and_schedule_async_job_<wrpc::SetNetworkModeCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error setting the network mode",
         mode);
 }
@@ -520,7 +520,7 @@ std::future<AllProjectsList> Controller::Impl::all_projects_list(const std::stri
     return create_and_schedule_async_job_<wrpc::GetAllProjectsListCommand, AllProjectsList>(
         __func__,
         host,
-        [](auto &r) { return r.projects; },
+        [](const auto &r) { return r.projects; },
         "Error getting the projects list");
 }
 
@@ -533,7 +533,7 @@ std::future<bool> Controller::Impl::start_loading_project_config(const std::stri
     return create_and_schedule_async_job_<wrpc::GetProjectConfigCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error loading the project config",
         {master_url});
 }
@@ -546,7 +546,7 @@ std::future<ProjectConfig> Controller::Impl::poll_project_config(const std::stri
     return create_and_schedule_async_job_<wrpc::GetProjectConfigPollCommand, ProjectConfig>(
         __func__,
         host,
-        [](auto &r) { return r.project_config; },
+        [](const auto &r) { return r.project_config; },
         "Error polling the project config");
 }
 
@@ -562,7 +562,7 @@ std::future<bool> Controller::Impl::start_account_lookup(const std::string &host
     return create_and_schedule_async_job_<wrpc::LookupAccountCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error looking up the account info",
         {master_url, email, password});
 }
@@ -575,7 +575,7 @@ std::future<AccountOut> Controller::Impl::poll_account_lookup(const std::string 
     return create_and_schedule_async_job_<wrpc::LookupAccountPollCommand, AccountOut>(
         __func__,
         host,
-        [](auto &r) { return r.account_out; },
+        [](const auto &r) { return r.account_out; },
         "Error polling the account info");
 }
 
@@ -591,7 +591,7 @@ std::future<bool> Controller::Impl::attach_project(const std::string &host,
     return create_and_schedule_async_job_<wrpc::ProjectAttachCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error attaching the project",
         {std::move(master_url), std::move(authenticator)});
 }
@@ -604,7 +604,7 @@ std::future<bool> Controller::Impl::network_available(const std::string &host) {
     return create_and_schedule_async_job_<wrpc::NetworkAvailableCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error retrying deferred network communication");
 }
 
@@ -616,7 +616,7 @@ std::future<bool> Controller::Impl::run_benchmarks(const std::string &host) {
     return create_and_schedule_async_job_<wrpc::RunBenchmarksCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error triggering the benchmarks run");
 }
 
@@ -628,7 +628,7 @@ std::future<bool> Controller::Impl::quit(const std::string &host) {
     return create_and_schedule_async_job_<wrpc::QuitCommand, bool>(
         __func__,
         host,
-        [](auto &r) { return r.success; },
+        [](const auto &r) { return r.success; },
         "Error quitting the client");
 }
 
