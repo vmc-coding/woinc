@@ -1,5 +1,5 @@
 /* woinc/rpc_connection.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -27,12 +27,6 @@
 #include <woinc/defs.h>
 
 namespace woinc { namespace rpc {
-
-enum class ConnectionStatus {
-    Ok,
-    Disconnected,
-    Error
-};
 
 class Connection {
     public:

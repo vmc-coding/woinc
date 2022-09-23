@@ -27,17 +27,6 @@ namespace woinc { namespace rpc {
 
 struct Connection;
 
-// TODO move this into defs.h
-enum class CommandStatus {
-    Ok,
-    Disconnected,
-    Unauthorized,
-    ConnectionError,
-    ClientError,
-    ParsingError,
-    LogicError
-};
-
 struct Command {
     virtual ~Command() = default;
 

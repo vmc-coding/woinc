@@ -1,5 +1,5 @@
 /* woinc/defs.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2022 by vmc.
 
    This file is part of woinc.
 
@@ -151,6 +151,17 @@ enum class DayOfWeek {
 
 // ----- woinc's own enums, i.e. not send by the clients -----
 
+enum class FileTransferOp {
+    Abort,
+    Retry
+};
+
+enum class GetGlobalPrefsMode {
+    File,
+    Override,
+    Working
+};
+
 enum class ProjectOp {
     Allowmorework,
     Detach,
@@ -169,16 +180,27 @@ enum class TaskOp {
     Suspend
 };
 
-enum class FileTransferOp {
-    Abort,
-    Retry
+
+namespace rpc {
+
+enum class ConnectionStatus {
+    Ok,
+    Disconnected,
+    Error
 };
 
-enum class GetGlobalPrefsMode {
-    File,
-    Override,
-    Working
+enum class CommandStatus {
+    Ok,
+    Disconnected,
+    Unauthorized,
+    ConnectionError,
+    ClientError,
+    ParsingError,
+    LogicError
 };
+
+}
+
 
 }
 
