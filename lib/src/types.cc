@@ -1,5 +1,5 @@
 /* lib/src/types.cc --
-   Written and Copyright (C) 2019-2021 by vmc.
+   Written and Copyright (C) 2019-2022 by vmc.
 
    This file is part of woinc.
 
@@ -144,32 +144,5 @@ Task::Task(const Task &task)
         active_task = std::make_unique<ActiveTask>(*task.active_task);
 }
 
-
-// ----- ClientState -----
-
-
-ClientState::ClientState(const ClientState &cs)
-    : WOINC_COPY(cs, app_versions)
-    , WOINC_COPY(cs, apps)
-    , WOINC_COPY(cs, projects)
-    , WOINC_COPY(cs, tasks)
-    , WOINC_COPY(cs, time_stats)
-    , WOINC_COPY(cs, workunits)
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
-    , WOINC_COPY(cs, global_prefs)
-    , WOINC_COPY(cs, host_info)
-    , WOINC_COPY(cs, platforms)
-    , WOINC_COPY(cs, core_client_version)
-    , WOINC_COPY(cs, executing_as_daemon)
-    , WOINC_COPY(cs, have_ati)
-    , WOINC_COPY(cs, have_cuda)
-    , WOINC_COPY(cs, platform_name)
-#endif
-{
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
-    if (cs.net_stats)
-        net_stats = std::make_unique<NetStats>(*cs.net_stats);
-#endif
-}
 
 }

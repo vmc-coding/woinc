@@ -30,7 +30,6 @@
 
 namespace woinc {
 
-
 struct FileRef {
     bool main_program = false;
     std::string file_name;
@@ -69,6 +68,24 @@ struct LogFlags {
 
     private:
         Flags flags_;
+};
+
+struct ProxyInfo {
+    bool socks5_remote_dns;
+    bool use_http_authentication;
+    bool use_http_proxy;
+    bool use_socks_proxy;
+
+    int http_server_port;
+    int socks_server_port;
+
+    std::string http_server_name;
+    std::string http_user_name;
+    std::string http_user_passwd;
+    std::string noproxy_hosts;
+    std::string socks5_user_name;
+    std::string socks5_user_passwd;
+    std::string socks_server_name;
 };
 
 struct AccountOut {
@@ -120,7 +137,6 @@ struct App {
 
 typedef std::vector<App> Apps;
 
-// TODO add the stuff about coprocs
 struct AppVersion {
     double avg_ncpus = 0;
     double flops = 0;
@@ -128,15 +144,25 @@ struct AppVersion {
     std::string app_name;
     std::string plan_class;
     std::string platform;
-    FileRefs file_refs;
+
+    FileRefs app_files;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
+    struct Coproc {
+        std::string type;
+        double count;
+    };
+
     bool dont_throttle = false;
+    bool is_vm_app = false;
     bool is_wrapper = false;
     bool needs_network = false;
     double gpu_ram = 0;
     std::string api_version;
     std::string cmdline;
     std::string file_prefix;
+
+    Coproc coproc;
 #endif
 
     std::string project_url; // not sent by the client, but needed to find corresponding project
@@ -152,9 +178,15 @@ struct CCConfig {
         std::string url;
     };
 
-    //TODO: COPROCS config_coprocs;
-    //TODO: PROXY_INFO proxy_info;
+    struct Coproc {
+        double peak_flops;
+        int count;
+        std::string type;
+        std::vector<int> device_nums;
+    };
+
     bool abort_jobs_on_exit = false;
+    bool allow_gui_rpc_get = false;
     bool allow_multiple_clients = false;
     bool allow_remote_gui_rpc = false;
     bool disallow_attach = false;
@@ -188,6 +220,8 @@ struct CCConfig {
     bool use_certs_only = false;
     bool vbox_window = false;
 
+    double max_stderr_file_size = 0;
+    double max_stdout_file_size = 0;
     double rec_half_life_days = 10;
     double start_delay = 0;
 
@@ -196,24 +230,26 @@ struct CCConfig {
     int max_event_log_lines = 2000;
     int max_file_xfers = 8;
     int max_file_xfers_per_project = 2;
-    int max_stderr_file_size = 0;
-    int max_stdout_file_size = 0;
     int max_tasks_reported = 0;
     int ncpus = -1;
     int process_priority = -1;
     int process_priority_special = -1;
     int save_stats_days = 30;
 
-    std::array<int, 5> ignore_gpu_instance = {0};
-
     std::string force_auth = "default";
 
+    std::vector<Coproc> coprocs;
     std::vector<ExcludeGpu> exclude_gpus;
+    std::vector<int> ignore_ati_dev;
+    std::vector<int> ignore_intel_dev;
+    std::vector<int> ignore_nvidia_dev;
     std::vector<std::string> alt_platforms;
     std::vector<std::string> exclusive_apps;
     std::vector<std::string> exclusive_gpu_apps;
+    std::vector<std::string> ignore_tty;
 
     LogFlags log_flags;
+    ProxyInfo proxy_info;
 };
 
 struct CCStatus {
@@ -224,11 +260,18 @@ struct CCStatus {
         double delay = 0; // seconds until mode gets perm_mode
     };
 
+    bool ams_password_error = false;
+    bool disallow_attach = false;
+    bool manager_must_quit = false;
+    bool simple_gui_only = false;
+
+    int max_event_log_lines = 0;
+
+    NetworkStatus network_status = NetworkStatus::UnknownToWoinc;
+
     State cpu;
     State gpu;
     State network;
-
-    NetworkStatus network_status = NetworkStatus::UnknownToWoinc;
 };
 
 struct DailyStatistic {
@@ -236,6 +279,7 @@ struct DailyStatistic {
     double host_total_credit;
     double user_expavg_credit;
     double user_total_credit;
+
     time_t day;
 };
 
@@ -297,6 +341,11 @@ struct FileTransfer {
 typedef std::vector<FileTransfer> FileTransfers;
 
 struct GlobalPreferences {
+    struct TimeSpan {
+        double start, end;
+    };
+    typedef std::map<DayOfWeek, TimeSpan> DayPrefs;
+
     bool confirm_before_connecting = false;
     bool dont_verify_images = false;
     bool hangup_if_dialed = false;
@@ -312,16 +361,12 @@ struct GlobalPreferences {
     double disk_max_used_gb = 0;
     double disk_max_used_pct = 0;
     double disk_min_free_gb = 0;
-    double end_hour = 0; // compute only until this timepoint every day
     double idle_time_to_run = 0;
     double max_bytes_sec_down = 0;
     double max_bytes_sec_up = 0;
     double max_ncpus_pct = 0;
-    double net_end_hour = 0;
-    double net_start_hour = 0;
     double ram_max_used_busy_pct = 0;
     double ram_max_used_idle_pct = 0;
-    double start_hour = 0; // start computing at this timepoint every day
     double suspend_cpu_usage = 0;
     double vm_max_used_pct = 0;
     double work_buf_additional_days = 0;
@@ -329,31 +374,29 @@ struct GlobalPreferences {
 
     int daily_xfer_period_days = 0;
 
+    DayPrefs daily_cpu_times;
+    DayPrefs daily_net_times;
+
+    TimeSpan general_cpu_times;
+    TimeSpan general_net_times;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     bool network_wifi_only = false;
     bool override_file_present = false;
     double battery_charge_min_pct = 0;
     double battery_max_temperature = 0;
-    double mod_time = 0;
     double suspend_if_no_recent_input = 0;
     int max_cpus = 0;
     std::string source_project;
 #endif
-
-    struct TimeSpan {
-        double start, end;
-    };
-
-    typedef std::map<DayOfWeek, TimeSpan> TimeSpans;
-
-    TimeSpans cpu_times;
-    TimeSpans net_times;
 };
 
 struct GlobalPreferencesMask {
     bool confirm_before_connecting = false;
     bool cpu_scheduling_period_minutes = false;
     bool cpu_usage_limit = false;
+    bool daily_cpu_times = false;
+    bool daily_net_times = false;
     bool daily_xfer_limit_mb = false;
     bool daily_xfer_period_days = false;
     bool disk_interval = false;
@@ -361,30 +404,28 @@ struct GlobalPreferencesMask {
     bool disk_max_used_pct = false;
     bool disk_min_free_gb = false;
     bool dont_verify_images = false;
-    bool end_hour = false;
+    bool general_cpu_times = false;
+    bool general_net_times = false;
     bool hangup_if_dialed = false;
     bool idle_time_to_run = false;
     bool leave_apps_in_memory = false;
     bool max_bytes_sec_down = false;
     bool max_bytes_sec_up = false;
     bool max_ncpus_pct = false;
-    bool net_end_hour = false;
-    bool net_start_hour = false;
     bool ram_max_used_busy_pct = false;
     bool ram_max_used_idle_pct = false;
     bool run_gpu_if_user_active = false;
     bool run_if_user_active = false;
     bool run_on_batteries = false;
-    bool start_hour = false;
     bool suspend_cpu_usage = false;
     bool vm_max_used_pct = false;
     bool work_buf_additional_days = false;
     bool work_buf_min_days = false;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     bool battery_charge_min_pct = false;
     bool battery_max_temperature = false;
     bool max_cpus = false;
-    bool mod_time = false;
     bool network_wifi_only = false;
     bool override_file_present = false;
     bool source_project = false;
@@ -396,13 +437,13 @@ struct GuiUrl {
     std::string name;
     std::string description;
     std::string url;
-
-    bool ifteam = false;
 };
 
 typedef std::vector<GuiUrl> GuiUrls;
 
 // TODO add the stuff about coprocs
+// TODO parse opencl_cpu_prop
+// TODO parse wsls
 struct HostInfo {
     double d_free = 0;
     double d_total = 0;
@@ -412,8 +453,10 @@ struct HostInfo {
     double p_fpops = 0;
     double p_iops = 0;
     double p_membw = 0;
+
     int p_ncpus = 0;
     int timezone = 0;
+
     std::string domain_name;
     std::string ip_addr;
     std::string os_name;
@@ -423,8 +466,12 @@ struct HostInfo {
 
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     bool p_vm_extensions_disabled = false;
+    bool wsl_available = false;
+
     double p_calculated = 0;
+
     int n_usable_coprocs = 0;
+
     std::string host_cpid;
     std::string mac_address;
     std::string p_features;
@@ -442,17 +489,6 @@ struct Message {
 };
 
 typedef std::vector<Message> Messages;
-
-struct NetStats {
-#if @WOINC_EXPOSE_FULL_STRUCTURES@
-    double bwup = 0;
-    double avg_up = 0;
-    double avg_time_up = 0;
-    double bwdown = 0;
-    double avg_down = 0;
-    double avg_time_down = 0;
-#endif
-};
 
 struct Notice {
     int seqno = 0;
@@ -472,10 +508,6 @@ struct Notice {
 
 typedef std::vector<Notice> Notices;
 
-// TODO there are at least two types of 'platform', so define this where needed, not on top level; don't use!
-typedef std::string Platform;
-typedef std::vector<Platform> Platforms;
-
 // TODO add the stuff about coprocs
 struct Project {
     bool anonymous_platform = false;
@@ -489,11 +521,11 @@ struct Project {
     bool suspended_via_gui = false;
     bool trickle_up_pending = false;
 
-    double desired_disk_usage = 0;
+    double disk_usage = 0;
+    double duration_correction_factor = 0;
     double elapsed_time = 0;
     double host_expavg_credit = 0;
     double host_total_credit = 0;
-    double project_files_downloaded_time = 0;
     double resource_share = 0;
     double sched_priority = 0;
     double user_expavg_credit = 0;
@@ -509,6 +541,7 @@ struct Project {
 
     std::string external_cpid;
     std::string master_url;
+    std::string project_dir;
     std::string project_name;
     std::string team_name;
     std::string user_name;
@@ -517,37 +550,10 @@ struct Project {
     time_t download_backoff = 0;
     time_t last_rpc_time = 0;
     time_t min_rpc_time = 0;
+    time_t project_files_downloaded_time = 0;
     time_t upload_backoff = 0;
 
     GuiUrls gui_urls;
-
-#if @WOINC_EXPOSE_FULL_STRUCTURES@
-    bool dont_use_dcf = false;
-    bool send_full_workload = false;
-    bool use_symlinks = false;
-    bool verify_files_on_app_start = false;
-
-    double ams_resource_share_new = 0;
-    double cpid_time = 0;
-    double duration_correction_factor = 0;
-    double host_create_time = 0;
-    double next_rpc_time = 0;
-    double rec = 0;
-    double rec_time = 0;
-    double user_create_time = 0;
-
-    int rpc_seqno = 0;
-    int send_job_log = 0;
-    int send_time_stats_log = 0;
-    int teamid = 0;
-    int userid = 0;
-
-    std::string cross_project_id;
-    std::string email_hash;
-    std::string host_venue;
-    std::string project_dir;
-    std::string symstore;
-#endif
 };
 
 typedef std::vector<Project> Projects;
@@ -557,8 +563,10 @@ struct ProjectConfig {
     bool client_account_creation_disabled;
     bool terms_of_use_is_html;
     bool uses_username;
+
     int error_num;
     int min_passwd_length;
+
     std::string error_msg;
     std::string master_url;
     std::string name;
@@ -573,11 +581,13 @@ struct ProjectConfig {
     typedef std::vector<Platform> Platforms;
 
     Platforms platforms;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     bool account_manager;
     bool ldap_auth;
     bool sched_stopped;
     bool web_stopped;
+
     int local_revision;
     int min_client_version;
 #endif
@@ -592,7 +602,7 @@ struct ProjectListEntry {
     std::string specific_area;
     std::string url;
     std::string web_url;
-    Platforms platforms;
+    std::vector<std::string> platforms;
 };
 
 typedef std::vector<ProjectListEntry> AllProjectsList;
@@ -675,7 +685,6 @@ struct Version {
     int release = 0;
 };
 
-// TODO add the (job) keywords
 struct Workunit {
     double rsc_disk_bound = 0;
     double rsc_fpops_bound = 0;
@@ -689,6 +698,7 @@ struct Workunit {
 
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     std::string command_line;
+    std::vector<int> job_keyword_ids;
 
     FileRefs input_files;
 #endif
@@ -699,10 +709,6 @@ struct Workunit {
 typedef std::vector<Workunit> Workunits;
 
 struct ClientState {
-    ClientState() = default;
-    ClientState(const ClientState &cs);
-    ClientState(ClientState &&cs) = default;
-
     AppVersions app_versions;
     Apps apps;
     Projects projects;
@@ -711,20 +717,16 @@ struct ClientState {
     Workunits workunits;
 
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
+    typedef std::string Platform;
+    typedef std::vector<Platform> Platforms;
+
     GlobalPreferences global_prefs;
     HostInfo host_info;
     Platforms platforms;
     Version core_client_version;
 
     bool executing_as_daemon = false;
-    bool have_ati = false; // deprecated
-    bool have_cuda = false; // deprecated
     std::string platform_name;
-
-    // according to the comments in BOINC's CLIENT_STATE::write_state_gui
-    // the net stats should not be sent, so it may be removed in the future;
-    // TODO c++17: Use std::optional instead of pointer here and remove the custom copy-c'tor and -operator
-    std::unique_ptr<NetStats> net_stats;
 #endif
 };
 

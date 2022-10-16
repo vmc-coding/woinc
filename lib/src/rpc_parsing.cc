@@ -18,7 +18,11 @@
 
 #include "rpc_parsing.h"
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <iterator>
+#include <sstream>
 #include <type_traits>
 
 #ifndef NDEBUG
@@ -214,18 +218,14 @@ void parse_(const woinc::xml::Node &node, woinc::LogFlags &log_flags);
 void parse_(const woinc::xml::Node &node, woinc::Message &msg);
 void parse_(const woinc::xml::Node &node, woinc::Notice &notice);
 void parse_(const woinc::xml::Node &node, woinc::PersistentFileXfer &persistent_file_xfer);
-void parse_(const woinc::xml::Node &node, woinc::Platform &platform);
 void parse_(const woinc::xml::Node &node, woinc::Project &project);
 void parse_(const woinc::xml::Node &node, woinc::ProjectStatistics &project_statistics);
+void parse_(const woinc::xml::Node &node, woinc::ProxyInfo &proxy_info);
 void parse_(const woinc::xml::Node &node, woinc::Statistics &statistics);
 void parse_(const woinc::xml::Node &node, woinc::Task &task);
 void parse_(const woinc::xml::Node &node, woinc::TimeStats &time_stats);
 void parse_(const woinc::xml::Node &node, woinc::Version &version);
 void parse_(const woinc::xml::Node &node, woinc::Workunit &workunit);
-
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
-void parse_(const woinc::xml::Node &node, woinc::NetStats &net_stats);
-#endif
 
 #define WOINC_PARSE_CHILD_CONTENT(NODE, RESULT_STRUCT, TAG) \
     parse_child_content_(NODE, #TAG, RESULT_STRUCT . TAG)
@@ -281,13 +281,9 @@ void parse_(const woinc::xml::Node &node, woinc::AllProjectsList &projects) {
         WOINC_PARSE_CHILD_CONTENT(project_node, entry, url);
         WOINC_PARSE_CHILD_CONTENT(project_node, entry, web_url);
         auto platforms_node = project_node.find_child("platforms");
-        if (project_node.found_child(platforms_node)) {
-            for (auto &platform_node : platforms_node->children) {
-                woinc::Platform platform;
-                parse_(platform_node, platform);
-                entry.platforms.push_back(std::move(platform));
-            }
-        }
+        if (project_node.found_child(platforms_node))
+            for (const auto &platform_node : platforms_node->children)
+                entry.platforms.push_back(platform_node.content);
         projects.push_back(std::move(entry));
     }
 }
@@ -310,7 +306,7 @@ void parse_(const wxml::Node &node, woinc::AppVersion &app_version) {
         if (n.tag == "file_ref") {
             woinc::FileRef f;
             parse_(n, f);
-            app_version.file_refs.push_back(std::move(f));
+            app_version.app_files.push_back(std::move(f));
         }
     }
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
@@ -321,6 +317,18 @@ void parse_(const wxml::Node &node, woinc::AppVersion &app_version) {
     WOINC_PARSE_CHILD_CONTENT(node, app_version, api_version);
     WOINC_PARSE_CHILD_CONTENT(node, app_version, cmdline);
     WOINC_PARSE_CHILD_CONTENT(node, app_version, file_prefix);
+
+    auto coproc_node = node.find_child("coproc");
+    if (node.found_child(coproc_node)) {
+        WOINC_PARSE_CHILD_CONTENT(*coproc_node, app_version.coproc, type);
+        WOINC_PARSE_CHILD_CONTENT(*coproc_node, app_version.coproc, count);
+    }
+
+    app_version.is_vm_app =
+        app_version.plan_class.find("vbox") != app_version.plan_class.npos ||
+        std::find_if(app_version.app_files.begin(), app_version.app_files.end(),
+                     [&](const auto &fr) { return fr.file_name.find("vboxwrapper") != fr.file_name.npos; })
+        != app_version.app_files.end();
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
 }
 
@@ -330,6 +338,7 @@ void parse_(const wxml::Node &node, woinc::CCConfig &cc_config) {
     auto options_node = *options_node_iter;
 
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, abort_jobs_on_exit);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, allow_gui_rpc_get);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, allow_multiple_clients);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, allow_remote_gui_rpc);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, disallow_attach);
@@ -362,6 +371,8 @@ void parse_(const wxml::Node &node, woinc::CCConfig &cc_config) {
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, use_certs);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, use_certs_only);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, vbox_window);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stderr_file_size);
+    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stdout_file_size);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, rec_half_life_days);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, start_delay);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, http_transfer_timeout);
@@ -369,42 +380,78 @@ void parse_(const wxml::Node &node, woinc::CCConfig &cc_config) {
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_event_log_lines);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_file_xfers);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_file_xfers_per_project);
-    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stderr_file_size);
-    WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_stdout_file_size);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, max_tasks_reported);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, ncpus);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, process_priority);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, process_priority_special);
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, save_stats_days);
-
-    // TODO what are the other flags?
-    if (options_node.has_child("ignore_cuda_dev") || options_node.has_child("ignore_nvidia_dev"))
-        cc_config.ignore_gpu_instance[1] = true;
-    if (options_node.has_child("ignore_ati_dev"))
-        cc_config.ignore_gpu_instance[2] = true;
-    if (options_node.has_child("ignore_intel_dev"))
-        cc_config.ignore_gpu_instance[3] = true;
-
     WOINC_PARSE_CHILD_CONTENT(options_node, cc_config, force_auth);
 
     for (const auto &child: options_node.children) {
-        if (child.tag == "alt_platform")
+        if (child.tag == "coproc") {
+            woinc::CCConfig::Coproc coproc;
+
+            WOINC_PARSE_CHILD_CONTENT(child, coproc, peak_flops);
+            WOINC_PARSE_CHILD_CONTENT(child, coproc, count);
+            WOINC_PARSE_CHILD_CONTENT(child, coproc, type);
+
+            std::string device_nums;
+            parse_child_content_(child, "device_nums", device_nums);
+            std::istringstream iss(std::move(device_nums));
+
+            coproc.device_nums.clear();
+            std::transform(
+                std::istream_iterator<std::string>(iss),
+                std::istream_iterator<std::string>(),
+                std::back_inserter(coproc.device_nums),
+                [](const std::string &num) { return std::stoi(num); });
+
+            cc_config.coprocs.push_back(std::move(coproc));
+        } else if (child.tag == "exclude_gpu") {
+            woinc::CCConfig::ExcludeGpu exclude_gpu;
+            WOINC_PARSE_CHILD_CONTENT(child, exclude_gpu, device_num);
+            WOINC_PARSE_CHILD_CONTENT(child, exclude_gpu, appname);
+            WOINC_PARSE_CHILD_CONTENT(child, exclude_gpu, type);
+            WOINC_PARSE_CHILD_CONTENT(child, exclude_gpu, url);
+            cc_config.exclude_gpus.push_back(std::move(exclude_gpu));
+        } else if (child.tag == "ignore_ati_dev") {
+            int num;
+            parse__(child.content, num);
+            cc_config.ignore_ati_dev.push_back(num);
+        } else if (child.tag == "ignore_intel_dev") {
+            int num;
+            parse__(child.content, num);
+            cc_config.ignore_intel_dev.push_back(num);
+        } else if (child.tag == "ignore_cuda_dev" || child.tag =="ignore_nvidia_dev") {
+            int num;
+            parse__(child.content, num);
+            cc_config.ignore_nvidia_dev.push_back(num);
+        } else if (child.tag == "alt_platform") {
             cc_config.alt_platforms.push_back(child.content);
-        else if (child.tag == "exclusive_app")
-            cc_config.exclusive_apps.push_back(child.content);
-        else if (child.tag == "exclusive_gpu_app")
-            cc_config.exclusive_gpu_apps.push_back(child.content);
+        } else if (child.tag == "exclusive_app") {
+             cc_config.exclusive_apps.push_back(child.content);
+        } else if (child.tag == "exclusive_gpu_app") {
+             cc_config.exclusive_gpu_apps.push_back(child.content);
+        } else if (child.tag == "ignore_tty") {
+            cc_config.ignore_tty.push_back(child.content);
+        } else if (child.tag == "proxy_info") {
+            parse_(child, cc_config.proxy_info);
+        }
     }
-    //TODO: std::vector<ExcludeGpu> exclude_gpus;
 
     auto log_flags_node = node.find_child("log_flags");
     if (node.found_child(log_flags_node))
         parse_(*log_flags_node, cc_config.log_flags);
 }
 
-// see handle_get_cc_status() in BOINC/client/gui_rpc_server_ops.cpp
 void parse_(const wxml::Node &node, woinc::CCStatus &cc_status) {
-    parse_child_content_(node, "network_status"        , cc_status.network_status);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, ams_password_error);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, disallow_attach);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, manager_must_quit);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, simple_gui_only);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, max_event_log_lines);
+    WOINC_PARSE_CHILD_CONTENT(node, cc_status, network_status);
+
     parse_child_content_(node, "task_suspend_reason"   , cc_status.cpu.suspend_reason);
     parse_child_content_(node, "task_mode"             , cc_status.cpu.mode);
     parse_child_content_(node, "task_mode_perm"        , cc_status.cpu.perm_mode);
@@ -483,20 +530,15 @@ void parse_(const wxml::Node &node, woinc::ClientState &client_state) {
         } else if (child.tag == "host_info") {
             parse_(child, client_state.host_info);
         } else if (child.tag == "platform") {
-            woinc::Platform platform;
-            parse_(child, platform);
+            woinc::ClientState::Platform platform;
+            parse__(child.content, platform);
             client_state.platforms.push_back(std::move(platform));
-        } else if (child.tag == "net_stats") {
-            client_state.net_stats = std::make_unique<woinc::NetStats>();
-            parse_(child, *client_state.net_stats);
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
         }
     }
 
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     WOINC_PARSE_CHILD_CONTENT(node, client_state, executing_as_daemon);
-    WOINC_PARSE_CHILD_CONTENT(node, client_state, have_ati);
-    WOINC_PARSE_CHILD_CONTENT(node, client_state, have_cuda);
     WOINC_PARSE_CHILD_CONTENT(node, client_state, platform_name);
     parse_child_content_(node, "core_client_major_version", client_state.core_client_version.major);
     parse_child_content_(node, "core_client_minor_version", client_state.core_client_version.minor);
@@ -563,21 +605,22 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, disk_max_used_gb);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, disk_max_used_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, disk_min_free_gb);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, end_hour);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, idle_time_to_run);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, max_bytes_sec_down);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, max_bytes_sec_up);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, max_ncpus_pct);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, net_end_hour);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, net_start_hour);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, ram_max_used_busy_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, ram_max_used_idle_pct);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, start_hour);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, suspend_cpu_usage);
+    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, vm_max_used_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, work_buf_additional_days);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, work_buf_min_days);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, vm_max_used_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, daily_xfer_period_days);
+
+    parse_child_content_(node, "start_hour", global_prefs.general_cpu_times.start);
+    parse_child_content_(node, "end_hour", global_prefs.general_cpu_times.end);
+    parse_child_content_(node, "net_start_hour", global_prefs.general_net_times.start);
+    parse_child_content_(node, "net_end_hour", global_prefs.general_net_times.end);
 
     auto prefs_node = node.find_child("day_prefs");
     while (node.found_child(prefs_node)) {
@@ -589,7 +632,7 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
             woinc::GlobalPreferences::TimeSpan span;
             parse_child_content_(*prefs_node, "start_hour", span.start);
             parse_child_content_(*prefs_node, "end_hour", span.end);
-            global_prefs.cpu_times.emplace(day, std::move(span));
+            global_prefs.daily_cpu_times.emplace(day, std::move(span));
         }
 
         if (prefs_node->has_child("net_start_hour")) {
@@ -597,7 +640,7 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
             woinc::GlobalPreferences::TimeSpan span;
             parse_child_content_(*prefs_node, "net_start_hour", span.start);
             parse_child_content_(*prefs_node, "net_end_hour", span.end);
-            global_prefs.net_times.emplace(day, std::move(span));
+            global_prefs.daily_net_times.emplace(day, std::move(span));
         }
 
         std::advance(prefs_node, 1);
@@ -609,7 +652,6 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, override_file_present);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, battery_charge_min_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, battery_max_temperature);
-    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, mod_time);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, suspend_if_no_recent_input);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, max_cpus);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, source_project);
@@ -641,6 +683,7 @@ void parse_(const woinc::xml::Node &node, woinc::HostInfo &info) {
     WOINC_PARSE_CHILD_CONTENT(node, info, p_vendor);
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     WOINC_PARSE_CHILD_CONTENT(node, info, p_vm_extensions_disabled);
+    WOINC_PARSE_CHILD_CONTENT(node, info, wsl_available);
     WOINC_PARSE_CHILD_CONTENT(node, info, p_calculated);
     WOINC_PARSE_CHILD_CONTENT(node, info, n_usable_coprocs);
     WOINC_PARSE_CHILD_CONTENT(node, info, host_cpid);
@@ -648,7 +691,15 @@ void parse_(const woinc::xml::Node &node, woinc::HostInfo &info) {
     WOINC_PARSE_CHILD_CONTENT(node, info, p_features);
     WOINC_PARSE_CHILD_CONTENT(node, info, product_name);
     WOINC_PARSE_CHILD_CONTENT(node, info, virtualbox_version);
+
+    std::transform(info.p_features.begin(), info.p_features.end(), info.p_features.begin(),
+                   [](auto c) { return std::tolower(c); });
 #endif // WOINC_EXPOSE_FULL_STRUCTURES
+
+    // sanitize data
+    info.p_fpops = std::abs(info.p_fpops);
+    info.p_iops = std::abs(info.p_iops);
+    info.p_membw = std::abs(info.p_membw);
 }
 
 void parse_(const wxml::Node &node, woinc::LogFlags &log_flags) {
@@ -667,18 +718,6 @@ void parse_(const wxml::Node &node, woinc::Message &msg) {
     parse_child_content_(node, "pri", msg.priority);
     parse_child_content_(node, "time", msg.timestamp);
 }
-
-// see NET_STATS::write() in BOINC/client/net_stats.cc
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
-void parse_(const wxml::Node &node, woinc::NetStats &net_stats) {
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, bwup);
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, avg_up);
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, avg_time_up);
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, bwdown);
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, avg_down);
-    WOINC_PARSE_CHILD_CONTENT(node, net_stats, avg_time_down);
-}
-#endif // WOINC_EXPOSE_FULL_STRUCTURES
 
 // see NOTICE::write in BOINC/lib/notice.cpp
 void parse_(const wxml::Node &node, woinc::Notice &notice) {
@@ -708,11 +747,6 @@ void parse_(const woinc::xml::Node &node, woinc::PersistentFileXfer &persistent_
 #endif
 }
 
-void parse_(const wxml::Node &node, woinc::Platform &platform) {
-    platform = node.content;
-}
-
-// see PROJECT::write_state in BOINC/client/project.cpp
 void parse_(const wxml::Node &node, woinc::Project &project) {
     WOINC_PARSE_CHILD_CONTENT(node, project, anonymous_platform);
     WOINC_PARSE_CHILD_CONTENT(node, project, attached_via_acct_mgr);
@@ -725,11 +759,11 @@ void parse_(const wxml::Node &node, woinc::Project &project) {
     WOINC_PARSE_CHILD_CONTENT(node, project, suspended_via_gui);
     WOINC_PARSE_CHILD_CONTENT(node, project, trickle_up_pending);
 
-    WOINC_PARSE_CHILD_CONTENT(node, project, desired_disk_usage);
+    WOINC_PARSE_CHILD_CONTENT(node, project, disk_usage);
+    WOINC_PARSE_CHILD_CONTENT(node, project, duration_correction_factor);
     WOINC_PARSE_CHILD_CONTENT(node, project, elapsed_time);
     WOINC_PARSE_CHILD_CONTENT(node, project, host_expavg_credit);
     WOINC_PARSE_CHILD_CONTENT(node, project, host_total_credit);
-    WOINC_PARSE_CHILD_CONTENT(node, project, project_files_downloaded_time);
     WOINC_PARSE_CHILD_CONTENT(node, project, resource_share);
     WOINC_PARSE_CHILD_CONTENT(node, project, sched_priority);
     WOINC_PARSE_CHILD_CONTENT(node, project, user_expavg_credit);
@@ -745,6 +779,7 @@ void parse_(const wxml::Node &node, woinc::Project &project) {
 
     WOINC_PARSE_CHILD_CONTENT(node, project, external_cpid);
     WOINC_PARSE_CHILD_CONTENT(node, project, master_url);
+    WOINC_PARSE_CHILD_CONTENT(node, project, project_dir);
     WOINC_PARSE_CHILD_CONTENT(node, project, project_name);
     WOINC_PARSE_CHILD_CONTENT(node, project, team_name);
     WOINC_PARSE_CHILD_CONTENT(node, project, user_name);
@@ -753,51 +788,15 @@ void parse_(const wxml::Node &node, woinc::Project &project) {
     WOINC_PARSE_CHILD_CONTENT(node, project, download_backoff);
     WOINC_PARSE_CHILD_CONTENT(node, project, last_rpc_time);
     WOINC_PARSE_CHILD_CONTENT(node, project, min_rpc_time);
+    WOINC_PARSE_CHILD_CONTENT(node, project, project_files_downloaded_time);
     WOINC_PARSE_CHILD_CONTENT(node, project, upload_backoff);
-#ifdef WOINC_EXPOSE_FULL_STRUCTURES
-    WOINC_PARSE_CHILD_CONTENT(node, project, dont_use_dcf);
-    WOINC_PARSE_CHILD_CONTENT(node, project, send_full_workload);
-    WOINC_PARSE_CHILD_CONTENT(node, project, use_symlinks);
-    WOINC_PARSE_CHILD_CONTENT(node, project, verify_files_on_app_start);
-
-    WOINC_PARSE_CHILD_CONTENT(node, project, ams_resource_share_new);
-    WOINC_PARSE_CHILD_CONTENT(node, project, cpid_time);
-    WOINC_PARSE_CHILD_CONTENT(node, project, duration_correction_factor);
-    WOINC_PARSE_CHILD_CONTENT(node, project, host_create_time);
-    WOINC_PARSE_CHILD_CONTENT(node, project, next_rpc_time);
-    WOINC_PARSE_CHILD_CONTENT(node, project, rec);
-    WOINC_PARSE_CHILD_CONTENT(node, project, rec_time);
-    WOINC_PARSE_CHILD_CONTENT(node, project, user_create_time);
-
-    WOINC_PARSE_CHILD_CONTENT(node, project, rpc_seqno);
-    WOINC_PARSE_CHILD_CONTENT(node, project, send_job_log);
-    WOINC_PARSE_CHILD_CONTENT(node, project, send_time_stats_log);
-    WOINC_PARSE_CHILD_CONTENT(node, project, teamid);
-    WOINC_PARSE_CHILD_CONTENT(node, project, userid);
-
-    WOINC_PARSE_CHILD_CONTENT(node, project, cross_project_id);
-    WOINC_PARSE_CHILD_CONTENT(node, project, email_hash);
-    WOINC_PARSE_CHILD_CONTENT(node, project, host_venue);
-    WOINC_PARSE_CHILD_CONTENT(node, project, project_dir);
-    WOINC_PARSE_CHILD_CONTENT(node, project, symstore);
-#endif // WOINC_EXPOSE_FULL_STRUCTURES
 
     auto gui_urls_node = node.find_child("gui_urls");
     if (node.found_child(gui_urls_node)) {
         for (const auto &child : gui_urls_node->children) {
             woinc::GuiUrl gui_url;
-            if (child.tag == "gui_url") {
-                gui_url.ifteam = false;
-                parse_(child, gui_url);
-                project.gui_urls.push_back(gui_url);
-            } else if (child.tag == "ifteam") {
-                gui_url.ifteam = true;
-                auto gui_url_child = child.find_child("gui_url");
-                if (child.found_child(gui_url_child)) {
-                    parse_(*gui_url_child, gui_url);
-                    project.gui_urls.push_back(gui_url);
-                }
-            }
+            parse_(child, gui_url);
+            project.gui_urls.push_back(gui_url);
         }
     }
 }
@@ -852,6 +851,22 @@ void parse_(const woinc::xml::Node &node, woinc::ProjectStatistics &project_stat
     }
 }
 
+void parse_(const woinc::xml::Node &node, woinc::ProxyInfo &proxy_info) {
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, socks5_remote_dns);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, use_http_authentication);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, use_http_proxy);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, use_socks_proxy);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, http_server_port);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, socks_server_port);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, http_server_name);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, http_user_name);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, http_user_passwd);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, noproxy_hosts);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, socks5_user_name);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, socks5_user_passwd);
+    WOINC_PARSE_CHILD_CONTENT(node, proxy_info, socks_server_name);
+}
+
 void parse_(const woinc::xml::Node &node, woinc::Statistics &statistics) {
     for (const auto &child : node.children) {
         if (child.tag == "project_statistics") {
@@ -897,6 +912,12 @@ void parse_(const wxml::Node &node, woinc::Task &task) {
     if (node.found_child(active_task_node)) {
         task.active_task = std::make_unique<woinc::ActiveTask>();
         parse_(*active_task_node, *task.active_task);
+
+        // sanitize data if we're talking to an old client
+        if (task.active_task->current_cpu_time != 0 && task.active_task->elapsed_time == 0)
+            task.active_task->elapsed_time = task.active_task->current_cpu_time;
+        if (task.final_cpu_time != 0 && task.final_elapsed_time == 0)
+            task.final_elapsed_time = task.final_cpu_time;
     }
 }
 
@@ -937,7 +958,16 @@ void parse_(const wxml::Node &node, woinc::Workunit &workunit) {
     WOINC_PARSE_CHILD_CONTENT(node, workunit, command_line);
 
     for (auto &n : node.children) {
-        if (n.tag == "file_ref") {
+        if (n.tag == "job_keyword_ids") {
+            std::istringstream iss(n.content);
+
+            workunit.job_keyword_ids.clear();
+            std::transform(
+                std::istream_iterator<std::string>(iss),
+                std::istream_iterator<std::string>(),
+                std::back_inserter(workunit.job_keyword_ids),
+                [](const std::string &num) { return std::stoi(num); });
+        } else if (n.tag == "file_ref") {
             woinc::FileRef f;
             parse_(n, f);
             workunit.input_files.push_back(std::move(f));

@@ -739,16 +739,12 @@ CommandStatus SetGlobalPreferencesCommand::execute(Connection &connection) {
     WOINC_ALWAYS_MAP_PREF(disk_max_used_gb, 0);
     WOINC_ALWAYS_MAP_PREF(disk_max_used_pct, 100);
     WOINC_ALWAYS_MAP_PREF(disk_min_free_gb, 0);
-    WOINC_MAP_PREF(end_hour);
     WOINC_MAP_PREF(idle_time_to_run);
     WOINC_MAP_PREF(max_bytes_sec_down);
     WOINC_MAP_PREF(max_bytes_sec_up);
     WOINC_MAP_PREF(max_ncpus_pct);
-    WOINC_MAP_PREF(net_end_hour);
-    WOINC_MAP_PREF(net_start_hour);
     WOINC_MAP_PREF(ram_max_used_busy_pct);
     WOINC_MAP_PREF(ram_max_used_idle_pct);
-    WOINC_MAP_PREF(start_hour);
     WOINC_ALWAYS_MAP_PREF(suspend_cpu_usage, 0);
     WOINC_MAP_PREF(vm_max_used_pct);
     WOINC_MAP_PREF(work_buf_additional_days);
@@ -756,12 +752,20 @@ CommandStatus SetGlobalPreferencesCommand::execute(Connection &connection) {
 
     WOINC_MAP_PREF(daily_xfer_period_days);
 
+    if (mask.general_cpu_times) {
+        prefs_node["start_hour"] = prefs.general_cpu_times.start;
+        prefs_node["end_hour"] = prefs.general_cpu_times.end;
+    }
+    if (mask.general_net_times) {
+        prefs_node["net_start_hour"] = prefs.general_net_times.start;
+        prefs_node["net_end_hour"] = prefs.general_net_times.end;
+    }
+
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     WOINC_MAP_PREF(network_wifi_only);
     WOINC_MAP_PREF(override_file_present);
     WOINC_MAP_PREF(battery_charge_min_pct);
     WOINC_MAP_PREF(battery_max_temperature);
-    WOINC_MAP_PREF(mod_time);
     WOINC_MAP_PREF(suspend_if_no_recent_input);
     WOINC_MAP_PREF(max_cpus);
     WOINC_MAP_PREF(source_project);
@@ -770,25 +774,27 @@ CommandStatus SetGlobalPreferencesCommand::execute(Connection &connection) {
     { // write day prefs
         std::set<woinc::DayOfWeek> days;
 
-        std::transform(prefs.cpu_times.begin(), prefs.cpu_times.end(),
-                       std::inserter(days, days.end()),
-                       [](const auto &t) { return t.first; });
-        std::transform(prefs.net_times.begin(), prefs.net_times.end(),
-                       std::inserter(days, days.end()),
-                       [](const auto &t) { return t.first; });
+        if (mask.daily_cpu_times)
+            std::transform(prefs.daily_cpu_times.begin(), prefs.daily_cpu_times.end(),
+                           std::inserter(days, days.end()),
+                           [](const auto &t) { return t.first; });
+        if (mask.daily_net_times)
+            std::transform(prefs.daily_net_times.begin(), prefs.daily_net_times.end(),
+                           std::inserter(days, days.end()),
+                           [](const auto &t) { return t.first; });
 
         for (auto &&day : days) {
             auto &node = prefs_node.add_child("day_prefs");
             node["day_of_week"] = static_cast<int>(day);
 
-            auto cpu_time = prefs.cpu_times.find(day);
-            if (cpu_time != prefs.cpu_times.end()) {
+            auto cpu_time = prefs.daily_cpu_times.find(day);
+            if (cpu_time != prefs.daily_cpu_times.end()) {
                 node["start_hour"] = cpu_time->second.start;
                 node["end_hour"] = cpu_time->second.end;
             }
 
-            auto net_time = prefs.net_times.find(day);
-            if (net_time != prefs.net_times.end()) {
+            auto net_time = prefs.daily_net_times.find(day);
+            if (net_time != prefs.daily_net_times.end()) {
                 node["net_start_hour"] = net_time->second.start;
                 node["net_end_hour"] = net_time->second.end;
             }
