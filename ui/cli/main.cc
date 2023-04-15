@@ -1,5 +1,5 @@
 /* ui/cli/main.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -521,7 +521,7 @@ void print(std::ostream &out, const woinc::Projects &projects) {
             << indent << "ended: " << bool_to_string(project.ended) << NL__
             << indent << "suspended via GUI: " << bool_to_string(project.suspended_via_gui) << NL__
             << indent << "don't request more work: " << bool_to_string(project.dont_request_more_work) << NL__
-            << indent << "disk usage: " << project.desired_disk_usage << NL__
+            << indent << "disk usage: " << project.disk_usage << NL__
             << indent << "last RPC: " << time_to_string(project.last_rpc_time) << NL__
             << NL__
             << indent << "project files downloaded: " << project.project_files_downloaded_time << NL__;
@@ -619,12 +619,12 @@ void print(std::ostream &out, const woinc::AppVersions &app_versions, const woin
             out << indent << "avg #CPUS: " << std::setprecision(3) << app_version.avg_ncpus << NL__;
         out << indent << "estimated GFLOPS: " << std::setprecision(2) << app_version.flops/1e9 << NL__;
 
-        auto file_ref = std::find_if(app_version.file_refs.cbegin(), app_version.file_refs.cend(),
+        auto app_file = std::find_if(app_version.app_files.cbegin(), app_version.app_files.cend(),
                                      [](const woinc::FileRef &f) { return f.main_program; });
 
         out << indent << "filename: ";
-        if (file_ref != app_version.file_refs.cend())
-            out << file_ref->file_name;
+        if (app_file != app_version.app_files.end())
+            out << app_file->file_name;
         out << NL__;
     }
 
