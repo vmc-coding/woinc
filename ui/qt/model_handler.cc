@@ -1,5 +1,5 @@
 /* ui/qt/model_handler.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -557,12 +557,12 @@ AppVersions ModelHandler::map_(woinc::AppVersions wapp_versions) {
 
         dest.app_name = QString::fromStdString(source.app_name);
 
-        auto file_ref_iter = std::find_if(source.file_refs.begin(),
-                                          source.file_refs.end(),
+        auto app_file_iter = std::find_if(source.app_files.begin(),
+                                          source.app_files.end(),
                                           [](const auto &fr) { return fr.main_program; });
 
-        if (file_ref_iter != source.file_refs.end())
-            dest.executable = QString::fromStdString(file_ref_iter->file_name);
+        if (app_file_iter != source.app_files.end())
+            dest.executable = QString::fromStdString(app_file_iter->file_name);
 
         dest.project_url  = QString::fromStdString(source.project_url);
         dest.plan_class   = QString::fromStdString(source.plan_class);

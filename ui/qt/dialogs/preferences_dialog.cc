@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/preferences_dialog.cc --
-   Written and Copyright (C) 2019-2021 by vmc.
+   Written and Copyright (C) 2019-2023 by vmc.
 
    This file is part of woinc.
 
@@ -217,7 +217,7 @@ const VALUE &find_or_default__(const std::map<KEY, VALUE> &map,
 }
 
 QWidget *time_of_weekday_widget__(woinc::DayOfWeek day,
-                                  woinc::GlobalPreferences::TimeSpans &spans) {
+                                  woinc::GlobalPreferences::DayPrefs &spans) {
     QString prefix;
     switch (day) {
         case woinc::DayOfWeek::Sunday:    prefix = QString::fromUtf8("Sunday");    break;
@@ -593,42 +593,42 @@ DailySchedulesTab::DailySchedulesTab(GlobalPreferences &prefs, GlobalPreferences
 QWidget *DailySchedulesTab::computing_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
     auto grid_lyt = new QGridLayout;
 
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Monday, prefs.cpu_times)   , 0, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Tuesday, prefs.cpu_times)  , 1, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Wednesday, prefs.cpu_times), 2, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Thursday, prefs.cpu_times) , 3, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Friday, prefs.cpu_times)   , 0, 1);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Saturday, prefs.cpu_times) , 1, 1);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Sunday, prefs.cpu_times)   , 2, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Monday, prefs.daily_cpu_times)   , 0, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Tuesday, prefs.daily_cpu_times)  , 1, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Wednesday, prefs.daily_cpu_times), 2, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Thursday, prefs.daily_cpu_times) , 3, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Friday, prefs.daily_cpu_times)   , 0, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Saturday, prefs.daily_cpu_times) , 1, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Sunday, prefs.daily_cpu_times)   , 2, 1);
 
     auto grid = new QWidget;
     grid->setLayout(grid_lyt);
 
     return as_group__(qstring__("Computing"),
                       time_of_day_widget__(qstring__("Compute only between"), qstring__("and"),
-                                           prefs.start_hour, mask.start_hour,
-                                           prefs.end_hour, mask.end_hour, false),
+                                           prefs.general_cpu_times.start, mask.general_cpu_times,
+                                           prefs.general_cpu_times.end, mask.general_cpu_times, false),
                       as_group__("Day-of-week override", grid));
 }
 
 QWidget *DailySchedulesTab::network_group_(GlobalPreferences &prefs, GlobalPreferencesMask &mask) {
     auto grid_lyt = new QGridLayout;
 
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Monday, prefs.net_times)   , 0, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Tuesday, prefs.net_times)  , 1, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Wednesday, prefs.net_times), 2, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Thursday, prefs.net_times) , 3, 0);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Friday, prefs.net_times)   , 0, 1);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Saturday, prefs.net_times) , 1, 1);
-    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Sunday, prefs.net_times)   , 2, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Monday, prefs.daily_net_times)   , 0, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Tuesday, prefs.daily_net_times)  , 1, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Wednesday, prefs.daily_net_times), 2, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Thursday, prefs.daily_net_times) , 3, 0);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Friday, prefs.daily_net_times)   , 0, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Saturday, prefs.daily_net_times) , 1, 1);
+    grid_lyt->addWidget(time_of_weekday_widget__(woinc::DayOfWeek::Sunday, prefs.daily_net_times)   , 2, 1);
 
     auto grid = new QWidget;
     grid->setLayout(grid_lyt);
 
     return as_group__(qstring__("Network"),
                       time_of_day_widget__(qstring__("Transfer files only between"), qstring__("and"),
-                                           prefs.net_start_hour, mask.net_start_hour,
-                                           prefs.net_end_hour, mask.net_end_hour, false),
+                                           prefs.general_net_times.start, mask.general_net_times,
+                                           prefs.general_net_times.end, mask.general_net_times, false),
                       as_group__("Day-of-week override", grid));
 }
 
