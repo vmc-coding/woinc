@@ -563,7 +563,7 @@ void print(std::ostream &out, const woinc::Projects &projects) {
             << indent << "disk usage: " << usage_to_string(project.disk_usage) << NL__
             << indent << "last RPC: " << time_to_string(project.last_rpc_time) << NL__
             << NL__
-            << indent << "project files downloaded: " << project.project_files_downloaded_time << NL__;
+            << indent << "project files downloaded: " << time_to_string(project.project_files_downloaded_time) << NL__;
         for (const auto &gui_url : project.gui_urls) {
             out << "GUI URL:" << NL__
                 << indent << "name: " << gui_url.name << NL__
