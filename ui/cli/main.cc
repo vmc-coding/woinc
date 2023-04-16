@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
     // execute the command
 
 #ifndef NDEBUG
-    std::cout << "Connect to host " << hostname << " on port " << port << "\n";
+    std::cerr << "[DEBUG] Connect to host " << hostname << " on port " << port << "\n";
 #endif
 
     Client client{hostname, port, password};
