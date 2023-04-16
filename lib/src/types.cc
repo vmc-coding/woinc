@@ -1,5 +1,5 @@
 /* lib/src/types.cc --
-   Written and Copyright (C) 2019-2022 by vmc.
+   Written and Copyright (C) 2019-2023 by vmc.
 
    This file is part of woinc.
 
@@ -106,6 +106,11 @@ FileTransfer::FileTransfer(const FileTransfer &ft)
         file_xfer = std::make_unique<FileXfer>(*ft.file_xfer);
 }
 
+FileTransfer &FileTransfer::operator=(const FileTransfer &ft) {
+    *this = FileTransfer(ft);
+    return *this;
+}
+
 
 // ----- Task -----
 
@@ -144,5 +149,9 @@ Task::Task(const Task &task)
         active_task = std::make_unique<ActiveTask>(*task.active_task);
 }
 
+Task &Task::operator=(const Task &ft) {
+    *this = Task(ft);
+    return *this;
+}
 
 }

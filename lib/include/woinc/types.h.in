@@ -330,6 +330,9 @@ struct FileTransfer {
     FileTransfer() = default;
     FileTransfer(const FileTransfer &ft);
     FileTransfer(FileTransfer &&ft) = default;
+    FileTransfer &operator=(const FileTransfer &ft);
+    FileTransfer &operator=(FileTransfer &&ft) = default;
+    ~FileTransfer() = default;
 
     double nbytes = 0;
 
@@ -636,6 +639,9 @@ struct Task {
     Task() = default;
     Task(const Task &task);
     Task(Task &&task) = default;
+    Task& operator=(const Task &task);
+    Task& operator=(Task &&task) = default;
+    ~Task() = default;
 
     ResultClientState state = ResultClientState::New;
 
