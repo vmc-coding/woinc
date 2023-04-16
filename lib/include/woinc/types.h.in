@@ -358,31 +358,31 @@ struct GlobalPreferences {
     };
     typedef std::map<DayOfWeek, TimeSpan> DayPrefs;
 
-    bool confirm_before_connecting = false;
+    bool confirm_before_connecting = true;
     bool dont_verify_images = false;
     bool hangup_if_dialed = false;
     bool leave_apps_in_memory = false;
     bool run_gpu_if_user_active = false;
-    bool run_if_user_active = false;
+    bool run_if_user_active = true;
     bool run_on_batteries = false;
 
-    double cpu_scheduling_period_minutes = 0;
-    double cpu_usage_limit = 0;
+    double cpu_scheduling_period_minutes = 60;
+    double cpu_usage_limit = 100;
     double daily_xfer_limit_mb = 0;
-    double disk_interval = 0;
-    double disk_max_used_gb = 0;
-    double disk_max_used_pct = 0;
-    double disk_min_free_gb = 0;
-    double idle_time_to_run = 0;
+    double disk_interval = 60;
+    double disk_max_used_gb = 100;
+    double disk_max_used_pct = 90;
+    double disk_min_free_gb = .1;
+    double idle_time_to_run = 3;
     double max_bytes_sec_down = 0;
     double max_bytes_sec_up = 0;
     double max_ncpus_pct = 0;
-    double ram_max_used_busy_pct = 0;
-    double ram_max_used_idle_pct = 0;
-    double suspend_cpu_usage = 0;
-    double vm_max_used_pct = 0;
-    double work_buf_additional_days = 0;
-    double work_buf_min_days = 0;
+    double ram_max_used_busy_pct = .5;
+    double ram_max_used_idle_pct = .9;
+    double suspend_cpu_usage = 25;
+    double vm_max_used_pct = .75;
+    double work_buf_additional_days = .5;
+    double work_buf_min_days = .1;
 
     int daily_xfer_period_days = 0;
 
@@ -395,12 +395,12 @@ struct GlobalPreferences {
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     bool network_wifi_only = false;
     bool override_file_present = false;
-    double battery_charge_min_pct = 0;
-    double battery_max_temperature = 0;
-    double niu_cpu_usage_limit = 0;
-    double niu_max_ncpus_pct = 0;
-    double niu_suspend_cpu_usage = 0;
-    double suspend_if_no_recent_input = 0;
+    double battery_charge_min_pct = 90;
+    double battery_max_temperature = 40;
+    double niu_cpu_usage_limit = 100;
+    double niu_max_ncpus_pct = 100;
+    double niu_suspend_cpu_usage = 50;
+    double suspend_if_no_recent_input = 60;
     int max_cpus = 0;
     std::string source_project;
 #endif
