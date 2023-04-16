@@ -1,5 +1,5 @@
 /* woinc/version.h --
-   Written and Copyright (C) 2017 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -25,6 +25,8 @@ namespace woinc {
 int major_version();
 //! \brief The minor version of the woinc lib
 int minor_version();
+//! \brief The patch version of the woinc lib
+int patch_version();
 
 // Used when exchanging the versions with the client.
 // Typically these are the versions of boinc I'm using on my dev-box, the client ignores it anyway ..

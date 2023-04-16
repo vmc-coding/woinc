@@ -133,7 +133,8 @@ int main(int argc, char **argv) {
     // if requested show version and quit
 
     if (matches(args, "-v") || matches(args, "--version")) {
-        std::cout << "Version: " << woinc::major_version() << "." << woinc::minor_version() << std::endl;
+        std::cout << "Version: " << woinc::major_version() << "." << woinc::minor_version()
+            << "." << woinc::patch_version() << "\n";
         return args.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 

@@ -1,5 +1,5 @@
 /* lib/version.cc.in --
-   Written and Copyright (C) 2017 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -26,6 +26,10 @@ namespace woinc {
 
     int minor_version() {
         return @WOINC_VERSION_MINOR@;
+    }
+
+    int patch_version() {
+        return @WOINC_VERSION_PATCH@;
     }
 
     int boinc_major_version() {
