@@ -393,6 +393,45 @@ std::string trimed(const std::string &str) {
     return std::string(front, end.base());
 }
 
+std::string usage_to_string(double usage) {
+    // BOINC always converts to MB
+#if 0
+    double factor = 0.;
+    const char *unit = nullptr;
+    if (usage >= 1024.*1024.*1024.*1024.) {
+        factor = 1024.*1024.*1024.*1024.;
+        unit = "TB";
+    } else if (usage >= 1024.*1024.*1024.) {
+        factor = 1024.*1024.*1024.;
+        unit = "GB";
+    } else if (usage >= 1024.*1024.) {
+        factor = 1024.*1024.;
+        unit = "MB";
+    } else if (usage >= 1024.) {
+        factor = 1024.;
+        unit = "KB";
+    }
+
+    std::stringstream ss;
+
+    ss << std::fixed;
+
+    if (unit) {
+        assert(factor > 0);
+        ss << std::setprecision(2) << usage/factor << unit;
+    } else {
+        ss << std::setprecision(0) << usage << "bytes";
+    }
+
+    return ss.str();
+#else
+    std::stringstream ss;
+    ss << std::fixed;
+    ss << std::setprecision(2) << usage/(1024.*1024.) << "MB";
+    return ss.str();
+#endif
+}
+
 std::string resolve_project_name(const woinc::Projects &projects, const std::string &url) {
     auto project = std::find_if(projects.cbegin(), projects.cend(),
                                 [&](const woinc::Project &p) { return p.master_url == url; });
@@ -521,7 +560,7 @@ void print(std::ostream &out, const woinc::Projects &projects) {
             << indent << "ended: " << bool_to_string(project.ended) << NL__
             << indent << "suspended via GUI: " << bool_to_string(project.suspended_via_gui) << NL__
             << indent << "don't request more work: " << bool_to_string(project.dont_request_more_work) << NL__
-            << indent << "disk usage: " << project.disk_usage << NL__
+            << indent << "disk usage: " << usage_to_string(project.disk_usage) << NL__
             << indent << "last RPC: " << time_to_string(project.last_rpc_time) << NL__
             << NL__
             << indent << "project files downloaded: " << project.project_files_downloaded_time << NL__;
@@ -646,8 +685,8 @@ void print(std::ostream &out, const woinc::Workunits &workunits) {
             << indent << "FP estimate: " << wu.rsc_fpops_est << NL__
             << indent << "FP bound: " << wu.rsc_fpops_bound << NL__
             << std::fixed << std::setprecision(2)
-            << indent << "memory bound: " << mibi(wu.rsc_memory_bound) << " MB" << NL__
-            << indent << "disk bound: " << mibi(wu.rsc_disk_bound) << " MB" << NL__;
+            << indent << "memory bound: " << usage_to_string(wu.rsc_memory_bound) << NL__
+            << indent << "disk bound: " << usage_to_string(wu.rsc_disk_bound) << NL__;
         out.precision(org_precision);
     }
 }
@@ -732,55 +771,17 @@ void print(std::ostream &out, const wrpc::GetDiskUsageResponse &response) {
 
     const auto org_precision = out.precision();
 
-    auto usage_formatter = [](double usage) {
-        // BOINC always converts to MB
-#if 0
-        double factor = 0.;
-        const char *unit = nullptr;
-        if (usage >= 1024.*1024.*1024.*1024.) {
-            factor = 1024.*1024.*1024.*1024.;
-            unit = "TB";
-        } else if (usage >= 1024.*1024.*1024.) {
-            factor = 1024.*1024.*1024.;
-            unit = "GB";
-        } else if (usage >= 1024.*1024.) {
-            factor = 1024.*1024.;
-            unit = "MB";
-        } else if (usage >= 1024.) {
-            factor = 1024.;
-            unit = "KB";
-        }
-
-        std::stringstream ss;
-
-        ss << std::fixed;
-
-        if (unit) {
-            assert(factor > 0);
-            ss << std::setprecision(2) << usage/factor << unit;
-        } else {
-            ss << std::setprecision(0) << usage << "bytes";
-        }
-
-        return ss.str();
-#else
-        std::stringstream ss;
-        ss << std::fixed;
-        ss << std::setprecision(2) << usage/(1024.*1024.) << "MB";
-        return ss.str();
-#endif
-    };
 
     out << "======== Disk usage ========\n"
         << std::fixed
-        << "total: " << response.disk_usage.total << NL__
-        << "free: " << response.disk_usage.free << NL__;
+        << "total: " << usage_to_string(response.disk_usage.total) << NL__
+        << "free: " << usage_to_string(response.disk_usage.free) << NL__;
 
     for (const auto &project : response.disk_usage.projects) {
         out << ++counter << ") -----------\n"
             << std::setprecision(2)
             << indent << "master URL: " << project.master_url << NL__
-            << indent << "disk usage: " << usage_formatter(project.disk_usage) << NL__;
+            << indent << "disk usage: " << usage_to_string(project.disk_usage) << NL__;
     }
 
     out.precision(org_precision);
