@@ -718,8 +718,10 @@ void print(std::ostream &out, const wrpc::GetFileTransfersResponse &response) {
             << indent << "direction: " << direction << NL__
             << indent << "sticky: no\n" // this isn't sent by the client at all ..
             << indent << "xfer active: " << bool_to_string(is_active) << NL__
-            << indent << "time_so_far: " << time_so_far << NL__
-            << indent << "bytes_xferred: " << bytes_xferred << NL__
+            << indent << "time_so_far: " << time_so_far << NL__;
+        if (is_active)
+            out << indent << "estimated_xfer_time_remaining: " << file_transfer.file_xfer->estimated_xfer_time_remaining << NL__;
+        out << indent << "bytes_xferred: " << bytes_xferred << NL__
             << indent << "xfer_speed: " << xfer_speed << NL__;
     }
 }
