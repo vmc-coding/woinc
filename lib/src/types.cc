@@ -90,11 +90,11 @@ bool &LogFlags::at(const std::string &name) {
 
 FileTransfer::FileTransfer(const FileTransfer &ft)
     : WOINC_COPY(ft, nbytes)
+    , WOINC_COPY(ft, project_backoff)
     , WOINC_COPY(ft, status)
     , WOINC_COPY(ft, name)
     , WOINC_COPY(ft, project_name)
     , WOINC_COPY(ft, project_url)
-    , WOINC_COPY(ft, project_backoff)
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     , WOINC_COPY(ft, max_nbytes)
 #endif

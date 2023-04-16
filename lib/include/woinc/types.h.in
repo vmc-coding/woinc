@@ -335,6 +335,7 @@ struct FileTransfer {
     ~FileTransfer() = default;
 
     double nbytes = 0;
+    double project_backoff = 0; // in seconds
 
     int status = 0;
 
@@ -342,7 +343,6 @@ struct FileTransfer {
     std::string project_name;
     std::string project_url;
 
-    time_t project_backoff = 0;
 
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     double max_nbytes = 0;

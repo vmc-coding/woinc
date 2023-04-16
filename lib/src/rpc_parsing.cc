@@ -558,11 +558,11 @@ void parse_(const wxml::Node &node, woinc::FileRef &file_ref) {
 
 void parse_(const woinc::xml::Node &node, woinc::FileTransfer &file_transfer) {
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, nbytes);
+    WOINC_PARSE_CHILD_CONTENT(node, file_transfer, project_backoff);
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, status);
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, name);
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, project_name);
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, project_url);
-    WOINC_PARSE_CHILD_CONTENT(node, file_transfer, project_backoff);
 
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     WOINC_PARSE_CHILD_CONTENT(node, file_transfer, max_nbytes);
