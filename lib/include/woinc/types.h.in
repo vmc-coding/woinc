@@ -1,5 +1,5 @@
 /* woinc/types.h --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -300,20 +300,28 @@ struct DiskUsage {
 
 struct FileXfer {
     double bytes_xferred = 0;
+    double estimated_xfer_time_remaining = 0;
     double xfer_speed = 0;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     double file_offset = 0;
+
     std::string url;
 #endif
 };
 
 struct PersistentFileXfer {
     bool is_upload = false;
+
     double time_so_far = 0;
+
     time_t next_request_time = 0;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     double last_bytes_xferred = 0;
+
     int num_retries = 0;
+
     time_t first_request_time = 0;
 #endif
 };
@@ -324,11 +332,15 @@ struct FileTransfer {
     FileTransfer(FileTransfer &&ft) = default;
 
     double nbytes = 0;
+
     int status = 0;
+
     std::string name;
     std::string project_name;
     std::string project_url;
+
     time_t project_backoff = 0;
+
 #if @WOINC_EXPOSE_FULL_STRUCTURES@
     double max_nbytes = 0;
 #endif
@@ -385,6 +397,9 @@ struct GlobalPreferences {
     bool override_file_present = false;
     double battery_charge_min_pct = 0;
     double battery_max_temperature = 0;
+    double niu_cpu_usage_limit = 0;
+    double niu_max_ncpus_pct = 0;
+    double niu_suspend_cpu_usage = 0;
     double suspend_if_no_recent_input = 0;
     int max_cpus = 0;
     std::string source_project;
@@ -427,6 +442,9 @@ struct GlobalPreferencesMask {
     bool battery_max_temperature = false;
     bool max_cpus = false;
     bool network_wifi_only = false;
+    bool niu_cpu_usage_limit = false;
+    bool niu_max_ncpus_pct = false;
+    bool niu_suspend_cpu_usage = false;
     bool override_file_present = false;
     bool source_project = false;
     bool suspend_if_no_recent_input = false;

@@ -1,5 +1,5 @@
 /* lib/rpc_parsing.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -583,6 +583,7 @@ void parse_(const woinc::xml::Node &node, woinc::FileTransfer &file_transfer) {
 
 void parse_(const woinc::xml::Node &node, woinc::FileXfer &file_xfer) {
     WOINC_PARSE_CHILD_CONTENT(node, file_xfer, bytes_xferred);
+    WOINC_PARSE_CHILD_CONTENT(node, file_xfer, estimated_xfer_time_remaining);
     WOINC_PARSE_CHILD_CONTENT(node, file_xfer, xfer_speed);
 #ifdef WOINC_EXPOSE_FULL_STRUCTURES
     WOINC_PARSE_CHILD_CONTENT(node, file_xfer, file_offset);
@@ -652,6 +653,9 @@ void parse_(const wxml::Node &node, woinc::GlobalPreferences &global_prefs) {
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, override_file_present);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, battery_charge_min_pct);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, battery_max_temperature);
+    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, niu_cpu_usage_limit);
+    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, niu_max_ncpus_pct);
+    WOINC_PARSE_CHILD_CONTENT(node, global_prefs, niu_suspend_cpu_usage);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, suspend_if_no_recent_input);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, max_cpus);
     WOINC_PARSE_CHILD_CONTENT(node, global_prefs, source_project);

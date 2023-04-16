@@ -1,5 +1,5 @@
 /* lib/rpc_command.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -766,6 +766,9 @@ CommandStatus SetGlobalPreferencesCommand::execute(Connection &connection) {
     WOINC_MAP_PREF(override_file_present);
     WOINC_MAP_PREF(battery_charge_min_pct);
     WOINC_MAP_PREF(battery_max_temperature);
+    WOINC_MAP_PREF(niu_cpu_usage_limit);
+    WOINC_MAP_PREF(niu_max_ncpus_pct);
+    WOINC_MAP_PREF(niu_suspend_cpu_usage);
     WOINC_MAP_PREF(suspend_if_no_recent_input);
     WOINC_MAP_PREF(max_cpus);
     WOINC_MAP_PREF(source_project);
