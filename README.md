@@ -6,7 +6,12 @@ It's written in C++-14 implementing its own library for communication with the B
 
 woinc should be compatible with C++-14 and above.
 
-This project is work in progress, the API may change without any public notices.
+~~This project is work in progress, the API may change without any public notices.~~
+
+**Note:**
+
+I'm not interested in this project anymore, so there won't be any active development.
+I may or may not migrate the Ui to Qt 6, we'll see.
 
 ## screenshots? screenshots!
 
@@ -19,27 +24,27 @@ They may not be up to date, but there are some [here](http://83.169.22.26/woinc/
 - **woinccmd**: reimplementation of boinccmd using libwoinc but not libwoincui; it's the CLI to the clients
 - **woincqt**: reimplementation of boincmgr using libwoincui and Qt5; not supporting multiple clients yet
 
-## roadmap
+## ~~roadmap~~
 
-Version 1 will be the libs and rebuild of boinccmd and boincmgr in Qt
+~~Version 1 will be the libs and rebuild of boinccmd and boincmgr in Qt
 Not supported are some rarely used features like excluding apps or reordering the UI.
-There are few things missing, so version 1 will be released in near future.
+There are few things missing, so version 1 will be released in near future.~~
 
-Ideas for next milestones in random order:
-- migrate from C++14 to C++17; I don't care about backwards compatibility, I'm doing this to learn modern C++, so keep updating :)
-  but you may contact me, if you're using this software with a compiler or system not supporting C++17
-- rewrite libwoincui to respect the command pattern:
+~~Ideas for next milestones in random order:~~
+- ~~migrate from C++14 to C++17; I don't care about backwards compatibility, I'm doing this to learn modern C++, so keep updating :)
+  but you may contact me, if you're using this software with a compiler or system not supporting C++17~~
+- ~~rewrite libwoincui to respect the command pattern:
   in v1 there is a controller class which imports all of libwoinc,
   i.e. the compiler/linker can't optimize away stuff which isn't used,
   which is contrary to how libwoinc had been designed.
-  I also don't think the current API is easy to use in external bindings
-- python bindings
-- more UI clients, e.g. GTK or maybe as a web app
-- instead of coding the Qt-GUI in C++, use QML and Qt Quick; implementing it all "by hand" had been exercise for me to learn Qt; but maybe I'll drop Qt because of their license bullshit
-- get a usable UI running on the Pinephone
+  I also don't think the current API is easy to use in external bindings~~
+- ~~python bindings~~
+- ~~more UI clients, e.g. GTK or maybe as a web app~~
+- ~~instead of coding the Qt-GUI in C++, use QML and Qt Quick; implementing it all "by hand" had been exercise for me to learn Qt; but maybe I'll drop Qt because of their license bullshit~~
+- ~~get a usable UI running on the Pinephone~~
 
-Mail me, if you have opinions on this software or some features you'd like to be implemented.
-Or implement them and create a pull request ;)
+~~Mail me, if you have opinions on this software or some features you'd like to be implemented.
+Or implement them and create a pull request ;)~~
 
 ## dependencies
 
