@@ -238,12 +238,6 @@ woinc::ui::qt::Notice::Category resolve_notice_category(const woinc::Notice &not
         return woinc::ui::qt::Notice::Category::NONE;
 }
 
-QString remove_localization_marker(QString str) {
-    str.remove("_(\"");
-    str.remove("\")");
-    return str;
-}
-
 QString resolve_transfer_status(const woinc::FileTransfer &file_transfer, const woinc::CCStatus &cc_status) {
     enum { ERR_GIVEUP_DOWNLOAD = -114, ERR_GIVEUP_UPLOAD = -115 };
 
@@ -661,25 +655,45 @@ Notices ModelHandler::map_(woinc::Notices wnotices) {
     Notices notices;
     notices.reserve(wnotices.size());
 
+    auto remove_localization_marker = [](QString str) -> QString {
+        str.remove("_(\"");
+        str.remove("\")");
+        return str;
+    };
+
+    // Because of the limited supported subset of HTML in QT-5,
+    // see https://doc.qt.io/qt-5/richtext-html-subset.html,
+    // we'll also remove paragprahs and try to GUESS if they should be followed by a linebreak.
+    // This may or may not work, the future will show.
+    auto convert_nl_to_html = [](QString str) -> QString {
+        str.replace("\r\n<p></p>\r\n", "<br>");
+        str.replace("\n<p></p>\n", "<br>");
+
+        str.replace("<br />", "<br>");
+        str.replace("<br/>", "<br>");
+        str.replace("<br>\r\n", "<br>");
+        str.replace("<br>\n", "<br>");
+        str.replace("<br><br>", "<br>");
+        str.replace("\r\n", "<br>");
+        str.replace("\n", "<br>");
+
+        str.replace("<br><p></p><br>", "<br>");
+        str.replace("<br><p>", "<br>");
+        str.replace("</p><br>", "<br>");
+
+        return str;
+    };
+
     for (auto &&source : wnotices) {
         Notice dest;
 
-        dest.title        = QString::fromStdString(source.title);
+        dest.title        = convert_nl_to_html(remove_localization_marker(QString::fromStdString(source.title)));
         dest.project_name = QString::fromStdString(source.project_name);
-        dest.description  = remove_localization_marker(QString::fromStdString(source.description));
+        dest.description  = convert_nl_to_html(remove_localization_marker(QString::fromStdString(source.description)));
         dest.category     = resolve_notice_category(source);
         dest.link         = QString::fromStdString(source.link);
         dest.create_time  = source.create_time;
 
-        // convert newlines to HTML
-        dest.description.replace("<br />", "<br>");
-        dest.description.replace("<br/>", "<br>");
-        dest.description.replace("<br>\r\n", "<br>");
-        dest.description.replace("<br>\n", "<br>");
-        dest.description.replace("\r\n", "<br>");
-        dest.description.replace("\n", "<br>");
-        // BOINC does this, but why delete newlines the project (presumably) intended?
-        //dest.description.replace("<br><br>", "<br>");
 
         notices.push_back(dest);
     }

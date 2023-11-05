@@ -1,5 +1,5 @@
 /* ui/qt/tabs/notices_tab.cc --
-   Written and Copyright (C) 2018-2020 by vmc.
+   Written and Copyright (C) 2018-2023 by vmc.
 
    This file is part of woinc.
 
@@ -114,7 +114,7 @@ void NoticesTab::update_() {
             footer += QString::fromUtf8(" &middot; <a href=\"") + notice->link + QString::fromUtf8("\">more...</a>");
         footer += "</font>";
 
-        txts <<  "<b>" + title + "</b><br>" + notice->description + footer;
+        txts << "<table border=0 cellpadding=5><tr><td><b>" + title + "</b><br>" + notice->description + footer + "</td></tr></table>";
     }
 
     setHtml("<html><head></head><body>" + txts.join("<hr>") + "</body></html>");
