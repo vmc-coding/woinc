@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     if (args.empty())
         error_die("Nothing to do, no command given.");
 
-    auto cmds{std::move(command_map())};
+    auto cmds{command_map()};
     auto cmd_iter = cmds.find(args.front());
 
     if (cmd_iter == cmds.end())
