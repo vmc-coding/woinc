@@ -1,5 +1,5 @@
 /* lib/socket.h --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -19,6 +19,7 @@
 #ifndef WOINC_SOCKET_H_
 #define WOINC_SOCKET_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
