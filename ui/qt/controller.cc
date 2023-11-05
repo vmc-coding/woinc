@@ -1,5 +1,5 @@
 /* ui/qt/controller.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -97,7 +97,11 @@ class SubscriptionImpl : public Subscription {
 
         void finish_() final {
             try {
+#if __cplusplus >= 201703L // use guaranteed copy elision with c++-17 and above
+                receiver_(future_.get());
+#else
                 receiver_(std::move(future_.get()));
+#endif
             } catch (woinc::ui::ShutdownException &) {
                 fail_(QString::fromUtf8("Not connected to host"));
             } catch (woinc::ui::UnknownHostException &e) {
