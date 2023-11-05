@@ -10,8 +10,9 @@ woinc should be compatible with C++-14 and above.
 
 **Note:**
 
-I'm not interested in this project anymore, so there won't be any active development.
-I may or may not migrate the Ui to Qt 6, we'll see.
+I'm not interested in this project anymore, so there won't be any active development
+except bugfixes and to keep it working with current compilers and dependencies.
+I'll may or may not migrate the Ui to Qt 6, we'll see.
 
 ## screenshots? screenshots!
 
