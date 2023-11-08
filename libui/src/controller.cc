@@ -1,5 +1,5 @@
 /* ui/controller/controller.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -154,7 +154,7 @@ class WOINCUI_LOCAL Controller::Impl {
             auto job = std::make_unique<woinc::ui::AsyncJob<Result>>(
                 std::make_unique<Command>(std::move(request)),
                 std::move(promise),
-                [=](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::CommandStatus status) {
+                [error_msg, getter](woinc::rpc::Command *cmd, Promise &p, woinc::rpc::CommandStatus status) {
                     if (status == woinc::rpc::CommandStatus::Ok)
                         p.set_value(getter(static_cast<Command *>(cmd)->response()));
                     else
@@ -185,7 +185,7 @@ class WOINCUI_LOCAL Controller::Impl {
 Controller::Impl::Impl() :
     periodic_tasks_scheduler_context_(configuration_,
                                       handler_registry_,
-                                      [=](const std::string &host, std::unique_ptr<Job> job) { host_controllers_.at(host)->schedule(std::move(job)); }),
+                                      [this](const std::string &host, std::unique_ptr<Job> job) { host_controllers_.at(host)->schedule(std::move(job)); }),
     periodic_tasks_scheduler_thread_(PeriodicTasksScheduler(periodic_tasks_scheduler_context_))
 {}
 
@@ -257,7 +257,7 @@ void Controller::Impl::add_host(std::string host,
     }
 
     // connect asynchronously because the connect may block for a long time (see man 2 connect)
-    std::thread([=]() {
+    std::thread([this, host, host_controller_ptr, port, url]() {
         bool connected = host_controller_ptr->connect(url, port);
         handler_registry_.for_host_handler([&](HostHandler &handler) {
             if (connected)
@@ -295,7 +295,7 @@ void Controller::Impl::remove_host(const std::string &host) {
 void Controller::Impl::async_remove_host(std::string host) {
     check_not_empty_host_name__(host);
 
-    std::thread([=]() { async_remove_host_(host); }).detach();
+    std::thread([this, host]() { async_remove_host_(host); }).detach();
 }
 
 void Controller::Impl::periodic_task_interval(const PeriodicTask task, std::chrono::milliseconds interval) {

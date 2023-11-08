@@ -1,5 +1,5 @@
 /* libui/src/periodic_tasks_scheduler.cc --
-   Written and Copyright (C) 2018-2022 by vmc.
+   Written and Copyright (C) 2018-2023 by vmc.
 
    This file is part of woinc.
 
@@ -141,7 +141,7 @@ void PeriodicTasksScheduler::operator()() {
             }
         }
 
-        if (context_.condition_.wait_for(guard, wake_up_interval, [=]() { return context_.shutdown_triggered_; }))
+        if (context_.condition_.wait_for(guard, wake_up_interval, [this]() { return context_.shutdown_triggered_; }))
             break;
     }
 }
