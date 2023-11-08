@@ -127,7 +127,7 @@ class Controller::Poller {
         Poller() {
             timer_.setInterval(SUBSCRIPTION_POLLING_INTERVAL_MSEC);
 
-            QObject::connect(&timer_, &QTimer::timeout, [=]() {
+            QObject::connect(&timer_, &QTimer::timeout, [this]() {
                 // we have to collect the subscriptions to be finished,
                 // because we don't know what the receiver will do and
                 // thus we've to call it without locking the poller

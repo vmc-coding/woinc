@@ -1,5 +1,5 @@
 /* ui/qt/tabs/statistics_tab.cc --
-   Written and Copyright (C) 2018-2020 by vmc.
+   Written and Copyright (C) 2018-2023 by vmc.
 
    This file is part of woinc.
 
@@ -332,7 +332,7 @@ void CommandsWidget::setup_buttons_() {
 }
 
 void CommandsWidget::setup_connections_() {
-#define WOINC_CONNECT_BTN(BTN, SIGNAL) connect(buttons_[BTN], &QPushButton::released, this, [=]() { emit SIGNAL; })
+#define WOINC_CONNECT_BTN(BTN, SIGNAL) connect(buttons_[BTN], &QPushButton::released, this, [this]() { emit SIGNAL; })
 
     WOINC_CONNECT_BTN(Command::SHOW_USER_TOTAL, statistic_type_changed(StatisticType::USER_TOTAL));
     WOINC_CONNECT_BTN(Command::SHOW_USER_AVG  , statistic_type_changed(StatisticType::USER_AVG));

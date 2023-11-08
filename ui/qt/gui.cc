@@ -1,5 +1,5 @@
 /* ui/qt/gui.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2023 by vmc.
 
    This file is part of woinc.
 
@@ -141,24 +141,24 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
 #endif
 
     connect(options_menu, &OptionsMenu::computation_preferences_to_be_shown,
-            [=, &controller](QString host) {
+            [this, &controller](QString host) {
                 // TODO Load the prefs in the dialog while showing a loading animation
                 controller.load_global_prefs(
                     host, GetGlobalPrefsMode::Working,
-                    [=, &controller](GlobalPreferences loaded_prefs) {
+                    [this, &controller, host](GlobalPreferences loaded_prefs) {
                         auto *dlg = new PreferencesDialog(std::move(loaded_prefs), this);
 
-                        connect(dlg, &PreferencesDialog::save, [=, &controller](GlobalPreferences prefs, GlobalPreferencesMask mask) {
+                        connect(dlg, &PreferencesDialog::save, [this, &controller, host](GlobalPreferences prefs, GlobalPreferencesMask mask) {
                             controller.save_global_prefs(
                                 host, std::move(prefs), std::move(mask),
-                                [=, &controller](bool status) {
+                                [this, &controller, host](bool status) {
                                     if (status)
                                         controller.read_global_prefs(host, [](bool){}, [](QString) {});
                                     else
                                         QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("The client failed to save the preferences."), QMessageBox::Ok);
 
                                 },
-                                [=](QString error) {
+                                [this](QString error) {
                                     QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
                                 });
                         });
@@ -166,13 +166,13 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                         dlg->setAttribute(Qt::WA_DeleteOnClose);
                         dlg->open();
                     },
-                    [=](QString error) {
+                    [this](QString error) {
                         show_error(QString::fromUtf8("Error"), error);
                     });
             });
 
     connect(options_menu, &OptionsMenu::event_log_options_to_be_shown,
-            [=, &controller](QString host) {
+            [this, &controller](QString host) {
                 // TODO - load the cc while showing a progress animation before opening the dialog
                 // TODO - open the dlg
                 // TODO - handle dlg lifecycle (apply/save with progress animation/close dlg after save)
@@ -180,17 +180,17 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
 
                 controller.load_cc_config(
                     host,
-                    [=, &controller](CCConfig cc_config) {
+                    [this, &controller, dlg, host](CCConfig cc_config) {
                         // for the apply/save operation we need a cc_config object, not the log flags only;
                         // so we have to register the apply/save handler after we've loaded and therefore know the cc_config
 
-                        connect(dlg, &EventLogOptionsDialog::apply, [=, &controller](woinc::LogFlags log_flags) mutable {
+                        connect(dlg, &EventLogOptionsDialog::apply, [this, cc_config, &controller, dlg, host](woinc::LogFlags log_flags) mutable {
                             cc_config.log_flags = std::move(log_flags);
                             dlg->show_progress_animation("Applying log flags");
                             controller.save_cc_config(
                                 host,
                                 cc_config,
-                                [=, &controller](bool status) {
+                                [this, &controller, dlg](bool status) {
                                     if (!status)
                                         QMessageBox::critical(this,
                                                               QStringLiteral("Error"),
@@ -198,19 +198,19 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                                                               QMessageBox::Ok);
                                     dlg->stop_progress_animation();
                                 },
-                                [=](QString error) {
+                                [this, dlg](QString error) {
                                     show_error(QString::fromUtf8("Error"), QStringLiteral("Applying the log flags failed:\n") + error);
                                     dlg->stop_progress_animation();
                                 });
                         });
 
-                        connect(dlg, &EventLogOptionsDialog::save, [=, &controller](woinc::LogFlags log_flags) mutable {
+                        connect(dlg, &EventLogOptionsDialog::save, [this, cc_config, &controller, dlg, host](woinc::LogFlags log_flags) mutable {
                             cc_config.log_flags = std::move(log_flags);
                             dlg->show_progress_animation("Saving log flags");
                             controller.save_cc_config(
                                 host,
                                 cc_config,
-                                [=, &controller](bool status) {
+                                [this, &controller, dlg](bool status) {
                                     if (!status) {
                                         QMessageBox::critical(this,
                                                               QStringLiteral("Error"),
@@ -221,7 +221,7 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                                         dlg->close();
                                     }
                                 },
-                                [=](QString error) {
+                                [this, dlg](QString error) {
                                     show_error(QString::fromUtf8("Error"), QStringLiteral("Saving the log flags failed:\n") + error);
                                     dlg->stop_progress_animation();
                                 });
@@ -230,7 +230,7 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                         dlg->update(std::move(cc_config.log_flags));
                         dlg->stop_progress_animation();
                     },
-                    [=](QString error) {
+                    [this, dlg](QString error) {
                         show_error(QString::fromUtf8("Error"), QStringLiteral("Loading the log flags failed:\n") + error);
                         dlg->close();
                     });
@@ -240,26 +240,26 @@ void Gui::create_options_menu_(const Model &model, Controller &controller) {
                 dlg->open();
             });
 
-    connect(options_menu, &OptionsMenu::config_files_to_be_read, [=, &controller](QString host) {
+    connect(options_menu, &OptionsMenu::config_files_to_be_read, [this, &controller](QString host) {
         controller.read_config_files(
             host,
-            [=](bool success){
+            [this](bool success){
                 if (!success)
                     QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Failed to read the config files"), QMessageBox::Ok);
             },
-            [=](QString error) {
+            [this](QString error) {
                 QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
             });
     });
 
-    connect(options_menu, &OptionsMenu::local_prefs_file_to_be_read, [=, &controller](QString host) {
+    connect(options_menu, &OptionsMenu::local_prefs_file_to_be_read, [this, &controller](QString host) {
         controller.read_global_prefs(
             host,
-            [=](bool success){
+            [this](bool success){
                 if (!success)
                     QMessageBox::critical(this, QStringLiteral("Error"), QStringLiteral("Failed to read the preferences file"), QMessageBox::Ok);
             },
-            [=](QString error) {
+            [this](QString error) {
                 QMessageBox::critical(this, QStringLiteral("Error"), error, QMessageBox::Ok);
             });
     });
@@ -276,7 +276,7 @@ void Gui::create_tools_menu_(const Model &model, Controller &controller) {
 #endif
 
     connect(menu, &ToolsMenu::add_project_wizard_to_be_shown,
-            [=, &controller](QString host) {
+            [this, &controller](QString host) {
                 auto *wizard = new AddProjectWizard(controller, std::move(host), this);
                 wizard->setAttribute(Qt::WA_DeleteOnClose);
                 wizard->open();

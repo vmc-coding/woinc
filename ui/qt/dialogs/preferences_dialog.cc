@@ -125,7 +125,7 @@ QLineEdit *floating_point_input__(double min, double max, int width,
     auto in = floating_point_input__(min, max, width);
     in->setText(text);
 
-    QObject::connect(in, &QLineEdit::textEdited, [=](const QString &str) {
+    QObject::connect(in, &QLineEdit::textEdited, [onTextEdited](const QString &str) {
         // TODO round to hundreds; see BOINC why this is a good idea
         onTextEdited(str.toDouble());
     });

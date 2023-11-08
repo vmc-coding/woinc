@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/event_log_options_dialog.cc --
-   Written and Copyright (C) 2022 by vmc.
+   Written and Copyright (C) 2023 by vmc.
 
    This file is part of woinc.
 
@@ -78,7 +78,7 @@ void EventLogOptionsDialog::update(woinc::LogFlags log_flags) {
             auto *chk = new QCheckBox(QString::fromStdString(flag.name));
             chk->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
             chk->setChecked(flag.value);
-            QObject::connect(chk, &QCheckBox::stateChanged, [=](int state) mutable {
+            QObject::connect(chk, &QCheckBox::stateChanged, [this, flag](int state) mutable {
                 log_flags_.at(flag.name) = state == Qt::Checked;
             });
 

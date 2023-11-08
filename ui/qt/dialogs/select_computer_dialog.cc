@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/select_computer_dialog.cc --
-   Written and Copyright (C) 2020 by vmc.
+   Written and Copyright (C) 2020-2023 by vmc.
 
    This file is part of woinc.
 
@@ -48,7 +48,7 @@ SelectComputerDialog::SelectComputerDialog(QWidget *parent) : QDialog(parent)
 
     auto *btn_ok = new QPushButton(QString::fromUtf8("OK"));
     btn_ok->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-    connect(btn_ok, &QPushButton::released, [=]() {
+    connect(btn_ok, &QPushButton::released, [this, in_host, in_pwd]() {
         auto tokens = in_host->text().trimmed().split(':');
         auto host = tokens.isEmpty() ? QString() : tokens[0].trimmed();
 

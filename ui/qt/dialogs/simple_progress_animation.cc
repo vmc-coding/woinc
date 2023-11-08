@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/simple_progress_animation.cc --
-   Written and Copyright (C) 2021-2022 by vmc.
+   Written and Copyright (C) 2021-2023 by vmc.
 
    This file is part of woinc.
 
@@ -34,7 +34,7 @@ SimpleProgressAnimation::SimpleProgressAnimation(QWidget *parent)
     label_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     setLayout(add_widgets__(new QVBoxLayout, label_));
 
-    connect(timer_, &QTimer::timeout, [=]() {
+    connect(timer_, &QTimer::timeout, [this]() {
         label_->setText(base_msg_ + QStringLiteral(".").repeated(counter_));
         counter_ = (counter_ + 1) % 4;
 

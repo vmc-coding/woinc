@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/add_project_wizard.cc --
-   Written and Copyright (C) 2020, 2021 by vmc.
+   Written and Copyright (C) 2020, 2023 by vmc.
 
    This file is part of woinc.
 
@@ -175,7 +175,7 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
 
     // connect the widgets
 
-    connect(categories_cb, &QComboBox::currentTextChanged, [=](QString category) {
+    connect(categories_cb, &QComboBox::currentTextChanged, [this, projects_list_wdgt](QString category) {
         auto all = all_category();
         QStringList projects;
         for (auto &&project : all_projects_)
@@ -185,7 +185,11 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
         projects_list_wdgt->addItems(std::move(projects));
     });
 
+#if __cplusplus >= 202002
+    connect(projects_list_wdgt, &QListWidget::itemSelectionChanged, [=, this]() {
+#else
     connect(projects_list_wdgt, &QListWidget::itemSelectionChanged, [=]() {
+#endif
         auto selected = projects_list_wdgt->selectedItems();
         assert(selected.size() <= 1);
         auto project_iter = selected.isEmpty() ? all_projects_.end() :
@@ -212,7 +216,7 @@ ChooseProjectPage::ChooseProjectPage(Controller &controller, QString host, QWidg
         }
     });
 
-    connect(this, &ChooseProjectPage::all_project_list_loaded, [=]() {
+    connect(this, &ChooseProjectPage::all_project_list_loaded, [this, categories_cb]() {
         categories_cb->addItems(extract_categories__(all_projects_));
         progress_animation_->stop();
         static_cast<QStackedLayout*>(layout())->setCurrentIndex(1);
@@ -226,11 +230,11 @@ void ChooseProjectPage::initializePage() {
         progress_animation_->start(QStringLiteral("Loading project list"));
         controller_.load_all_projects_list(
             host_,
-            [=](AllProjectsList apl) {
+            [this](AllProjectsList apl) {
                 all_projects_ = std::move(apl);
                 emit all_project_list_loaded();
             },
-            [=](QString error) {
+            [this](QString error) {
                 QMessageBox::critical(this, QStringLiteral("Error"), error.isEmpty() ? QStringLiteral("Failed to load the projects list") : error, QMessageBox::Ok);
                 close();
             });
@@ -307,7 +311,7 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
 
     // connections
 
-    connect(this, &ProjectAccountPage::project_config_loaded, [=]() {
+    connect(this, &ProjectAccountPage::project_config_loaded, [this]() {
         poll_config_timer_->stop();
         progress_animation_->stop();
         static_cast<QStackedLayout*>(layout())->setCurrentIndex(1);
@@ -320,10 +324,10 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
     poll_config_timer_->setSingleShot(true);
     poll_config_timer_->setInterval(POLLING_INTERVAL_MSECS);
 
-    connect(poll_config_timer_, &QTimer::timeout, [=]() {
+    connect(poll_config_timer_, &QTimer::timeout, [this]() {
         controller_.poll_project_config(
             host_,
-            [=](ProjectConfig config) {
+            [this](ProjectConfig config) {
                 if (config.error_num == 0) {
                     config_ = std::move(config);
                     emit project_config_loaded();
@@ -335,7 +339,7 @@ ProjectAccountPage::ProjectAccountPage(Controller &controller, QString host, QWi
                     poll_config_timer_->start();
                 }
             },
-            [=](QString error) {
+            [this](QString error) {
                 on_error_(error.isEmpty() ? QStringLiteral("Timeout while loading the project configuration.")
                           : QStringLiteral("Loading the project configuration failed."));
             });
@@ -351,7 +355,7 @@ void ProjectAccountPage::initializePage() {
     controller_.start_loading_project_config(
         host_,
         field(FIELD_ATTACH_PROJECT_URL).toString().trimmed(),
-        [=](bool result) {
+        [this](bool result) {
             if (result) {
                 polling_start_ = std::chrono::steady_clock::now();
                 poll_config_timer_->start();
@@ -359,7 +363,7 @@ void ProjectAccountPage::initializePage() {
                 on_error_(QStringLiteral("Loading the project configuration failed,"));
             }
         },
-        [=](QString) { on_error_(QStringLiteral("Loading the project configuration failed.")); });
+        [this](QString) { on_error_(QStringLiteral("Loading the project configuration failed.")); });
 }
 
 void ProjectAccountPage::cleanupPage() {
@@ -431,7 +435,7 @@ void AttachProjectPage::load_account_key_(QString email, QString password) {
         project_url_,
         email,
         password,
-        [=](bool result) {
+        [this](bool result) {
             if (result) {
                 polling_start_ = std::chrono::steady_clock::now();
                 poll_timer_->start();
@@ -439,13 +443,13 @@ void AttachProjectPage::load_account_key_(QString email, QString password) {
                 on_error_(QStringLiteral("Looking up the account key failed."));
             }
         },
-        [=](QString) { on_error_(QStringLiteral("Looking up the account key failed.")); });
+        [this](QString) { on_error_(QStringLiteral("Looking up the account key failed.")); });
 }
 
 void AttachProjectPage::poll_account_key_() {
     controller_.poll_account_lookup(
         host_,
-        [=](AccountOut account) {
+        [this](AccountOut account) {
             if (account.error_num == 0) {
                 progress_animation_->stop();
                 emit project_to_be_attached(QString::fromStdString(std::move(account.authenticator)));
@@ -457,7 +461,7 @@ void AttachProjectPage::poll_account_key_() {
                 poll_timer_->start();
             }
         },
-        [=](QString error) {
+        [this](QString error) {
             on_error_(error.isEmpty() ? QStringLiteral("Timeout while looking up the account key.")
                       : QStringLiteral("Looking up the account key failed."));
         });
@@ -477,7 +481,7 @@ void AttachProjectPage::attach_project_(QString account_key) {
         host_,
         project_url_,
         std::move(account_key),
-        [=](bool result) {
+        [this](bool result) {
             if (result) {
                 progress_animation_->stop();
                 emit project_attached();
@@ -485,7 +489,7 @@ void AttachProjectPage::attach_project_(QString account_key) {
                 on_error_(QStringLiteral("Faild to attach the project."));
             }
         },
-        [=](QString error) { on_error_(error.isEmpty() ? QStringLiteral("Timeout while attaching the project.") : std::move(error)); });
+        [this](QString error) { on_error_(error.isEmpty() ? QStringLiteral("Timeout while attaching the project.") : std::move(error)); });
 }
 
 // ----- CompletionPage -----
