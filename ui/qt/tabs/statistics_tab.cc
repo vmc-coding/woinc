@@ -97,8 +97,8 @@ void create_statistics_chart_axes__(QChart &chart) {
     auto y_axis = new QValueAxis;
 
     x_axis->setFormat("dd.MMMyy");
-    x_axis->setRange(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(x_range.first  - MILLISECONDS_PER_DAY)),
-                     QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(x_range.second + MILLISECONDS_PER_DAY)));
+    x_axis->setRange(QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(x_range.first)  - MILLISECONDS_PER_DAY),
+                     QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(x_range.second) + MILLISECONDS_PER_DAY));
 
     auto gap = std::max((y_range.second - y_range.first) * 0.05, 1.);
     y_range.first -= gap;
