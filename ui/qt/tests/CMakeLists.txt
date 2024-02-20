@@ -7,7 +7,9 @@ set(WOINC_UI_QT_TESTS
 foreach(testname IN LISTS WOINC_UI_QT_TESTS)
     add_executable(${testname} ${testname}.cc)
     woincSetupCompilerOptions(${testname})
-    target_link_libraries(${testname} PRIVATE Qt5::Widgets Qt5::Test)
+    target_link_libraries(${testname} PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Test)
     add_test(${testname} ${testname})
 endforeach()
 

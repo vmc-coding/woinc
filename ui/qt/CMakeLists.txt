@@ -2,10 +2,10 @@ project(woincqt VERSION ${WOINC_VERSION} LANGUAGES CXX)
 
 include(woincSetupCompilerOptions)
 
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Charts REQUIRED)
-find_package(Qt5Network REQUIRED)
-find_package(Qt5Test)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Charts Network Widgets)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test)
 
 set(CMAKE_AUTOMOC ON)
 
@@ -47,12 +47,12 @@ woincSetupCompilerOptions(woincqt)
 #target_compile_definitions(woincqt PRIVATE QT_NO_CAST_FROM_ASCII)
 
 target_link_libraries(woincqt PRIVATE $<TARGET_OBJECTS:woinc_ui_common>
-    woinc::ui Qt5::Widgets Qt5::Charts Qt5::Network)
+    woinc::ui Qt${QT_VERSION_MAJOR}::Charts Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)
 
 install(TARGETS woincqt DESTINATION ${INSTALL_BIN_DIR} PERMISSIONS OWNER_WRITE OWNER_READ
     OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
-if(Qt5Test_FOUND)
+if(Qt${QT_VERSION_MAJOR}Test_FOUND)
     add_subdirectory(tests EXCLUDE_FROM_ALL)
 
     set(WOINC_ALL_TEST_TARGETS ${WOINC_ALL_TEST_TARGETS} PARENT_SCOPE)
