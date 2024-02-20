@@ -23,11 +23,12 @@
 #include <iostream>
 #endif
 
-#include <QDateTime>
 #include <QImage>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QUrl>
+
+#include "qt/utils.h"
 
 namespace woinc { namespace ui { namespace qt {
 
@@ -109,7 +110,7 @@ void NoticesTab::update_() {
         }
 
         QString footer = QString::fromUtf8("<br><font size=-2 color=#8f8f8f>");
-        footer += QDateTime::fromSecsSinceEpoch(static_cast<qint64>(notice->create_time)).toString(Qt::TextDate);
+        footer += time_t_as_string(notice->create_time);
         if (!notice->link.isEmpty())
             footer += QString::fromUtf8(" &middot; <a href=\"") + notice->link + QString::fromUtf8("\">more...</a>");
         footer += "</font>";

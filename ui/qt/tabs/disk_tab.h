@@ -1,5 +1,5 @@
 /* ui/qt/tabs/disk_tab.h --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2024 by vmc.
 
    This file is part of woinc.
 
@@ -20,9 +20,15 @@
 #define WOINC_UI_QT_TABS_DISK_TAB_H_
 
 #include <QWidget>
-#include <QtCharts/QChartView>
 
 #include "qt/types.h"
+
+#if QT_VERSION >= 0x060000
+struct QChartView;
+#else
+namespace QtCharts { struct QChartView; }
+using QChartView = QtCharts::QChartView;
+#endif
 
 namespace woinc { namespace ui { namespace qt {
 
@@ -49,8 +55,8 @@ class DiskTab : public QWidget {
         QString selected_host_;
         DiskUsage disk_usage_;
 
-        QtCharts::QChartView *total_chart_view_ = nullptr;
-        QtCharts::QChartView *projects_chart_view_ = nullptr;
+        QChartView *total_chart_view_ = nullptr;
+        QChartView *projects_chart_view_ = nullptr;
 };
 
 }}}

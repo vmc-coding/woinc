@@ -1,10 +1,10 @@
 # woinc - an alternative to boinccmd and boincmgr
 
-woinc is a reimplementation of boinccmd and boincmgr of [BOINC](https://boinc.berkeley.edu/). It's a hobby project to learn modern C++ and Qt (and maybe GTK later on).
+woinc is a reimplementation of boinccmd and boincmgr of [BOINC](https://boinc.berkeley.edu/). It's a hobby project to learn modern C++ and Qt ~~(and maybe GTK later on)~~.
 
-It's written in C++-14 implementing its own library for communication with the BOINC clients. The GUI is an Qt5 application.
+It's written in C++-14 implementing its own library for communication with the BOINC clients. The GUI is an Qt application supporting Qt5 and Qt6.
 
-woinc should be compatible with C++-14 and above.
+woinc should be compatible with C++-14 and above. You may wan't to use at least C++-17 when building against Qt6.
 
 ~~This project is work in progress, the API may change without any public notices.~~
 
@@ -12,7 +12,6 @@ woinc should be compatible with C++-14 and above.
 
 I'm not interested in this project anymore, so there won't be any active development
 except bugfixes and to keep it working with current compilers and dependencies.
-I'll may or may not migrate the Ui to Qt 6, we'll see.
 
 ## screenshots? screenshots!
 
@@ -55,10 +54,17 @@ Or implement them and create a pull request ;)~~
 - [pugixml](https://pugixml.org/) >= 1.9: for parsing the XML
 
 #### woincqt
-- Qt 5: woincqt is compiling with qt >= 5.9 (maybe before, I don't know); version qt >= 5.12 is supported. Needed Qt components:
-    - Qt5Widgets: for the UI
-    - Qt5Charts: playing around with statistics, may be made optional in the future
-    - Qt5Network: to load images rendered in the news tab, may be made optional in the future
+- Needed Qt components:
+    - QtWidgets: for the UI
+    - QtCharts: playing around with statistics, may be made optional in the future
+    - QtNetwork: to load images rendered in the news tab, may be made optional in the future
+
+- woincqt 1.0.* supports Qt5
+    - it's compiling with qt >= 5.9 (maybe before, I don't know); version qt 5.15.* is supported
+
+- woincqt 1.1.* supports Qt5 and Qt6
+    - for Qt5: same as above for woincqt 1.0
+    - for Qt6: it's compiling with qt >= 6.6 (maybe before, I don't know; it won't build with 6.0 for sure)
 
 ### compiletime
 

@@ -36,12 +36,19 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QScrollArea>
+
+#if QT_VERSION >= 0x060000
+#include <QChartView>
+#include <QDateTimeAxis>
+#include <QLineSeries>
+#include <QValueAxis>
+#else
 #include <QtCharts/QChartView>
 #include <QtCharts/QDateTimeAxis>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
-
 QT_CHARTS_USE_NAMESPACE
+#endif
 
 namespace {
 

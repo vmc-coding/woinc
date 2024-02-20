@@ -1,5 +1,5 @@
 /* ui/qt/tabs/disk_tab.cc --
-   Written and Copyright (C) 2018-2019 by vmc.
+   Written and Copyright (C) 2018-2024 by vmc.
 
    This file is part of woinc.
 
@@ -25,13 +25,19 @@
 
 #include <QGraphicsLayout>
 #include <QHBoxLayout>
+
+#if QT_VERSION >= 0x060000
+#include <QChartView>
+#include <QLegendMarker>
+#include <QPieSeries>
+#else
+#include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QPieSeries>
-#include <QtCharts/QPieSlice>
+QT_CHARTS_USE_NAMESPACE
+#endif
 
 #include "qt/utils.h"
-
-using namespace QtCharts;
 
 namespace {
 
