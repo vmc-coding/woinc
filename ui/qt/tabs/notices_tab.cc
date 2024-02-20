@@ -1,5 +1,5 @@
 /* ui/qt/tabs/notices_tab.cc --
-   Written and Copyright (C) 2018-2023 by vmc.
+   Written and Copyright (C) 2018-2024 by vmc.
 
    This file is part of woinc.
 
@@ -109,7 +109,7 @@ void NoticesTab::update_() {
         }
 
         QString footer = QString::fromUtf8("<br><font size=-2 color=#8f8f8f>");
-        footer += QDateTime::fromTime_t(static_cast<unsigned int>(notice->create_time)).toString(Qt::TextDate);
+        footer += QDateTime::fromSecsSinceEpoch(static_cast<qint64>(notice->create_time)).toString(Qt::TextDate);
         if (!notice->link.isEmpty())
             footer += QString::fromUtf8(" &middot; <a href=\"") + notice->link + QString::fromUtf8("\">more...</a>");
         footer += "</font>";

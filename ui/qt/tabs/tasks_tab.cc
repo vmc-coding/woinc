@@ -1,5 +1,5 @@
 /* ui/qt/tabs/tasks_tab.cc --
-   Written and Copyright (C) 2017-2022 by vmc.
+   Written and Copyright (C) 2017-2024 by vmc.
 
    This file is part of woinc.
 
@@ -237,9 +237,9 @@ QVariant TabModel::data(const QModelIndex &index, int role) const {
                 case INDEX_STATUS:
                 case INDEX_APPLICATION:
                 case INDEX_TASK_NAME:
-                    return Qt::AlignLeft + Qt::AlignVCenter;
+                    return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
                 case INDEX_DEADLINE:
-                    return Qt::AlignRight + Qt::AlignVCenter;
+                    return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
                 case INDEX_PROGRESS:
                 case INDEX_ELAPSED:
                 case INDEX_REMAINING:
@@ -274,7 +274,7 @@ QVariant TabModel::headerData(int section, Qt::Orientation orientation, int role
     } else if (role == Qt::TextAlignmentRole) {
         switch (section) {
             case INDEX_REMAINING:
-                return Qt::AlignLeft + Qt::AlignVCenter;
+                return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
             default:
                 return Qt::AlignCenter;
         }

@@ -1,5 +1,5 @@
 /* ui/qt/tabs/projects_tab.cc --
-   Written and Copyright (C) 2017-2021 by vmc.
+   Written and Copyright (C) 2017-2024 by vmc.
 
    This file is part of woinc.
 
@@ -233,11 +233,11 @@ QVariant TabModel::data(const QModelIndex &index, int role) const {
                 case INDEX_ACCOUNT:
                 case INDEX_TEAM:
                 case INDEX_STATUS:
-                    return Qt::AlignLeft + Qt::AlignVCenter;
+                    return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
                 case INDEX_WORK_DONE:
                 case INDEX_AVG_WORK_DONE:
                 case INDEX_RESOURCE_SHARE:
-                    return Qt::AlignRight + Qt::AlignVCenter;
+                    return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
             }
             assert(false);
             break;
@@ -270,10 +270,10 @@ QVariant TabModel::headerData(int section, Qt::Orientation orientation, int role
             case INDEX_ACCOUNT:
             case INDEX_TEAM:
             case INDEX_STATUS:
-                return Qt::AlignLeft + Qt::AlignVCenter;
+                return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
             case INDEX_WORK_DONE:
             case INDEX_AVG_WORK_DONE:
-                return Qt::AlignRight + Qt::AlignVCenter;
+                return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
             case INDEX_RESOURCE_SHARE:
                 return Qt::AlignCenter;
         }

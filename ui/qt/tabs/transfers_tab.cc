@@ -1,5 +1,5 @@
 /* ui/qt/tabs/transfers_tab.cc --
-   Written and Copyright (C) 2018-2021 by vmc.
+   Written and Copyright (C) 2018-2024 by vmc.
 
    This file is part of woinc.
 
@@ -205,9 +205,9 @@ QVariant TabModel::data(const QModelIndex &index, int role) const {
         assert(column < COLUMN_COUNT);
 
         if (column == INDEX_PROGRESS)
-            return Qt::AlignRight + Qt::AlignVCenter;
+            return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
         else
-            return Qt::AlignLeft + Qt::AlignVCenter;
+            return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
     }
 
     return QVariant();
@@ -235,7 +235,7 @@ QVariant TabModel::headerData(int section, Qt::Orientation orientation, int role
         if (section == INDEX_PROGRESS)
             return Qt::AlignCenter;
         else
-            return Qt::AlignLeft + Qt::AlignVCenter;
+            return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
     }
 
     return QVariant();

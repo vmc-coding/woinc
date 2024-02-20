@@ -1,5 +1,5 @@
 /* ui/qt/tabs/events_tab.cc --
-   Written and Copyright (C) 2019 by vmc.
+   Written and Copyright (C) 2019-2024 by vmc.
 
    This file is part of woinc.
 
@@ -68,7 +68,7 @@ QVariant TabModel::data(const QModelIndex &index, int role) const {
         return QVariant();
 
     if (role == Qt::TextAlignmentRole)
-        return Qt::AlignLeft + Qt::AlignVCenter;
+        return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
 
     assert(index.row() >= 0);
 
@@ -99,7 +99,7 @@ QVariant TabModel::headerData(int section, Qt::Orientation orientation, int role
         return QVariant();
 
     if (role == Qt::TextAlignmentRole)
-        return Qt::AlignLeft + Qt::AlignVCenter;
+        return QVariant::fromValue(Qt::AlignLeft | Qt::AlignVCenter);
 
     if (role == Qt::DisplayRole) {
         switch (section) {

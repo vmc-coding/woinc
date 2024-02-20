@@ -1,5 +1,5 @@
 /* ui/qt/menu.cc --
-   Written and Copyright (C) 2017-2023 by vmc.
+   Written and Copyright (C) 2017-2024 by vmc.
 
    This file is part of woinc.
 
@@ -20,6 +20,7 @@
 
 #include <cassert>
 
+#include <QActionGroup>
 #include <QDesktopServices>
 #include <QUrl>
 
@@ -72,7 +73,7 @@ FileMenu::FileMenu(const QString &title, QWidget *parent)
     new_window->setEnabled(false);
 
     auto *select_computer = addAction("Select computer..."); // Ctrl+Shift+I
-    select_computer->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_I);
+    select_computer->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_I);
     connect(select_computer, &QAction::triggered, this, &FileMenu::computer_to_be_selected);
 
     shut_down_client_ = addAction("Shut down connected client...");
@@ -104,17 +105,17 @@ ViewMenu::ViewMenu(const QString &title, QWidget *parent)
 {
 #define ADD_ACTION(TITLE, SHORTCUT, TYPE) do { \
         auto *action = addAction(TITLE); \
-        action->setShortcut(QKeySequence(SHORTCUT)); \
+        action->setShortcut(SHORTCUT); \
         connect(action, &QAction::triggered, [this]() { emit current_tab_to_be_changed(TYPE); }); \
     } while (0)
 
-    ADD_ACTION("&Notices", Qt::CTRL + Qt::SHIFT + Qt::Key_N, TAB::NOTICES);
-    ADD_ACTION("&Projects", Qt::CTRL + Qt::SHIFT + Qt::Key_P, TAB::PROJECTS);
-    ADD_ACTION("&Tasks", Qt::CTRL + Qt::SHIFT + Qt::Key_T, TAB::TASKS);
-    ADD_ACTION("Trans&fers", Qt::CTRL + Qt::SHIFT + Qt::Key_X, TAB::TRANSFERS);
-    ADD_ACTION("&Statistics", Qt::CTRL + Qt::SHIFT + Qt::Key_S, TAB::STATISTICS);
-    ADD_ACTION("&Disk", Qt::CTRL + Qt::SHIFT + Qt::Key_D, TAB::DISK);
-    ADD_ACTION("&Events", Qt::CTRL + Qt::SHIFT + Qt::Key_E, TAB::EVENTS);
+    ADD_ACTION("&Notices",    Qt::CTRL | Qt::SHIFT | Qt::Key_N, TAB::NOTICES);
+    ADD_ACTION("&Projects",   Qt::CTRL | Qt::SHIFT | Qt::Key_P, TAB::PROJECTS);
+    ADD_ACTION("&Tasks",      Qt::CTRL | Qt::SHIFT | Qt::Key_T, TAB::TASKS);
+    ADD_ACTION("Trans&fers",  Qt::CTRL | Qt::SHIFT | Qt::Key_X, TAB::TRANSFERS);
+    ADD_ACTION("&Statistics", Qt::CTRL | Qt::SHIFT | Qt::Key_S, TAB::STATISTICS);
+    ADD_ACTION("&Disk",       Qt::CTRL | Qt::SHIFT | Qt::Key_D, TAB::DISK);
+    ADD_ACTION("&Events",     Qt::CTRL | Qt::SHIFT | Qt::Key_E, TAB::EVENTS);
 
 #undef ADD_ACTION
 }
@@ -190,7 +191,7 @@ OptionsMenu::OptionsMenu(const QString &title, QWidget *parent)
     addAction("Select columns...")->setEnabled(false);
     {
         auto *action = addAction("Event Log options...");
-        action->setShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_F));
+        action->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_F);
         connect(action, &QAction::triggered, [&]() {
             emit event_log_options_to_be_shown(selected_host_);
         });

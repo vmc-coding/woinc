@@ -1,5 +1,5 @@
 /* ui/qt/tabs/statistics_tab.cc --
-   Written and Copyright (C) 2018-2023 by vmc.
+   Written and Copyright (C) 2018-2024 by vmc.
 
    This file is part of woinc.
 
@@ -80,7 +80,7 @@ void create_statistics_chart_axes__(QChart &chart) {
         assert(dynamic_cast<QXYSeries *>(si));
         auto series = static_cast<QXYSeries *>(si);
 
-        auto points = series->pointsVector();
+        auto points = series->points();
         assert(!points.empty());
 
         x_range.first  = std::min(x_range.first,  points.front().x());
