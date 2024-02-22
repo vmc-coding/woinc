@@ -2,7 +2,15 @@ project(woincqt VERSION ${WOINC_VERSION} LANGUAGES CXX)
 
 include(woincSetupCompilerOptions)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+if(CMAKE_DISABLE_FIND_PACKAGE_Qt5)
+    find_package(QT NAMES Qt6 REQUIRED COMPONENTS Core)
+elseif(CMAKE_DISABLE_FIND_PACKAGE_Qt6)
+    find_package(QT NAMES Qt5 REQUIRED COMPONENTS Core)
+else()
+    find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+endif()
+
+message("Build against Qt${QT_VERSION_MAJOR}")
 
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Charts Network Widgets)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Test)
@@ -46,8 +54,10 @@ add_executable(woincqt ${WOINCQT_SOURCES})
 woincSetupCompilerOptions(woincqt)
 #target_compile_definitions(woincqt PRIVATE QT_NO_CAST_FROM_ASCII)
 
-target_link_libraries(woincqt PRIVATE $<TARGET_OBJECTS:woinc_ui_common>
-    woinc::ui Qt${QT_VERSION_MAJOR}::Charts Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(woincqt PRIVATE
+    $<TARGET_OBJECTS:woinc_ui_common> woinc::ui
+    Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Charts
+    Qt${QT_VERSION_MAJOR}::Network Qt${QT_VERSION_MAJOR}::Widgets)
 
 install(TARGETS woincqt DESTINATION ${INSTALL_BIN_DIR} PERMISSIONS OWNER_WRITE OWNER_READ
     OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
