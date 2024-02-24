@@ -1,5 +1,5 @@
 /* ui/qt/dialogs/about_dialog.cc --
-   Written and Copyright (C) 2022-2023 by vmc.
+   Written and Copyright (C) 2022-2024 by vmc.
 
    This file is part of woinc.
 
@@ -70,7 +70,7 @@ AboutDialog::AboutDialog(QWidget *parent)
     add_line__(grid, QStringLiteral("<h1>woincqt</h1>"));
     add_line__(grid, QStringLiteral("Version:"), QString::asprintf("%d.%d.%d", major_version(), minor_version(), patch_version()));
     add_line__(grid, QStringLiteral("QT version:"), qVersion());
-    add_line__(grid, QStringLiteral("Copyright:"), QStringLiteral("(C) 2017-2023 by <a href=\"mailto:vmc.coding@gmail.com\">vmc</>"));
+    add_line__(grid, QStringLiteral("Copyright:"), QStringLiteral("(C) 2017-2024 by <a href=\"mailto:vmc.coding@gmail.com\">vmc</>"));
     add_line__(grid, QStringLiteral("woincqt is distributed under the GNU General Public License v3.0."));
     add_line__(grid, QStringLiteral("For more information, visit <a href=\"https://github.com/vmc-coding/woinc\">https://github.com/vmc-coding/woinc</a>"));
 
