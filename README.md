@@ -15,7 +15,7 @@ except bugfixes and to keep it working with current compilers and dependencies.
 
 ## screenshots? screenshots!
 
-They may not be up to date, but there are some [here](http://83.169.22.26/woinc/)
+They may not be up to date, but there are some [here](https://hasenfusel.de/woinc/)
 
 ## woinc consists of
 
@@ -144,6 +144,6 @@ No manpage yet. But it's compatible with boinccmd - for the stuff implemented - 
 Just run it and add a client via UI. The application won't remember the user and/or password yet.
 Of course that is a really bad way if you've to do it a lot of times,
  e.g. while developing.
-So there is a shortcut by assuming the host ist localhost
+So there is a shortcut by assuming the host is localhost
  and password the first parameter to the program.
 This is for dev only, because all other logged in users on your computer may see your password!
