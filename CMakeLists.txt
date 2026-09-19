@@ -1,5 +1,5 @@
-# compile feature cxx_std_14 had been introduced with 3.8
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+# compile feature cxx_std_14 had been introduced with 3.8 but versions <3.10 are deprecated, so let's enforce >= 3.10
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 mark_as_advanced(FORCE WOINC_VERSION_MAJOR)
 mark_as_advanced(FORCE WOINC_VERSION_MINOR)

@@ -70,7 +70,7 @@ Or implement them and create a pull request ;)~~
 
 - all of runtime; of course you only need Qt if you want to build woincqt
 - some C++-compiler supporting C++-14 standard or above
-- cmake >= 3.8
+- cmake >= 3.10
 - some tool cmake accepts as generator (make, ninja, ..)
 - optional: qttest to run the tests of woincqt
 
