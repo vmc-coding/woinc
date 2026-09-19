@@ -39,6 +39,10 @@ macro(woincSetupCompilerOptions target)
         endif()
     endif()
 
+    if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        target_compile_definitions(${target} PRIVATE NDEBUG)
+    endif()
+
     if(WOINC_ENABLE_SANITIZER)
         target_compile_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
     endif()
