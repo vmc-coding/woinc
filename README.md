@@ -106,8 +106,8 @@ Or implement them and create a pull request ;)~~
     ```
     -DWOINC_BUILD_LIB=<ON|OFF>              # build libwoinc
     -DWOINC_BUILD_LIBUI=<ON|OFF>            # build libwoincui
-    -DWOINC_BUILD_CLI_UI=<ON|OFF>           # build woincdmd
-    -DWOINC_BUILD_CLI_QT=<ON|OFF>           # build woincqt
+    -DWOINC_BUILD_UI_CLI=<ON|OFF>           # build woincdmd
+    -DWOINC_BUILD_UI_QT=<ON|OFF>            # build woincqt
     -DWOINC_CLI_COMMANDS=<ON|OFF>           # enable some extra commands in woinccmd
     -DWOINC_EXPOSE_FULL_STRUCTURES=<ON|OFF> # also handle data from the client woinc doesn't need but maybe someone using this lib; off by default
     -DWOINC_BUILD_SHARED_LIBS=<ON|OFF>      # build shared instead of static libs of libwoinc and libwoincui
